@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protokół Finansowy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: white; }
+        .hidden-step { display: none; }
+        .spinner { border: 4px solid rgba(255, 255, 255, 0.1); border-left-color: #ef4444; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div id="funnel-container" class="max-w-md w-full bg-slate-800 p-5 sm:p-8 rounded-xl shadow-2xl border border-slate-700">
+        
+        <div id="step-1">
+            <h2 class="text-xl sm:text-2xl font-bold text-center mb-5 sm:mb-6 leading-tight">Ile pieniędzy banki kradną Ci co miesiąc w ukrytych prowizjach i zawyżonych ratach?</h2>
+            <div class="flex flex-col gap-3 sm:gap-4">
+                <button onclick="nextStep(2)" class="w-full py-3 sm:py-4 px-3 bg-slate-700 hover:bg-slate-600 text-white text-sm sm:text-base font-semibold rounded-lg transition-all leading-snug">Poniżej 1000 PLN (Biednieję, ale powoli)</button>
+                <button onclick="nextStep(2)" class="w-full py-3 sm:py-4 px-3 bg-slate-700 hover:bg-slate-600 text-white text-sm sm:text-base font-semibold rounded-lg transition-all leading-snug">1000 - 3000 PLN (Odczuwam poważną stratę)</button>
+                <button onclick="nextStep(2)" class="w-full py-3 sm:py-4 px-3 bg-slate-700 hover:bg-slate-600 text-white text-sm sm:text-base font-semibold rounded-lg transition-all leading-snug">Powyżej 3000 PLN (Zarabiam na system)</button>
+            </div>
+        </div>
+
+        <div id="step-2" class="hidden-step">
+            <h2 class="text-xl sm:text-2xl font-bold text-center mb-5 sm:mb-6 leading-tight">Przy tych kwotach tracisz rocznie równowartość dobrych wakacji. Chcesz wiedzieć, gdzie ucieka Twój kapitał?</h2>
+            <div class="flex flex-col gap-3 sm:gap-4">
+                <button onclick="nextStep(3)" class="w-full py-3 sm:py-4 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg transition-all text-base sm:text-lg shadow-lg shadow-red-500/30">TAK, pokaż mi wycieki</button>
+                <button onclick="confirmExit()" class="w-full py-2 sm:py-3 bg-transparent text-slate-500 hover:text-slate-300 text-xs sm:text-sm transition-all">Nie, wolę dalej tracić</button>
+            </div>
+        </div>
+
+        <div id="step-3" class="hidden-step">
+            <h2 class="text-xl sm:text-2xl font-bold text-center mb-5 sm:mb-6 leading-tight">Zidentyfikowano luki. Jesteś gotowy wdrożyć agresywne cięcia kosztów i odzyskać płynność?</h2>
+            <div class="flex flex-col gap-3 sm:gap-4">
+                <button onclick="startLoading()" class="w-full py-3 sm:py-4 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg transition-all text-base sm:text-lg shadow-lg shadow-red-500/30">TAK, uruchom protokół</button>
+                <button onclick="confirmExit()" class="w-full py-2 sm:py-3 bg-transparent text-slate-500 hover:text-slate-300 text-xs sm:text-sm transition-all">Nie, rezygnuję</button>
+            </div>
+        </div>
+
+        <div id="loading-screen" class="hidden-step flex flex-col items-center justify-center py-10">
+            <div class="spinner mb-6"></div>
+            <p id="loading-text" class="text-base sm:text-lg font-mono text-red-400 font-semibold text-center px-4">Łączenie z API bankowym...</p>
+        </div>
+
+        <div id="step-4" class="hidden-step">
+            <h2 class="text-xl sm:text-2xl font-bold text-center mb-2 leading-tight">Analiza zakończona.</h2>
+            <p class="text-red-400 text-xs sm:text-sm text-center mb-5 sm:mb-6 font-semibold">Raport i dostęp do elitarnych ofert wygasają za 24h. Zabezpieczamy dostęp.</p>
+            
+            <form id="lead-form" onsubmit="submitLead(event)">
+                <input type="email" id="email-input" required placeholder="Wpisz swój najlepszy e-mail" class="w-full px-4 py-3 sm:py-4 mb-1 bg-slate-900 border border-slate-600 rounded-lg text-white text-sm sm:text-base focus:outline-none focus:border-red-500 transition-colors">
+                <p id="email-error" class="text-red-500 text-xs mb-3 hidden">Proszę wprowadzić poprawny adres e-mail.</p>
+                <button type="submit" class="w-full py-3 sm:py-4 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg transition-all text-base sm:text-lg shadow-lg shadow-red-500/30">ODBLOKUJ MOJĄ OFERTĘ</button>
+            </form>
+        </div>
+
+    </div>
+
+    <script>
+        function nextStep(stepNumber) {
+            document.querySelectorAll('#funnel-container > div').forEach(el => el.classList.add('hidden-step'));
+            document.getElementById(`step-${stepNumber}`).classList.remove('hidden-step');
+        }
+
+        function confirmExit() {
+            if (confirm('Czy na pewno chcesz zrezygnować i dalej tracić pieniądze?')) {
+                location.reload();
+            }
+        }
+
+        function startLoading() {
+            document.querySelectorAll('#funnel-container > div').forEach(el => el.classList.add('hidden-step'));
+            document.getElementById('loading-screen').classList.remove('hidden-step');
+            
+            const texts = ["Łączenie z API bankowym...", "Skanowanie ukrytych ofert...", "Generowanie algorytmu..."];
+            let i = 0;
+            const textEl = document.getElementById('loading-text');
+            
+            const interval = setInterval(() => {
+                i++;
+                if (i < texts.length) textEl.innerText = texts[i];
+            }, 1000);
+
+            setTimeout(() => {
+                clearInterval(interval);
+                document.getElementById('loading-screen').classList.add('hidden-step');
+                document.getElementById('step-4').classList.remove('hidden-step');
+            }, 3000);
+        }
+
+        function submitLead(e) {
+            e.preventDefault();
+            const emailInput = document.getElementById('email-input');
+            const emailError = document.getElementById('email-error');
+            const email = emailInput.value.trim();
+            
+            // Walidacja e-mail za pomocą wyrażenia regularnego
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            
+            if (!emailRegex.test(email)) {
+                emailError.classList.remove('hidden');
+                emailInput.classList.add('border-red-500');
+                return;
+            }
+            
+            // Ukryj błąd, jeśli e-mail jest poprawny
+            emailError.classList.add('hidden');
+            emailInput.classList.remove('border-red-500');
+            
+            // W TYM MIEJSCU WYSYŁAMY DANE DO NASZEGO BACKENDU
+            const webhookUrl = '/api/leads';
+            
+            fetch(webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email, timestamp: new Date().toISOString() })
+            }).catch(err => console.error('Błąd zapisu leada', err));
+
+            // Natychmiastowe przekierowanie do głównej aplikacji
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>

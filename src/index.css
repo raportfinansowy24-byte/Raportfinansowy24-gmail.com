@@ -1,0 +1,186 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Montserrat:wght@700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-montserrat: "Montserrat", sans-serif;
+  --color-accent: #DC143C;
+  --animate-spin-reverse: spin-reverse 1s linear infinite;
+}
+
+@keyframes spin-reverse {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+
+@layer base {
+  html, body, #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    @apply font-sans antialiased text-white fixed inset-0 overflow-hidden;
+    background-color: #09090b !important;
+  }
+}
+
+@media (min-width: 640px) {
+  body {
+    background-color: #000000 !important;
+  }
+}
+
+.neon-tile {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0.6) 20%, rgba(0, 0, 0, 0.8) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid #DC143C;
+  box-shadow: 0 0 15px rgba(255, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.neon-tile:hover, .neon-tile:active {
+  box-shadow: 0 0 25px rgba(255, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  border-color: #FF0000;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(0, 0, 0, 0.5) 20%, rgba(0, 0, 0, 0.7) 100%);
+}
+
+.icon-glow {
+  filter: drop-shadow(0 0 6px rgba(220, 20, 60, 0.9));
+}
+
+.ribbon-wrapper {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 75px;
+  height: 75px;
+  overflow: hidden;
+  z-index: 10;
+  border-top-right-radius: 16px;
+}
+
+.ribbon {
+  font-size: 8px;
+  font-weight: 800;
+  color: #FFF;
+  text-align: center;
+  text-transform: uppercase;
+  transform: rotate(45deg);
+  position: relative;
+  padding: 3px 0;
+  left: -12px;
+  top: 12px;
+  width: 110px;
+  background: linear-gradient(45deg, #8B0000, #FF0000, #8B0000);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.5), 0 0 10px rgba(255,0,0,0.6);
+  letter-spacing: 0.5px;
+  line-height: 1.1;
+}
+
+.prose {
+  @apply text-white/80 leading-relaxed;
+}
+
+.prose h1, .prose h2, .prose h3 {
+  @apply font-bold text-white mt-6 mb-4;
+}
+
+.prose p {
+  @apply mb-4;
+}
+
+.prose ul {
+  @apply list-disc pl-5 mb-4;
+}
+
+.prose li {
+  @apply mb-1;
+}
+.live-counter-mini {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background-color: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(220, 38, 38, 0.5);
+    padding: 5px 12px;
+    border-radius: 20px;
+    color: #ef4444;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+    box-shadow: 0 0 10px rgba(220, 38, 38, 0.3);
+    z-index: 50;
+}
+
+.pulse-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #dc2626;
+    border-radius: 50%;
+    animation: pulse-animation 1.5s infinite;
+}
+
+@keyframes pulse-animation {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+}
+
+.glow-slider {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.glow-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #DC143C;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid #fff;
+  box-shadow: 0 0 5px rgba(220, 20, 60, 0.3);
+}
+
+.glow-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #DC143C;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid #fff;
+  box-shadow: 0 0 5px rgba(220, 20, 60, 0.3);
+}
+
+.group:hover .glow-slider::-webkit-slider-thumb {
+  box-shadow: 0 0 20px 8px rgba(220, 20, 60, 0.6), 0 0 40px 10px rgba(220, 20, 60, 0.4);
+  transform: scale(1.2);
+  background: #FF0000;
+}
+
+.group:hover .glow-slider::-moz-range-thumb {
+  box-shadow: 0 0 20px 8px rgba(220, 20, 60, 0.6), 0 0 40px 10px rgba(220, 20, 60, 0.4);
+  transform: scale(1.2);
+  background: #FF0000;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.custom-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.custom-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}

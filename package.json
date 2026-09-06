@@ -1,0 +1,49 @@
+{
+  "name": "kalkulator-ofert-kredytowych",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx server.ts",
+    "build": "tsc -b && vite build && npx esbuild server.ts --bundle --platform=node --target=node18 --format=esm --outdir=dist-server --packages=external",
+    "start": "node dist-server/server.js",
+    "preview": "vite preview",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@google/genai": "^1.36.0",
+    "@supabase/supabase-js": "^2.103.0",
+    "cheerio": "^1.2.0",
+    "clsx": "^2.1.1",
+    "cors": "^2.8.6",
+    "d3": "^7.9.0",
+    "express": "^5.2.1",
+    "firebase": "^12.10.0",
+    "jspdf": "^4.2.1",
+    "lucide-react": "^0.577.0",
+    "marked": "^17.0.4",
+    "motion": "^12.38.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.14.1",
+    "recharts": "^3.8.0",
+    "tailwind-merge": "^3.5.0",
+    "tailwindcss": "latest",
+    "tsx": "^4.21.0",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.2.2",
+    "@types/cors": "^2.8.19",
+    "@types/d3": "^7.4.3",
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/uuid": "^10.0.0",
+    "@vitejs/plugin-react": "^6.0.1",
+    "esbuild": "^0.28.0",
+    "typescript": "~5.8.2",
+    "vite": "^8.0.1"
+  }
+}

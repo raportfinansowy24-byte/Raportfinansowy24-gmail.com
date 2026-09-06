@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId (UID)
+    // Fields:
+    //   - uid: string (required)
+    //   - email: string (required, email format)
+    //   - displayName: string (optional)
+    //   - photoURL: string (optional)
+    //   - role: string (required, 'user' or 'admin')
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: simulations
+    // Document ID: auto-generated
+    // Fields:
+    //   - uid: string (required, owner UID)
+    //   - type: string (required, 'loan', 'savings', 'compound')
+    //   - data: map (required)
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: chats
+    // Document ID: auto-generated
+    // Fields:
+    //   - uid: string (required, owner UID)
+    //   - role: string (required, 'user', 'model', 'system')
+    //   - text: string (required, max 5000 chars)
+    //   - context: string (optional)
+    //   - createdAt: timestamp (required)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    // Default deny all access as authentication has been removed from the application
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}
