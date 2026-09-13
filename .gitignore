@@ -9,7 +9,9 @@ lerna-debug.log*
 
 node_modules
 dist
+dist-server
 dist-ssr
+*.tsbuildinfo
 *.local
 
 # Środowiskowe (Zmienne)

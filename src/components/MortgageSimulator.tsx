@@ -15,14 +15,16 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
-import { Calculator, Save, TrendingUp, AlertCircle, ArrowLeft, Home, Zap, Clock, ShieldCheck, Sparkles, Bookmark, ArrowLeftRight, X, FileText } from 'lucide-react';
+import { Calculator, Save, TrendingUp, AlertCircle, ArrowLeft, Home, Zap, Clock, ShieldCheck, Sparkles, Bookmark, ArrowLeftRight, X, FileText, Percent, Coins, DollarSign } from 'lucide-react';
 import { motion } from 'motion/react';
 import { getAiRecommendedOffers, Offer } from '../services/aiOfferService';
 import { AiOfferRecommendations } from './AiOfferRecommendations';
 import { FinancialReportModal } from './FinancialReportModal';
+import { useViewMode } from '../context/ViewModeContext';
 
 export function MortgageSimulator() {
   const navigate = useNavigate();
+  const { isBrowserMode } = useViewMode();
   const [propertyValue, setPropertyValue] = useState<number>(500000);
   const [downPayment, setDownPayment] = useState<number>(100000);
   const [years, setYears] = useState<number>(25);
@@ -333,219 +335,252 @@ export function MortgageSimulator() {
         </h2>
       </div>
 
-      {/* Main Calculator Card */}
-      <div className="relative overflow-hidden rounded-[32px] bg-zinc-900 border border-white/10 shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#DC143C]/5 via-transparent to-transparent opacity-50"></div>
-        
-        <div className="p-6 space-y-6 relative z-10">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-4 group bg-black/30 p-4 rounded-2xl border border-white/5 hover:border-[#DC143C]/30 transition-colors sm:col-span-2 relative">
-              {getPropertyValueTip() && (
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#111] border border-[#DC143C]/30 text-white/90 text-[10px] font-bold px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-20 shadow-[0_4px_12px_rgba(220,20,60,0.2)]">
-                  {getPropertyValueTip()}
+      {/* Main Content Layout - Two columns in browser mode, stacked in mobile mode */}
+      <div className={isBrowserMode ? "grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full text-left" : "flex flex-col gap-6 w-full"}>
+        {/* Left Column: Sliders, Monthly Payment Action Card, and Matched Offer */}
+        <div className={isBrowserMode ? "lg:col-span-6 space-y-6" : "space-y-6"}>
+          {/* Main Calculator Card */}
+          <div className="relative overflow-hidden rounded-[32px] bg-zinc-900 border border-white/10 shadow-2xl">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#DC143C]/5 via-transparent to-transparent opacity-50"></div>
+            
+            <div className="p-6 space-y-6 relative z-10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-4 group bg-black/30 p-4 rounded-2xl border border-white/5 hover:border-[#DC143C]/30 transition-colors sm:col-span-2 relative">
+                  {getPropertyValueTip() && (
+                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#111] border border-[#DC143C]/30 text-white/90 text-[10px] font-bold px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-20 shadow-[0_4px_12px_rgba(220,20,60,0.2)]">
+                      {getPropertyValueTip()}
+                    </div>
+                  )}
+                  <div className="flex justify-between items-end">
+                    <label className="text-[10px] text-white/40 uppercase font-black tracking-widest flex items-center gap-2">
+                      <Home size={12} className="group-hover:text-[#DC143C] transition-colors" /> Wartość Nieruchomości
+                    </label>
+                    <div className="text-2xl font-black text-white group-hover:text-[#DC143C] transition-colors group-hover:drop-shadow-[0_0_12px_rgba(220,20,60,0.8)]">
+                      {propertyValue.toLocaleString('pl-PL')} <span className="text-sm text-white/40">PLN</span>
+                    </div>
+                  </div>
+                  <div className="relative pt-2 pb-2">
+                    <input 
+                      type="range" 
+                      min="50000" 
+                      max="5000000" 
+                      step="10000"
+                      value={propertyValue}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setPropertyValue(val);
+                        if (downPayment > val) setDownPayment(val);
+                      }}
+                      className="w-full h-2 bg-white/10 rounded-lg glow-slider"
+                      style={{
+                        background: `linear-gradient(to right, #DC143C ${(propertyValue - 50000) / (5000000 - 50000) * 100}%, rgba(255,255,255,0.1) ${(propertyValue - 50000) / (5000000 - 50000) * 100}%)`
+                      }}
+                    />
+                  </div>
                 </div>
-              )}
-              <div className="flex justify-between items-end">
-                <label className="text-[10px] text-white/40 uppercase font-black tracking-widest flex items-center gap-2">
-                  <Home size={12} className="group-hover:text-[#DC143C] transition-colors" /> Wartość Nieruchomości
-                </label>
-                <div className="text-2xl font-black text-white group-hover:text-[#DC143C] transition-colors group-hover:drop-shadow-[0_0_12px_rgba(220,20,60,0.8)]">
-                  {propertyValue.toLocaleString('pl-PL')} <span className="text-sm text-white/40">PLN</span>
-                </div>
-              </div>
-              <div className="relative pt-2 pb-2">
-                <input 
-                  type="range" 
-                  min="50000" 
-                  max="5000000" 
-                  step="10000"
-                  value={propertyValue}
-                  onChange={(e) => {
-                    const val = Number(e.target.value);
-                    setPropertyValue(val);
-                    if (downPayment > val) setDownPayment(val);
-                  }}
-                  className="w-full h-2 bg-white/10 rounded-lg glow-slider"
-                  style={{
-                    background: `linear-gradient(to right, #DC143C ${(propertyValue - 50000) / (5000000 - 50000) * 100}%, rgba(255,255,255,0.1) ${(propertyValue - 50000) / (5000000 - 50000) * 100}%)`
-                  }}
-                />
-              </div>
-            </div>
 
-            <div className="space-y-4 group bg-black/30 p-4 rounded-2xl border border-white/5 hover:border-[#DC143C]/30 transition-colors relative">
-              {getDownPaymentTip() && (
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#111] border border-[#DC143C]/30 text-white/90 text-[10px] font-bold px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-20 shadow-[0_4px_12px_rgba(220,20,60,0.2)]">
-                  {getDownPaymentTip()}
+                <div className="space-y-4 group bg-black/30 p-4 rounded-2xl border border-white/5 hover:border-[#DC143C]/30 transition-colors relative">
+                  {getDownPaymentTip() && (
+                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#111] border border-[#DC143C]/30 text-white/90 text-[10px] font-bold px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-20 shadow-[0_4px_12px_rgba(220,20,60,0.2)]">
+                      {getDownPaymentTip()}
+                    </div>
+                  )}
+                  <div className="flex justify-between items-end">
+                    <label className="text-[10px] text-white/40 uppercase font-black tracking-widest flex items-center gap-2">
+                      <Zap size={12} className="group-hover:text-[#DC143C] transition-colors" /> Wkład Własny
+                    </label>
+                    <div className="text-2xl font-black text-white group-hover:text-[#DC143C] transition-colors group-hover:drop-shadow-[0_0_12px_rgba(220,20,60,0.8)]">
+                      {downPayment.toLocaleString('pl-PL')} <span className="text-sm text-white/40">PLN</span>
+                    </div>
+                  </div>
+                  <div className="relative pt-2 pb-2">
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max={propertyValue} 
+                      step="5000"
+                      value={downPayment}
+                      onChange={(e) => setDownPayment(Number(e.target.value))}
+                      className="w-full h-2 bg-white/10 rounded-lg glow-slider"
+                      style={{
+                        background: `linear-gradient(to right, #DC143C ${(downPayment) / (propertyValue || 1) * 100}%, rgba(255,255,255,0.1) ${(downPayment) / (propertyValue || 1) * 100}%)`
+                      }}
+                    />
+                  </div>
                 </div>
-              )}
-              <div className="flex justify-between items-end">
-                <label className="text-[10px] text-white/40 uppercase font-black tracking-widest flex items-center gap-2">
-                  <Zap size={12} className="group-hover:text-[#DC143C] transition-colors" /> Wkład Własny
-                </label>
-                <div className="text-2xl font-black text-white group-hover:text-[#DC143C] transition-colors group-hover:drop-shadow-[0_0_12px_rgba(220,20,60,0.8)]">
-                  {downPayment.toLocaleString('pl-PL')} <span className="text-sm text-white/40">PLN</span>
-                </div>
-              </div>
-              <div className="relative pt-2 pb-2">
-                <input 
-                  type="range" 
-                  min="0" 
-                  max={propertyValue} 
-                  step="5000"
-                  value={downPayment}
-                  onChange={(e) => setDownPayment(Number(e.target.value))}
-                  className="w-full h-2 bg-white/10 rounded-lg glow-slider"
-                  style={{
-                    background: `linear-gradient(to right, #DC143C ${(downPayment) / (propertyValue || 1) * 100}%, rgba(255,255,255,0.1) ${(downPayment) / (propertyValue || 1) * 100}%)`
-                  }}
-                />
-              </div>
-            </div>
 
-            <div className="space-y-4 group bg-black/30 p-4 rounded-2xl border border-white/5 hover:border-[#DC143C]/30 transition-colors relative">
-              {getYearsTip() && (
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#111] border border-[#DC143C]/30 text-white/90 text-[10px] font-bold px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-20 shadow-[0_4px_12px_rgba(220,20,60,0.2)]">
-                  {getYearsTip()}
+                <div className="space-y-4 group bg-black/30 p-4 rounded-2xl border border-white/5 hover:border-[#DC143C]/30 transition-colors relative">
+                  {getYearsTip() && (
+                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#111] border border-[#DC143C]/30 text-white/90 text-[10px] font-bold px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-20 shadow-[0_4px_12px_rgba(220,20,60,0.2)]">
+                      {getYearsTip()}
+                    </div>
+                  )}
+                  <div className="flex justify-between items-end">
+                    <label className="text-[10px] text-white/40 uppercase font-black tracking-widest flex items-center gap-2">
+                      <Clock size={12} className="group-hover:text-[#DC143C] transition-colors" /> Okres Spłaty
+                    </label>
+                    <div className="text-2xl font-black text-white group-hover:text-[#DC143C] transition-colors group-hover:drop-shadow-[0_0_12px_rgba(220,20,60,0.8)]">
+                      {years} <span className="text-sm text-white/40">LATA</span>
+                    </div>
+                  </div>
+                  <div className="relative pt-2 pb-2">
+                    <input 
+                      type="range" 
+                      min="1" 
+                      max="35" 
+                      step="1"
+                      value={years}
+                      onChange={(e) => setYears(Number(e.target.value))}
+                      className="w-full h-2 bg-white/10 rounded-lg glow-slider"
+                      style={{
+                        background: `linear-gradient(to right, #DC143C ${(years - 1) / (35 - 1) * 100}%, rgba(255,255,255,0.1) ${(years - 1) / (35 - 1) * 100}%)`
+                      }}
+                    />
+                  </div>
                 </div>
-              )}
-              <div className="flex justify-between items-end">
-                <label className="text-[10px] text-white/40 uppercase font-black tracking-widest flex items-center gap-2">
-                  <Clock size={12} className="group-hover:text-[#DC143C] transition-colors" /> Okres Spłaty
-                </label>
-                <div className="text-2xl font-black text-white group-hover:text-[#DC143C] transition-colors group-hover:drop-shadow-[0_0_12px_rgba(220,20,60,0.8)]">
-                  {years} <span className="text-sm text-white/40">LATA</span>
-                </div>
-              </div>
-              <div className="relative pt-2 pb-2">
-                <input 
-                  type="range" 
-                  min="1" 
-                  max="35" 
-                  step="1"
-                  value={years}
-                  onChange={(e) => setYears(Number(e.target.value))}
-                  className="w-full h-2 bg-white/10 rounded-lg glow-slider"
-                  style={{
-                    background: `linear-gradient(to right, #DC143C ${(years - 1) / (35 - 1) * 100}%, rgba(255,255,255,0.1) ${(years - 1) / (35 - 1) * 100}%)`
-                  }}
-                />
-              </div>
-            </div>
 
-            <div className="space-y-4 group bg-black/30 p-4 rounded-2xl border border-white/5 hover:border-[#DC143C]/30 transition-colors sm:col-span-2">
-              <div className="flex justify-between items-center">
-                <label className="text-[10px] text-white/40 uppercase font-black tracking-widest flex items-center gap-2">
-                  <Calculator size={12} className="group-hover:text-[#DC143C] transition-colors" /> Kwota Kredytu
-                </label>
-                <div className="text-2xl font-black text-white group-hover:text-[#DC143C] transition-colors group-hover:drop-shadow-[0_0_12px_rgba(220,20,60,0.8)]">
-                  {loanAmount.toLocaleString('pl-PL')} <span className="text-sm text-white/40">PLN</span>
+                <div className="space-y-4 group bg-black/30 p-4 rounded-2xl border border-white/5 hover:border-[#DC143C]/30 transition-colors sm:col-span-2">
+                  <div className="flex justify-between items-center">
+                    <label className="text-[10px] text-white/40 uppercase font-black tracking-widest flex items-center gap-2">
+                      <Calculator size={12} className="group-hover:text-[#DC143C] transition-colors" /> Kwota Kredytu
+                    </label>
+                    <div className="text-2xl font-black text-white group-hover:text-[#DC143C] transition-colors group-hover:drop-shadow-[0_0_12px_rgba(220,20,60,0.8)]">
+                      {loanAmount.toLocaleString('pl-PL')} <span className="text-sm text-white/40">PLN</span>
+                    </div>
+                  </div>
                 </div>
+              </div>
+
+              {/* Result Summary */}
+              <div className="bg-[#DC143C]/10 rounded-3xl p-6 border border-[#DC143C]/20 flex flex-col sm:flex-row items-center justify-between gap-6">
+                <div className="text-center sm:text-left">
+                  <span className="text-[10px] text-[#DC143C] uppercase font-black tracking-[0.2em] block mb-1">Miesięczna Rata</span>
+                  <p className="text-4xl font-black text-white tracking-tighter">
+                    {Math.round(monthlyPayment).toLocaleString('pl-PL')} <span className="text-xl text-white/40">zł</span>
+                  </p>
+                </div>
+                <button 
+                  onClick={handleMatchOffer}
+                  disabled={isMatching}
+                  className="w-full sm:w-auto flex items-center justify-center gap-3 bg-[#DC143C] hover:bg-[#FF0000] text-white px-8 py-5 rounded-2xl font-black uppercase tracking-tighter shadow-[0_10px_20px_rgba(220,20,60,0.3)] transition-all disabled:opacity-50 active:scale-95"
+                >
+                  {isMatching ? (
+                    <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <><Zap size={20} /> Dopasuj Ofertę</>
+                  )}
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Result Summary */}
-          <div className="bg-[#DC143C]/10 rounded-3xl p-6 border border-[#DC143C]/20 flex flex-col sm:flex-row items-center justify-between gap-6">
-            <div className="text-center sm:text-left">
-              <span className="text-[10px] text-[#DC143C] uppercase font-black tracking-[0.2em] block mb-1">Miesięczna Rata</span>
-              <p className="text-4xl font-black text-white tracking-tighter">
-                {Math.round(monthlyPayment).toLocaleString('pl-PL')} <span className="text-xl text-white/40">zł</span>
-              </p>
+          {/* Matched Offer Result */}
+          {matchedOffer && (
+            <div id="matched-offer-section" className="mt-4 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+              <AiOfferRecommendations offers={[matchedOffer]} />
             </div>
-            <button 
-              onClick={handleMatchOffer}
-              disabled={isMatching}
-              className="w-full sm:w-auto flex items-center justify-center gap-3 bg-[#DC143C] hover:bg-[#FF0000] text-white px-8 py-5 rounded-2xl font-black uppercase tracking-tighter shadow-[0_10px_20px_rgba(220,20,60,0.3)] transition-all disabled:opacity-50 active:scale-95"
-            >
-              {isMatching ? (
-                <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <><Zap size={20} /> Dopasuj Ofertę</>
-              )}
-            </button>
-          </div>
+          )}
+        </div>
+
+        {/* Right Column: Key Metrics & Charts */}
+        <div className={isBrowserMode ? "lg:col-span-6 space-y-6" : "space-y-6"}>
+          {/* Key Metrics Dashboard in Browser Mode */}
+          {isBrowserMode && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-zinc-900 border border-white/10 rounded-2xl p-3.5">
+                <p className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-1">Kwota Kredytu</p>
+                <p className="text-base sm:text-lg font-black text-white">{loanAmount.toLocaleString('pl-PL')} zł</p>
+              </div>
+              <div className="bg-zinc-900 border border-white/10 rounded-2xl p-3.5">
+                <p className="text-[10px] text-[#DC143C] uppercase font-black tracking-widest mb-1">Miesięczna Rata</p>
+                <p className="text-base sm:text-lg font-black text-[#DC143C]">{Math.round(monthlyPayment).toLocaleString('pl-PL')} zł</p>
+              </div>
+              <div className="bg-zinc-900 border border-white/10 rounded-2xl p-3.5">
+                <p className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-1">Koszt Odsetek</p>
+                <p className="text-base sm:text-lg font-black text-white">{Math.round(totalInterest).toLocaleString('pl-PL')} zł</p>
+              </div>
+              <div className="bg-zinc-900 border border-white/10 rounded-2xl p-3.5">
+                <p className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-1">Wskaźnik LTV</p>
+                <p className="text-base sm:text-lg font-black text-white">
+                  {propertyValue > 0 ? Math.round((loanAmount / propertyValue) * 100) : 0}%
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Charts Section */}
+          {schedule.length > 0 && (
+            <div className="space-y-6">
+              <div className="relative overflow-hidden rounded-[32px] bg-zinc-900 border border-white/10 p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-full bg-[#DC143C]/10 flex items-center justify-center text-[#DC143C]">
+                    <TrendingUp size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-white uppercase tracking-tight">Struktura Raty</h3>
+                    <p className="text-[10px] text-white/40 uppercase font-bold tracking-widest">Podział na kapitał i odsetki</p>
+                  </div>
+                </div>
+                <div className="h-[250px] w-full text-[10px] font-bold">
+                  {isChartReady && (
+                    <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+                      <BarChart data={schedule} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                        <XAxis dataKey="year" stroke="#ffffff20" tick={{fill: '#ffffff30'}} />
+                        <YAxis stroke="#ffffff20" tick={{fill: '#ffffff30'}} tickFormatter={(val) => `${val / 1000}k`} />
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: '#09090b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', padding: '12px' }}
+                          itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: 'bold' }}
+                          cursor={{ fill: 'rgba(220,20,60,0.05)' }}
+                          formatter={(value: number) => [`${value.toLocaleString('pl-PL')} zł`, '']}
+                        />
+                        <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '9px' }} />
+                        <Bar dataKey="kapital" name="Kapitał" stackId="a" fill="#ffffff" radius={[0, 0, 4, 4]} />
+                        <Bar dataKey="odsetki" name="Odsetki" stackId="a" fill="#DC143C" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </div>
+              <div className="relative overflow-hidden rounded-[32px] bg-zinc-900 border border-white/10 p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-full bg-[#DC143C]/10 flex items-center justify-center text-[#DC143C]">
+                    <ShieldCheck size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-white uppercase tracking-tight">Spadek Zadłużenia</h3>
+                    <p className="text-[10px] text-white/40 uppercase font-bold tracking-widest">Progresja spłaty kapitału</p>
+                  </div>
+                </div>
+                <div className="h-[250px] w-full text-[10px] font-bold">
+                  {isChartReady && (
+                    <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+                      <LineChart data={schedule} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                        <XAxis dataKey="year" stroke="#ffffff20" tick={{fill: '#ffffff30'}} />
+                        <YAxis stroke="#ffffff20" tick={{fill: '#ffffff30'}} tickFormatter={(val) => `${val / 1000}k`} />
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: '#09090b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', padding: '12px' }}
+                          itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: 'bold' }}
+                          formatter={(value: number) => [`${value.toLocaleString('pl-PL')} zł`, 'Saldo']}
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="saldo" 
+                          stroke="#DC143C" 
+                          strokeWidth={4} 
+                          dot={false} 
+                          activeDot={{ r: 6, fill: '#DC143C', stroke: '#fff', strokeWidth: 2 }} 
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Matched Offer Result */}
-      {matchedOffer && (
-        <div id="matched-offer-section" className="mt-4 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-          <AiOfferRecommendations offers={[matchedOffer]} />
-        </div>
-      )}
-
-      {/* Charts Section */}
-      {schedule.length > 0 && (
-        <div className="space-y-6">
-          <div className="relative overflow-hidden rounded-[32px] bg-zinc-900 border border-white/10 p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-full bg-[#DC143C]/10 flex items-center justify-center text-[#DC143C]">
-                <TrendingUp size={20} />
-              </div>
-              <div>
-                <h3 className="text-lg font-black text-white uppercase tracking-tight">Struktura Raty</h3>
-                <p className="text-[10px] text-white/40 uppercase font-bold tracking-widest">Podział na kapitał i odsetki</p>
-              </div>
-            </div>
-            <div className="h-[250px] w-full text-[10px] font-bold">
-              {isChartReady && (
-                <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
-                  <BarChart data={schedule} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
-                    <XAxis dataKey="year" stroke="#ffffff20" tick={{fill: '#ffffff30'}} />
-                    <YAxis stroke="#ffffff20" tick={{fill: '#ffffff30'}} tickFormatter={(val) => `${val / 1000}k`} />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#09090b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', padding: '12px' }}
-                      itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: 'bold' }}
-                      cursor={{ fill: 'rgba(220,20,60,0.05)' }}
-                      formatter={(value: number) => [`${value.toLocaleString('pl-PL')} zł`, '']}
-                    />
-                    <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '9px' }} />
-                    <Bar dataKey="kapital" name="Kapitał" stackId="a" fill="#ffffff" radius={[0, 0, 4, 4]} />
-                    <Bar dataKey="odsetki" name="Odsetki" stackId="a" fill="#DC143C" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          </div>
-          <div className="relative overflow-hidden rounded-[32px] bg-zinc-900 border border-white/10 p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-full bg-[#DC143C]/10 flex items-center justify-center text-[#DC143C]">
-                <ShieldCheck size={20} />
-              </div>
-              <div>
-                <h3 className="text-lg font-black text-white uppercase tracking-tight">Spadek Zadłużenia</h3>
-                <p className="text-[10px] text-white/40 uppercase font-bold tracking-widest">Progresja spłaty kapitału</p>
-              </div>
-            </div>
-            <div className="h-[250px] w-full text-[10px] font-bold">
-              {isChartReady && (
-                <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
-                  <LineChart data={schedule} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
-                    <XAxis dataKey="year" stroke="#ffffff20" tick={{fill: '#ffffff30'}} />
-                    <YAxis stroke="#ffffff20" tick={{fill: '#ffffff30'}} tickFormatter={(val) => `${val / 1000}k`} />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#09090b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', padding: '12px' }}
-                      itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: 'bold' }}
-                      formatter={(value: number) => [`${value.toLocaleString('pl-PL')} zł`, 'Saldo']}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="saldo" 
-                      stroke="#DC143C" 
-                      strokeWidth={4} 
-                      dot={false} 
-                      activeDot={{ r: 6, fill: '#DC143C', stroke: '#fff', strokeWidth: 2 }} 
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {showSavedComparison && savedSimulation && (
         <>

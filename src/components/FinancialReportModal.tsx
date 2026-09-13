@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, Copy, Check, Bot, Download, FileText, Sparkles } from 'lucide-react';
+import { X, Copy, Check, Bot, Download, FileText, Sparkles, Video } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useNavigate } from 'react-router-dom';
 
 interface FinancialReportModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ export function FinancialReportModal({
   reportText,
 }: FinancialReportModalProps) {
   const [copied, setCopied] = useState(false);
+  const navigate = useNavigate();
 
   const handleCopy = async () => {
     try {
@@ -33,6 +35,13 @@ export function FinancialReportModal({
     window.dispatchEvent(
       new CustomEvent('open_ai_chat', { detail: { prompt } })
     );
+  };
+
+  const handleGenerateVideo = () => {
+    onClose();
+    const summaryPrompt = `Cinematic 3D animation representing financial success and wealth planning for ${title}, ascending graphs, golden light particles, 4k resolution`;
+    sessionStorage.setItem('video_prefill_prompt', summaryPrompt);
+    navigate('/video');
   };
 
   const handleDownloadTxt = () => {
@@ -109,6 +118,15 @@ export function FinancialReportModal({
             >
               <Bot className="w-4 h-4" />
               <span>Przeanalizuj z AI</span>
+            </button>
+
+            <button
+              onClick={handleGenerateVideo}
+              title="Wygeneruj klip wideo za darmo z Hugging Face ZeroGPU"
+              className="flex-1 flex items-center justify-center gap-2 py-3 px-3 bg-white/10 hover:bg-white/15 text-white font-bold text-xs rounded-xl border border-white/15 transition-all active:scale-95"
+            >
+              <Video className="w-4 h-4 text-emerald-400" />
+              <span>Wideo AI (0 zł)</span>
             </button>
 
             <button

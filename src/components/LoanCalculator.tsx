@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { m2mService, M2MOffer } from '../services/m2m.service';
-import { Zap, Gift, Briefcase, ShieldPlus, CreditCard, Shield, X, HelpCircle, Home, Car, Coins, Banknote, Wallet, Landmark, Clock, Calendar, Coffee, ThumbsUp, Minus, ThumbsDown, ArrowLeft, ArrowRight, PiggyBank, XCircle, Building2, ChevronDown, ChevronUp, TrendingUp, Download, Bookmark, ArrowLeftRight, FileText } from 'lucide-react';
+import { Zap, Gift, Briefcase, ShieldPlus, CreditCard, Shield, X, HelpCircle, Home, Car, Coins, Banknote, Wallet, Landmark, Clock, Calendar, Coffee, ThumbsUp, Minus, ThumbsDown, ArrowLeft, ArrowRight, PiggyBank, XCircle, Building2, ChevronDown, ChevronUp, TrendingUp, Download, Bookmark, ArrowLeftRight, FileText, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import { getAiRecommendedOffers, Offer } from '../services/aiOfferService';
 import { AiOfferRecommendations } from './AiOfferRecommendations';
@@ -15,6 +15,7 @@ import { fetchOffersFromApi } from '../services/apiClient';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from 'recharts';
 import { AmortizationChart } from './AmortizationChart';
 import { motion } from 'motion/react';
+import { useViewMode } from '../context/ViewModeContext';
 
 const FAQ_QUESTIONS = [
   "Jak działa konsolidacja kredytów?",
@@ -449,6 +450,7 @@ const ExpertTip = ({ quizData, savedQuizData }: { quizData: any, savedQuizData: 
 
 export function LoanCalculator() {
   const navigate = useNavigate();
+  const { isBrowserMode } = useViewMode();
   const [step, setStep] = useState(0);
   const [quizStep, setQuizStep] = useState(0);
   const [quizData, setQuizData] = useState<Record<string, any>>(() => loadFromLocalStorage('quizData') || {
@@ -486,6 +488,20 @@ export function LoanCalculator() {
   const [savedSimulation, setSavedSimulation] = useState<any>(() => loadFromLocalStorage('savedSimulation') || null);
   const [showSavedComparison, setShowSavedComparison] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [protocolStatus, setProtocolStatus] = useState<{
+    unlocked: boolean;
+    email?: string;
+    lossTier?: string;
+  }>(() => {
+    try {
+      const unlocked = localStorage.getItem('protocol_unlocked') === 'true';
+      const email = localStorage.getItem('protocol_email') || undefined;
+      const lossTier = localStorage.getItem('protocol_loss_tier') || undefined;
+      return { unlocked, email, lossTier };
+    } catch {
+      return { unlocked: false };
+    }
+  });
 
   const generateTextReport = () => {
     const principal = quizData.amount === 'small' ? 3000 : quizData.amount === 'medium' ? 6500 : quizData.amount === 'big' ? 30000 : 75000;
@@ -849,7 +865,7 @@ export function LoanCalculator() {
     ];
 
     return (
-      <div className="flex-1 w-full max-w-md mx-auto space-y-4 animate-in zoom-in duration-500 p-4 pb-6 overflow-y-auto relative custom-scrollbar">
+      <div className={`flex-1 w-full ${isBrowserMode ? 'max-w-5xl' : 'max-w-md'} mx-auto space-y-6 animate-in zoom-in duration-500 p-4 pb-6 overflow-y-auto relative custom-scrollbar`}>
         <button 
           onClick={reset} 
           className="absolute top-0 left-4 text-white/50 hover:text-white transition-colors p-2 z-20"
@@ -885,75 +901,79 @@ export function LoanCalculator() {
         </div>
         {aiOffer && <AiOfferRecommendations offers={[aiOffer]} />}
         
-        {chartData.length > 0 && (
-          <div className="mt-8 mb-4 bg-[#111111] p-5 rounded-[24px] border border-white/5 shadow-2xl relative overflow-hidden group hover:border-[#DC143C]/30 transition-all">
-            <div className="absolute inset-0 bg-gradient-to-br from-[#DC143C]/5 via-transparent to-transparent opacity-50"></div>
-            <h3 className="text-sm font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2 relative z-10">
-              <TrendingUp className="w-4 h-4 text-[#DC143C]" />
-              Szansa na akceptację (%)
-            </h3>
-            <div className="h-48 w-full relative z-10">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 20, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" horizontal={false} />
-                  <XAxis type="number" domain={[0, 100]} hide />
-                  <YAxis dataKey="name" type="category" stroke="#ffffff50" fontSize={10} tickLine={false} axisLine={false} width={100} />
-                  <Tooltip 
-                    cursor={{fill: 'transparent'}}
-                    contentStyle={{ backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
-                    itemStyle={{ color: '#fff', fontSize: '12px' }}
-                    formatter={(value: number) => [`${value}%`, 'Akceptacja']}
-                  />
-                  <Bar dataKey="match" radius={[0, 4, 4, 0]} barSize={16}>
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={index === 0 && aiOffer ? '#DC143C' : '#ffffff20'} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+        <div className={isBrowserMode ? "grid grid-cols-1 lg:grid-cols-2 gap-6 items-start" : ""}>
+          {chartData.length > 0 && (
+            <div className="mt-8 mb-4 bg-[#111111] p-5 rounded-[24px] border border-white/5 shadow-2xl relative overflow-hidden group hover:border-[#DC143C]/30 transition-all">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#DC143C]/5 via-transparent to-transparent opacity-50"></div>
+              <h3 className="text-sm font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2 relative z-10">
+                <TrendingUp className="w-4 h-4 text-[#DC143C]" />
+                Szansa na akceptację (%)
+              </h3>
+              <div className="h-48 w-full relative z-10">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 20, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" horizontal={false} />
+                    <XAxis type="number" domain={[0, 100]} hide />
+                    <YAxis dataKey="name" type="category" stroke="#ffffff50" fontSize={10} tickLine={false} axisLine={false} width={100} />
+                    <Tooltip 
+                      cursor={{fill: 'transparent'}}
+                      contentStyle={{ backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                      itemStyle={{ color: '#fff', fontSize: '12px' }}
+                      formatter={(value: number) => [`${value}%`, 'Akceptacja']}
+                    />
+                    <Bar dataKey="match" radius={[0, 4, 4, 0]} barSize={16}>
+                      {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={index === 0 && aiOffer ? '#DC143C' : '#ffffff20'} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <AmortizationChart principal={principal} annualRate={0.10} months={months} />
+          <AmortizationChart principal={principal} annualRate={0.10} months={months} />
+        </div>
 
         {visibleOffers.length > 0 && (
           <div className="mt-8 space-y-4">
             <h3 className="text-lg font-black text-white uppercase italic text-center w-full block mb-4 border-b border-white/10 pb-2">
               Pozostałe Dopasowane Oferty
             </h3>
-            {visibleOffers.map((offer, idx) => (
-              <div key={idx} className="bg-[#111111] p-5 sm:p-6 rounded-[24px] border border-white/5 flex flex-col gap-5 group hover:border-[#DC143C]/50 hover:shadow-[0_0_15px_rgba(220,20,60,0.15)] transition-all relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#DC143C]/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <div className="flex items-center justify-center relative min-h-[64px] z-10">
-                  <h4 className="text-white font-bold text-base sm:text-lg text-center px-10 leading-snug tracking-tight group-hover:text-[#DC143C] transition-colors">{offer.name}</h4>
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 text-[#DC143C] opacity-80 group-hover:opacity-100 transition-opacity">
-                    {getOfferIcon(offer.category || '')}
+            <div className={isBrowserMode ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" : "space-y-4"}>
+              {visibleOffers.map((offer, idx) => (
+                <div key={idx} className="bg-[#111111] p-5 sm:p-6 rounded-[24px] border border-white/5 flex flex-col gap-5 group hover:border-[#DC143C]/50 hover:shadow-[0_0_15px_rgba(220,20,60,0.15)] transition-all relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#DC143C]/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  <div className="flex items-center justify-center relative min-h-[64px] z-10">
+                    <h4 className="text-white font-bold text-base sm:text-lg text-center px-6 leading-snug tracking-tight group-hover:text-[#DC143C] transition-colors line-clamp-2">{offer.name}</h4>
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 text-[#DC143C] opacity-80 group-hover:opacity-100 transition-opacity">
+                      {getOfferIcon(offer.category || '')}
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-center w-full z-10 gap-2 mt-auto">
+                    <OfferCountdown initialMinutes={14} />  
+                    <button 
+                      onClick={() => toggleCompare(offer)}
+                      className={`w-full py-2 text-[10px] sm:text-xs font-bold uppercase tracking-widest rounded-lg border transition-all ${
+                        comparedOffers.find(o => o.id === offer.id)
+                          ? 'bg-[#DC143C] border-[#DC143C] text-white'
+                          : 'bg-transparent border-white/20 text-white/50 hover:text-white hover:border-white/40'
+                      }`}
+                    >
+                      {comparedOffers.find(o => o.id === offer.id) ? 'Wybrano do porównania' : 'Porównaj'}
+                    </button>
+                    <a 
+                      href={`/api/go?offerId=${offer.id || idx}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-4 sm:py-4 bg-[#1a1a1a] hover:bg-[#DC143C] border border-white/10 group-hover:border-transparent text-white text-[13px] sm:text-sm font-black uppercase tracking-[0.2em] rounded-xl flex items-center justify-center gap-2 transition-all duration-300 min-h-[48px] shadow-lg group-hover:shadow-[#DC143C]/30"
+                    >
+                      Dalej <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </a>
                   </div>
                 </div>
-                <div className="flex flex-col items-center w-full z-10 gap-2">
-                  <OfferCountdown initialMinutes={14} />  
-                  <button 
-                    onClick={() => toggleCompare(offer)}
-                    className={`w-full py-2 text-[10px] sm:text-xs font-bold uppercase tracking-widest rounded-lg border transition-all ${
-                      comparedOffers.find(o => o.id === offer.id)
-                        ? 'bg-[#DC143C] border-[#DC143C] text-white'
-                        : 'bg-transparent border-white/20 text-white/50 hover:text-white hover:border-white/40'
-                    }`}
-                  >
-                    {comparedOffers.find(o => o.id === offer.id) ? 'Wybrano do porównania' : 'Porównaj'}
-                  </button>
-                  <a 
-                    href={`/api/go?offerId=${offer.id || idx}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full py-4 sm:py-4 bg-[#1a1a1a] hover:bg-[#DC143C] border border-white/10 group-hover:border-transparent text-white text-[13px] sm:text-sm font-black uppercase tracking-[0.2em] rounded-xl flex items-center justify-center gap-2 transition-all duration-300 min-h-[48px] shadow-lg group-hover:shadow-[#DC143C]/30"
-                  >
-                    Dalej <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </a>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
         
@@ -1124,6 +1144,43 @@ export function LoanCalculator() {
 
       {step === 0 && (
         <div className="flex-1 w-full flex flex-col px-2 sm:px-4 pb-6">
+          {protocolStatus.unlocked ? (
+            <div className="w-full max-w-lg mx-auto mb-3.5 px-3.5 py-2.5 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 flex items-center justify-between gap-2 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+              <div className="flex items-center gap-2 min-w-0">
+                <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                <div className="text-[11px] text-emerald-200 truncate">
+                  <span className="font-bold">Protokół Anty-Prowizyjny aktywny</span>
+                  {protocolStatus.lossTier && <span className="opacity-80"> ({protocolStatus.lossTier})</span>}
+                </div>
+              </div>
+              <button 
+                onClick={() => navigate('/protokol')}
+                className="text-[10px] uppercase font-black tracking-wider text-emerald-400 hover:text-emerald-300 underline shrink-0"
+              >
+                Wyniki
+              </button>
+            </div>
+          ) : (
+            <div 
+              onClick={() => navigate('/protokol')}
+              className="w-full max-w-lg mx-auto mb-3.5 p-2.5 sm:p-3 rounded-2xl bg-gradient-to-r from-red-950/40 via-[#DC143C]/15 to-black/60 border border-[#DC143C]/30 hover:border-[#DC143C]/70 cursor-pointer transition-all shadow-[0_0_20px_rgba(220,20,60,0.15)] flex items-center justify-between group"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="p-2 rounded-xl bg-[#DC143C]/20 text-[#FF0033] border border-[#DC143C]/30 shrink-0">
+                  <ShieldAlert size={16} className="animate-pulse" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-black text-white group-hover:text-red-300 transition-colors flex items-center gap-1.5 flex-wrap">
+                    <span>Protokół Anty-Prowizyjny AI</span>
+                    <span className="px-1.5 py-0.5 rounded bg-[#DC143C] text-white text-[8px] font-black uppercase tracking-wider">Audyt 60s</span>
+                  </div>
+                  <p className="text-[10px] text-zinc-400 truncate">Sprawdź ile banki ukrywają w Twoich ratach i odzyskaj płynność</p>
+                </div>
+              </div>
+              <ArrowRight size={16} className="text-[#DC143C] group-hover:translate-x-1 transition-transform shrink-0 ml-2" />
+            </div>
+          )}
+
           <div className="flex items-center justify-between mb-4 sm:mb-6">
             {quizStep > 0 ? (
               <button onClick={() => setQuizStep(quizStep - 1)} className="text-white/50 hover:text-white transition-colors">

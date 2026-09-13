@@ -1,7 +1,8 @@
 {
   "name": "Remix: My to Sukces",
-  "description": "Aplikacja do symulacji finansowej i generowania spersonalizowanych ofert przy użyciu AI.",
+  "description": "Platforma analityki finansowej i B2B RaportFinansowy24: audyt spółek KRS/NIP, analiza sprawozdań finansowych AI Gemini, monitoring ryzyka oraz kalkulatory finansowe.",
   "requestFramePermissions": [],
-  "y7": [],
-  "Yp": []
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

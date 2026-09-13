@@ -6,6 +6,7 @@ import { Zap, TrendingUp, FileText } from 'lucide-react';
 import { motion, useMotionValue, useTransform, animate } from 'motion/react';
 import * as d3 from 'd3';
 import { FinancialReportModal } from './FinancialReportModal';
+import { useViewMode } from '../context/ViewModeContext';
 
 function AnimatedNumber({ value }: { value: number }) {
   const count = useMotionValue(0);
@@ -154,6 +155,7 @@ const SavingsChart: React.FC<SavingsChartProps> = ({ currentSavings, monthlyCont
 };
 
 export function SavingsGoal() {
+  const { isBrowserMode } = useViewMode();
   const [targetAmount, setTargetAmount] = useState<number>(50000);
   const [currentSavings, setCurrentSavings] = useState<number>(5000);
   const [years, setYears] = useState<number>(5);
@@ -262,136 +264,130 @@ export function SavingsGoal() {
         </p>
       </div>
 
-      <div className="flex-1 w-full flex flex-col min-h-0 px-4 overflow-y-auto custom-scrollbar">
-        <div className="flex flex-row gap-3 mb-6">
-          <div className="flex-[2] flex flex-col gap-3">
-            <div className="space-y-1.5 text-left">
-              <label className="text-[10px] font-medium text-white/50 uppercase tracking-widest">Kwota docelowa (PLN)</label>
-              <input 
-                type="number" 
-                placeholder="np. 50000"
-                value={targetAmount} 
-                onChange={(e) => setTargetAmount(Number(e.target.value))}
-                className={`w-full bg-white/5 border rounded-xl px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-[#DC143C] focus:border-transparent outline-none transition-all ${targetError ? 'border-[#DC143C]' : 'border-white/10'}`}
-              />
-              {targetError && <p className="text-[10px] text-[#DC143C] mt-1 uppercase tracking-widest">{targetError}</p>}
-            </div>
-
-            <div className="space-y-1.5 text-left">
-              <label className="text-[10px] font-medium text-white/50 uppercase tracking-widest">Obecne oszczędności (PLN)</label>
-              <input 
-                type="number" 
-                placeholder="np. 5000"
-                value={currentSavings} 
-                onChange={(e) => setCurrentSavings(Number(e.target.value))}
-                className={`w-full bg-white/5 border rounded-xl px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-[#DC143C] focus:border-transparent outline-none transition-all ${currentError ? 'border-[#DC143C]' : 'border-white/10'}`}
-              />
-              {currentError && <p className="text-[10px] text-[#DC143C] mt-1 uppercase tracking-widest">{currentError}</p>}
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
+      <div className={`flex-1 w-full flex flex-col min-h-0 px-4 overflow-y-auto custom-scrollbar ${isBrowserMode ? 'max-w-6xl' : 'max-w-md'}`}>
+        <div className={isBrowserMode ? "grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-6" : "space-y-6 mb-6"}>
+          {/* Left Column / Form Inputs */}
+          <div className={isBrowserMode ? "lg:col-span-5 space-y-5" : "space-y-4"}>
+            <div className="bg-[#111111] p-5 sm:p-6 rounded-[24px] border border-white/5 shadow-xl space-y-4">
+              <h3 className="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2 border-b border-white/5 pb-2">
+                <span className="w-2 h-2 rounded-full bg-[#DC143C]"></span> Parametry Oszczędzania
+              </h3>
               <div className="space-y-1.5 text-left">
-                <label className="text-[10px] font-medium text-white/50 uppercase tracking-widest">Okres (lata)</label>
+                <label className="text-[10px] font-medium text-white/50 uppercase tracking-widest">Kwota docelowa (PLN)</label>
                 <input 
                   type="number" 
-                  placeholder="np. 5"
-                  value={years} 
-                  onChange={(e) => setYears(Number(e.target.value))}
-                  className={`w-full bg-white/5 border rounded-xl px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-[#DC143C] focus:border-transparent outline-none transition-all ${yearsError ? 'border-[#DC143C]' : 'border-white/10'}`}
+                  placeholder="np. 50000"
+                  value={targetAmount} 
+                  onChange={(e) => setTargetAmount(Number(e.target.value))}
+                  className={`w-full bg-white/5 border rounded-xl px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-[#DC143C] focus:border-transparent outline-none transition-all ${targetError ? 'border-[#DC143C]' : 'border-white/10'}`}
                 />
-                {yearsError && <p className="text-[10px] text-[#DC143C] mt-1 uppercase tracking-widest">{yearsError}</p>}
+                {targetError && <p className="text-[10px] text-[#DC143C] mt-1 uppercase tracking-widest">{targetError}</p>}
               </div>
 
               <div className="space-y-1.5 text-left">
-                <label className="text-[10px] font-medium text-white/50 uppercase tracking-widest">Zysk (%)</label>
+                <label className="text-[10px] font-medium text-white/50 uppercase tracking-widest">Obecne oszczędności (PLN)</label>
                 <input 
                   type="number" 
-                  placeholder="np. 5"
-                  value={rateOfReturn} 
-                  onChange={(e) => setRateOfReturn(Number(e.target.value))}
-                  className={`w-full bg-white/5 border rounded-xl px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-[#DC143C] focus:border-transparent outline-none transition-all ${rateError ? 'border-[#DC143C]' : 'border-white/10'}`}
+                  placeholder="np. 5000"
+                  value={currentSavings} 
+                  onChange={(e) => setCurrentSavings(Number(e.target.value))}
+                  className={`w-full bg-white/5 border rounded-xl px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-[#DC143C] focus:border-transparent outline-none transition-all ${currentError ? 'border-[#DC143C]' : 'border-white/10'}`}
                 />
-                {rateError && <p className="text-[10px] text-[#DC143C] mt-1 uppercase tracking-widest">{rateError}</p>}
+                {currentError && <p className="text-[10px] text-[#DC143C] mt-1 uppercase tracking-widest">{currentError}</p>}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5 text-left">
+                  <label className="text-[10px] font-medium text-white/50 uppercase tracking-widest">Okres (lata)</label>
+                  <input 
+                    type="number" 
+                    placeholder="np. 5"
+                    value={years} 
+                    onChange={(e) => setYears(Number(e.target.value))}
+                    className={`w-full bg-white/5 border rounded-xl px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-[#DC143C] focus:border-transparent outline-none transition-all ${yearsError ? 'border-[#DC143C]' : 'border-white/10'}`}
+                  />
+                  {yearsError && <p className="text-[10px] text-[#DC143C] mt-1 uppercase tracking-widest">{yearsError}</p>}
+                </div>
+
+                <div className="space-y-1.5 text-left">
+                  <label className="text-[10px] font-medium text-white/50 uppercase tracking-widest">Zysk (%)</label>
+                  <input 
+                    type="number" 
+                    placeholder="np. 5"
+                    value={rateOfReturn} 
+                    onChange={(e) => setRateOfReturn(Number(e.target.value))}
+                    className={`w-full bg-white/5 border rounded-xl px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-[#DC143C] focus:border-transparent outline-none transition-all ${rateError ? 'border-[#DC143C]' : 'border-white/10'}`}
+                  />
+                  {rateError && <p className="text-[10px] text-[#DC143C] mt-1 uppercase tracking-widest">{rateError}</p>}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-[#DC143C]/10 rounded-3xl p-5 sm:p-6 border border-[#DC143C]/20 flex flex-col items-center gap-4">
+              <div className="text-center w-full">
+                <p className="text-[#DC143C] text-[10px] uppercase font-black tracking-[0.2em] mb-2">Twoja miesięczna wpłata powinna wynosić:</p>
+                {isInputValid ? (
+                  <p className="text-3xl sm:text-4xl font-black text-white tracking-tighter">
+                    {monthlyContribution.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-lg text-white/40">PLN</span>
+                  </p>
+                ) : (
+                  <p className="text-sm font-medium text-[#DC143C] tracking-tight py-2">
+                    Wprowadź poprawne dane
+                  </p>
+                )}
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-3 w-full">
+                <button 
+                  onClick={() => fetchOffers('all')}
+                  disabled={isLoadingOffers || !isInputValid}
+                  className="flex-1 flex items-center justify-center gap-3 bg-[#DC143C] hover:bg-[#FF0000] text-white px-5 py-3.5 rounded-2xl font-black uppercase tracking-tighter shadow-[0_10px_20px_rgba(220,20,60,0.3)] transition-all disabled:opacity-50 active:scale-95 text-xs sm:text-sm"
+                >
+                  {isLoadingOffers ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <><Zap size={18} /> Dopasuj Ofertę</>
+                  )}
+                </button>
+                {isInputValid && (
+                  <button 
+                    onClick={() => setShowReportModal(true)}
+                    className="flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 px-4 py-3.5 rounded-2xl font-bold uppercase tracking-widest text-xs transition-all active:scale-95"
+                  >
+                    <FileText size={16} className="text-[#DC143C]" /> Raport Tekstowy
+                  </button>
+                )}
               </div>
             </div>
           </div>
 
-          <div className="flex-[1] flex flex-col gap-3">
-            {isInputValid ? (
-              <>
-                <div className="flex-1 p-3 bg-black/30 rounded-xl border border-white/5 flex flex-col justify-center items-center text-center">
-                  <p className="text-white/50 text-[9px] uppercase tracking-widest mb-1">Wpłacone</p>
-                  <p className="text-sm font-bold text-white flex items-center justify-center gap-1">
-                    <TrendingUp className="w-3 h-3 text-green-500" />
-                    <AnimatedNumber value={totalInvested} /> PLN
-                  </p>
-                </div>
-                <div className="flex-1 p-3 bg-black/30 rounded-xl border border-white/5 flex flex-col justify-center items-center text-center">
-                  <p className="text-white/50 text-[9px] uppercase tracking-widest mb-1">Odsetki</p>
-                  <p className="text-sm font-bold text-[#DC143C] flex items-center justify-center gap-1">
-                    <TrendingUp className="w-3 h-3" />
-                    <AnimatedNumber value={interestEarned} /> PLN
-                  </p>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="flex-1 p-3 bg-black/30 rounded-xl border border-white/5 flex flex-col justify-center items-center text-center opacity-50">
-                  <p className="text-white/50 text-[9px] uppercase tracking-widest mb-1">Wpłacone</p>
-                  <p className="text-sm font-bold text-white">-</p>
-                </div>
-                <div className="flex-1 p-3 bg-black/30 rounded-xl border border-white/5 flex flex-col justify-center items-center text-center opacity-50">
-                  <p className="text-white/50 text-[9px] uppercase tracking-widest mb-1">Odsetki</p>
-                  <p className="text-sm font-bold text-[#DC143C]">-</p>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+          {/* Right Column / Metrics & Chart */}
+          <div className={isBrowserMode ? "lg:col-span-7 space-y-5" : "space-y-4"}>
+            <div className="grid grid-cols-2 sm:grid-cols-2 gap-3">
+              <div className="p-4 bg-[#111111] rounded-2xl border border-white/5 flex flex-col justify-center items-center text-center">
+                <p className="text-white/50 text-[10px] uppercase tracking-widest mb-1">Wpłacony kapitał</p>
+                <p className="text-base sm:text-lg font-bold text-white flex items-center justify-center gap-1">
+                  <TrendingUp className="w-3.5 h-3.5 text-green-500" />
+                  {isInputValid ? <AnimatedNumber value={totalInvested} /> : '-'} PLN
+                </p>
+              </div>
+              <div className="p-4 bg-[#111111] rounded-2xl border border-white/5 flex flex-col justify-center items-center text-center">
+                <p className="text-white/50 text-[10px] uppercase tracking-widest mb-1">Zysk z odsetek</p>
+                <p className="text-base sm:text-lg font-bold text-[#DC143C] flex items-center justify-center gap-1">
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  {isInputValid ? <AnimatedNumber value={interestEarned} /> : '-'} PLN
+                </p>
+              </div>
+            </div>
 
-        {isInputValid && (
-          <SavingsChart 
-            currentSavings={currentSavings} 
-            monthlyContribution={monthlyContribution} 
-            years={years} 
-            rateOfReturn={rateOfReturn} 
-            targetAmount={targetAmount} 
-          />
-        )}
-
-        <div className="bg-[#DC143C]/10 rounded-3xl p-6 mb-6 border border-[#DC143C]/20 flex flex-col items-center gap-6">
-          <div className="text-center w-full">
-            <p className="text-[#DC143C] text-[10px] uppercase font-black tracking-[0.2em] mb-2">Twoja miesięczna wpłata powinna wynosić:</p>
-            {isInputValid ? (
-              <p className="text-4xl sm:text-5xl font-black text-white tracking-tighter">
-                {monthlyContribution.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xl text-white/40">PLN</span>
-              </p>
-            ) : (
-              <p className="text-lg font-medium text-[#DC143C] tracking-tight py-2">
-                Wprowadź poprawne dane
-              </p>
-            )}
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-3 w-full">
-            <button 
-              onClick={() => fetchOffers('all')}
-              disabled={isLoadingOffers || !isInputValid}
-              className="flex-1 flex items-center justify-center gap-3 bg-[#DC143C] hover:bg-[#FF0000] text-white px-6 py-4 rounded-2xl font-black uppercase tracking-tighter shadow-[0_10px_20px_rgba(220,20,60,0.3)] transition-all disabled:opacity-50 active:scale-95 text-sm"
-            >
-              {isLoadingOffers ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <><Zap size={18} /> Dopasuj Ofertę</>
-              )}
-            </button>
             {isInputValid && (
-              <button 
-                onClick={() => setShowReportModal(true)}
-                className="flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 px-5 py-4 rounded-2xl font-bold uppercase tracking-widest text-xs transition-all active:scale-95"
-              >
-                <FileText size={16} className="text-[#DC143C]" /> Raport Tekstowy
-              </button>
+              <SavingsChart 
+                currentSavings={currentSavings} 
+                monthlyContribution={monthlyContribution} 
+                years={years} 
+                rateOfReturn={rateOfReturn} 
+                targetAmount={targetAmount} 
+              />
             )}
           </div>
         </div>
