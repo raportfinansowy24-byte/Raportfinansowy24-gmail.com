@@ -840,18 +840,18 @@ export function LoanCalculator() {
     if (!aiOffer && visibleOffers.length === 0) {
       return (
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-4 animate-in fade-in duration-500 relative">
-          <button 
+          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ type: "spring", stiffness: 400, damping: 17 }} 
             onClick={reset} 
             className="absolute top-0 left-4 text-white/50 hover:text-white transition-colors p-2"
           >
             <ArrowLeft className="w-5 h-5" />
-          </button>
+          </motion.button>
           <HelpCircle className="w-12 h-12 text-white/20 mb-2" />
           <h3 className="text-lg font-bold text-white uppercase">Brak dostępnych ofert</h3>
           <p className="text-white/60 text-sm">Przepraszamy, w tej chwili nie znaleźliśmy ofert dopasowanych do Twojego profilu. Spróbuj zmienić parametry wyszukiwania.</p>
-          <button onClick={reset} className="w-full py-4 bg-[#DC143C] text-white font-bold rounded-xl uppercase tracking-widest mt-4">
+          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ type: "spring", stiffness: 400, damping: 17 }} onClick={reset} className="w-full py-4 bg-[#DC143C] text-white font-bold rounded-xl uppercase tracking-widest mt-4">
             Spróbuj ponownie
-          </button>
+          </motion.button>
         </div>
       );
     }
@@ -866,12 +866,12 @@ export function LoanCalculator() {
 
     return (
       <div className={`flex-1 w-full ${isBrowserMode ? 'max-w-5xl' : 'max-w-md'} mx-auto space-y-6 animate-in zoom-in duration-500 p-4 pb-6 overflow-y-auto relative custom-scrollbar`}>
-        <button 
+        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ type: "spring", stiffness: 400, damping: 17 }} 
           onClick={reset} 
           className="absolute top-0 left-4 text-white/50 hover:text-white transition-colors p-2 z-20"
         >
           <ArrowLeft className="w-5 h-5" />
-        </button>
+        </motion.button>
         <div className="flex items-center justify-end mb-2 pt-2 pr-2 gap-2 flex-wrap">
           {visibleOffers.length > 0 && (
              <button onClick={() => setShowReportModal(true)} className="flex items-center gap-1 text-[10px] uppercase font-black tracking-widest text-[#DC143C] hover:text-white transition-colors bg-[#DC143C]/10 px-3 py-1.5 rounded-full border border-[#DC143C]/30 shadow-[0_0_10px_rgba(220,20,60,0.2)]">
@@ -1105,9 +1105,9 @@ export function LoanCalculator() {
           </p>
         </div>
 
-        <button onClick={reset} className="w-full text-white/20 text-[9px] uppercase font-bold mt-4 tracking-widest hover:text-white transition-colors pb-4">
+        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ type: "spring", stiffness: 400, damping: 17 }} onClick={reset} className="w-full text-white/20 text-[9px] uppercase font-bold mt-4 tracking-widest hover:text-white transition-colors pb-4">
           ← Resetuj i przeprowadź nową analizę
-        </button>
+        </motion.button>
       </div>
     );
   };
@@ -1390,12 +1390,11 @@ export function LoanCalculator() {
             {phoneError && <p className="text-[#DC143C] text-[10px] font-bold uppercase ml-2 animate-in fade-in slide-in-from-top-1">{phoneError}</p>}
           </div>
 
-          <button 
-            onClick={handleContactSubmit}
+          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ type: "spring", stiffness: 400, damping: 17 }} onClick={handleContactSubmit}
             className="w-full py-4 bg-[#DC143C] text-white font-bold rounded-xl uppercase tracking-widest mt-4 shadow-[0_0_20px_rgba(220,20,60,0.3)] hover:shadow-[0_0_30px_rgba(220,20,60,0.5)] transition-all hover:scale-[1.02] active:scale-95"
           >
             Zakończ i odbierz raport
-          </button>
+          </motion.button>
           <p className="text-[9px] text-white/30 text-center uppercase tracking-tighter mt-2">Bezpieczeństwo Twoich danych jest dla nas priorytetem</p>
         </div>
       )}
@@ -1412,16 +1411,16 @@ export function LoanCalculator() {
 
       {step === 4 && (
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-4 relative">
-          <button 
+          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ type: "spring", stiffness: 400, damping: 17 }} 
             onClick={reset} 
             className="absolute top-0 left-4 text-white/50 hover:text-white transition-colors p-2"
           >
             <ArrowLeft className="w-5 h-5" />
-          </button>
+          </motion.button>
           <ShieldPlus className="w-12 h-12 text-[#DC143C] mb-2" />
           <h3 className="text-xl font-bold text-white uppercase">Wymagana dodatkowa weryfikacja</h3>
           <p className="text-white/60 text-sm">Twoje parametry wymagają manualnego dopasowania przez eksperta.</p>
-          <button onClick={reset} className="w-full py-4 bg-[#DC143C] text-white font-bold rounded-xl uppercase tracking-widest">Spróbuj ponownie</button>
+          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ type: "spring", stiffness: 400, damping: 17 }} onClick={reset} className="w-full py-4 bg-[#DC143C] text-white font-bold rounded-xl uppercase tracking-widest">Spróbuj ponownie</motion.button>
         </div>
       )}
 

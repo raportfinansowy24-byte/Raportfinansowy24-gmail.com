@@ -303,25 +303,46 @@ export function MortgageSimulator() {
       {/* Header Section */}
       <div className="flex flex-col items-center text-center space-y-2 mb-4">
         <div className="w-full flex justify-between items-center mb-4">
-          <button 
+          <motion.button 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
             onClick={() => navigate('/loan')}
             className="flex items-center gap-2 text-white/30 hover:text-[#DC143C] transition-colors text-[10px] font-bold uppercase tracking-widest group"
           >
             <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
             Wróć do analizy
-          </button>
+          </motion.button>
           
           <div className="flex items-center gap-2">
-            <button onClick={() => setShowReportModal(true)} className="flex items-center gap-1 text-[10px] uppercase font-black tracking-widest text-[#DC143C] hover:text-white transition-colors bg-[#DC143C]/10 px-3 py-1.5 rounded-full border border-[#DC143C]/30 shadow-[0_0_10px_rgba(220,20,60,0.2)]">
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              onClick={() => setShowReportModal(true)} 
+              className="flex items-center gap-1 text-[10px] uppercase font-black tracking-widest text-[#DC143C] hover:text-white transition-colors bg-[#DC143C]/10 px-3 py-1.5 rounded-full border border-[#DC143C]/30 shadow-[0_0_10px_rgba(220,20,60,0.2)]"
+            >
               <FileText className="w-3 h-3 text-[#DC143C]" /> Raport Tekstowy
-            </button>
-            <button onClick={saveSimulation} className="flex items-center gap-1 text-[10px] uppercase font-black tracking-widest text-white hover:text-[#DC143C] transition-colors bg-white/5 px-3 py-1.5 rounded-full border border-white/10">
+            </motion.button>
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              onClick={saveSimulation} 
+              className="flex items-center gap-1 text-[10px] uppercase font-black tracking-widest text-white hover:text-[#DC143C] transition-colors bg-white/5 px-3 py-1.5 rounded-full border border-white/10"
+            >
               <Bookmark className="w-3 h-3" /> Zapisz
-            </button>
+            </motion.button>
             {savedSimulation && (
-              <button onClick={() => setShowSavedComparison(true)} className="flex items-center gap-1 text-[10px] uppercase font-black tracking-widest text-[#DC143C] hover:text-white transition-colors bg-[#DC143C]/10 px-3 py-1.5 rounded-full border border-[#DC143C]/20">
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                onClick={() => setShowSavedComparison(true)} 
+                className="flex items-center gap-1 text-[10px] uppercase font-black tracking-widest text-[#DC143C] hover:text-white transition-colors bg-[#DC143C]/10 px-3 py-1.5 rounded-full border border-[#DC143C]/20"
+              >
                 <ArrowLeftRight className="w-3 h-3" /> Porównaj
-              </button>
+              </motion.button>
             )}
           </div>
         </div>
@@ -360,7 +381,10 @@ export function MortgageSimulator() {
                     </div>
                   </div>
                   <div className="relative pt-2 pb-2">
-                    <input 
+                    <motion.input 
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 17 }}
                       type="range" 
                       min="50000" 
                       max="5000000" 
@@ -394,7 +418,10 @@ export function MortgageSimulator() {
                     </div>
                   </div>
                   <div className="relative pt-2 pb-2">
-                    <input 
+                    <motion.input 
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 17 }}
                       type="range" 
                       min="0" 
                       max={propertyValue} 
@@ -424,7 +451,10 @@ export function MortgageSimulator() {
                     </div>
                   </div>
                   <div className="relative pt-2 pb-2">
-                    <input 
+                    <motion.input 
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 17 }}
                       type="range" 
                       min="1" 
                       max="35" 
@@ -459,7 +489,10 @@ export function MortgageSimulator() {
                     {Math.round(monthlyPayment).toLocaleString('pl-PL')} <span className="text-xl text-white/40">zł</span>
                   </p>
                 </div>
-                <button 
+                <motion.button 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
                   onClick={handleMatchOffer}
                   disabled={isMatching}
                   className="w-full sm:w-auto flex items-center justify-center gap-3 bg-[#DC143C] hover:bg-[#FF0000] text-white px-8 py-5 rounded-2xl font-black uppercase tracking-tighter shadow-[0_10px_20px_rgba(220,20,60,0.3)] transition-all disabled:opacity-50 active:scale-95"
@@ -469,7 +502,7 @@ export function MortgageSimulator() {
                   ) : (
                     <><Zap size={20} /> Dopasuj Ofertę</>
                   )}
-                </button>
+                </motion.button>
               </div>
             </div>
           </div>

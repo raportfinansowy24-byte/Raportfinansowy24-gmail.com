@@ -338,7 +338,7 @@ export function SavingsGoal() {
               </div>
               
               <div className="flex flex-col sm:flex-row gap-3 w-full">
-                <button 
+                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ type: "spring", stiffness: 400, damping: 17 }}
                   onClick={() => fetchOffers('all')}
                   disabled={isLoadingOffers || !isInputValid}
                   className="flex-1 flex items-center justify-center gap-3 bg-[#DC143C] hover:bg-[#FF0000] text-white px-5 py-3.5 rounded-2xl font-black uppercase tracking-tighter shadow-[0_10px_20px_rgba(220,20,60,0.3)] transition-all disabled:opacity-50 active:scale-95 text-xs sm:text-sm"
@@ -348,14 +348,14 @@ export function SavingsGoal() {
                   ) : (
                     <><Zap size={18} /> Dopasuj Ofertę</>
                   )}
-                </button>
+                </motion.button>
                 {isInputValid && (
-                  <button 
+                  <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ type: "spring", stiffness: 400, damping: 17 }}
                     onClick={() => setShowReportModal(true)}
                     className="flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 px-4 py-3.5 rounded-2xl font-bold uppercase tracking-widest text-xs transition-all active:scale-95"
                   >
                     <FileText size={16} className="text-[#DC143C]" /> Raport Tekstowy
-                  </button>
+                  </motion.button>
                 )}
               </div>
             </div>
