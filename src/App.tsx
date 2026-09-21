@@ -14,7 +14,6 @@ const FinancialProtocolFunnel = lazy(() => import('./components/FinancialProtoco
 const LoanCalculator = lazy(() => import('./components/LoanCalculator').then(m => ({ default: m.LoanCalculator })));
 const MortgageSimulator = lazy(() => import('./components/MortgageSimulator').then(m => ({ default: m.MortgageSimulator })));
 const SavingsGoal = lazy(() => import('./components/SavingsGoal').then(m => ({ default: m.SavingsGoal })));
-const VideoGenerator = lazy(() => import('./components/VideoGenerator').then(m => ({ default: m.VideoGenerator })));
 const NotificationSystem = lazy(() => import('./components/NotificationSystem').then(m => ({ default: m.NotificationSystem })));
 
 function AppContent() {
@@ -248,21 +247,6 @@ function AppContent() {
                 }
               >
                 <SavingsGoal />
-              </motion.div>
-            )}
-            {(location.pathname === '/video' || location.pathname === '/wideo') && (
-              <motion.div
-                key="video"
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -15 }}
-                transition={{ duration: 0.25, ease: "easeOut" }}
-                className={isBrowserMode 
-                  ? "w-full flex flex-col"
-                  : "absolute inset-0 w-full h-full overflow-hidden flex flex-col p-2 sm:p-4"
-                }
-              >
-                <VideoGenerator />
               </motion.div>
             )}
           </AnimatePresence>

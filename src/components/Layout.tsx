@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { useViewMode } from '../context/ViewModeContext';
 import { ViewModeSwitch } from './ViewModeSwitch';
-import { Eye, Calculator, Home, PiggyBank, Video, ShieldAlert, Building2 } from 'lucide-react';
+import { Eye, Calculator, Home, PiggyBank, ShieldAlert, Building2 } from 'lucide-react';
 
 export const Header = () => {
   const { theme, toggleTheme } = useTheme();
@@ -16,7 +16,6 @@ export const Header = () => {
   const isLoanActive = location.pathname === '/' || location.pathname === '/loan';
   const isMortgageActive = location.pathname === '/mortgage';
   const isSavingsActive = location.pathname === '/savings';
-  const isVideoActive = location.pathname === '/video' || location.pathname === '/wideo';
 
   return (
     <header className={`w-full transition-colors duration-300 border-b z-50 ${
@@ -101,17 +100,6 @@ export const Header = () => {
             >
               <PiggyBank size={14} />
               <span>Oszczędności</span>
-            </button>
-            <button
-              onClick={() => navigate('/video')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all ${
-                isVideoActive
-                  ? 'bg-[#DC143C] text-white shadow-[0_0_12px_rgba(220,20,60,0.4)]'
-                  : 'text-white/60 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <Video size={14} />
-              <span>Wideo AI (HF)</span>
             </button>
           </nav>
         )}
