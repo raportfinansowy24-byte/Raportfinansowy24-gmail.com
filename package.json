@@ -43,8 +43,7 @@
     "@types/react-dom": "^19.0.0",
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^6.0.1",
-    "esbuild": "^0.28.0",
-    "puppeteer": "^25.10.0",
+    "esbuild": "^0.27.0",
     "typescript": "~5.8.2",
     "vite": "^8.0.1"
   }
