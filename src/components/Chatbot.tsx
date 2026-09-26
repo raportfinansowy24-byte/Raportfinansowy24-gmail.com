@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, X, Send, Loader2, Bot, User, Trash2 } from 'lucide-react';
+import { MessageSquare, X, Send, Loader2, Bot, User, Trash2, Globe, ExternalLink } from 'lucide-react';
 
 interface Message {
   id: string;
   role: 'user' | 'model';
   content: string;
+  sources?: Array<{ title?: string; uri?: string }>;
 }
 
 export function Chatbot() {
@@ -89,7 +90,8 @@ export function Chatbot() {
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
         role: 'model',
-        content: data.text || 'Oto analiza Twojego raportu finansowego.'
+        content: data.text || 'Oto analiza Twojego raportu finansowego.',
+        sources: data.sources || []
       }]);
     } catch (error) {
       console.error('Error sending message:', error);
@@ -123,14 +125,15 @@ export function Chatbot() {
       setMessages([{
         id: Date.now().toString(),
         role: 'model',
-        content: data.text || 'Witaj! Jestem Twoim osobistym doradcą finansowym AI. W czym mogę Ci dzisiaj pomóc?'
+        content: data.text || 'Witaj! Jestem Twoim osobistym doradcą finansowym AI z dostępem do Google Search w czasie rzeczywistym. W czym mogę Ci dzisiaj pomóc?',
+        sources: data.sources || []
       }]);
     } catch (error) {
       console.error('Error initializing chat:', error);
       setMessages([{
         id: Date.now().toString(),
         role: 'model',
-        content: 'Witaj! Jestem Twoim osobistym doradcą finansowym AI. W czym mogę Ci dzisiaj pomóc?'
+        content: 'Witaj! Jestem Twoim osobistym doradcą finansowym AI z dostępem do Google Search w czasie rzeczywistym. W czym mogę Ci dzisiaj pomóc?'
       }]);
     } finally {
       setIsLoading(false);
@@ -174,7 +177,8 @@ export function Chatbot() {
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
         role: 'model',
-        content: data.text || 'Przepraszam, nie zrozumiałem.'
+        content: data.text || 'Przepraszam, nie zrozumiałem.',
+        sources: data.sources || []
       }]);
     } catch (error) {
       console.error('Error sending message:', error);
@@ -219,9 +223,9 @@ export function Chatbot() {
               </div>
               <div>
                 <h3 className="text-white font-bold text-sm tracking-tight">Doradca AI</h3>
-                <p className="text-green-500 text-[10px] flex items-center gap-1 uppercase tracking-widest font-bold">
-                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
-                  Online
+                <p className="text-emerald-400 text-[10px] flex items-center gap-1 font-semibold">
+                  <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
+                  Google Search Grounding
                 </p>
               </div>
             </div>
@@ -244,7 +248,30 @@ export function Chatbot() {
                     ? 'bg-[#DC143C] text-white rounded-2xl rounded-tr-sm' 
                     : 'bg-zinc-800 text-white/90 rounded-2xl rounded-tl-sm border border-white/5'
                 }`}>
-                  {msg.content}
+                  <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
+
+                  {msg.sources && msg.sources.length > 0 && (
+                    <div className="mt-2.5 pt-2 border-t border-white/10 text-[10px]">
+                      <div className="flex items-center gap-1 text-zinc-400 font-bold uppercase tracking-wider mb-1">
+                        <Globe size={11} className="text-[#DC143C]" />
+                        <span>Źródła (Google Search):</span>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        {msg.sources.slice(0, 3).map((source, sIdx) => (
+                          <a
+                            key={sIdx}
+                            href={source.uri}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-zinc-300 hover:text-white hover:underline truncate transition-colors"
+                          >
+                            <ExternalLink size={10} className="shrink-0 text-zinc-400" />
+                            <span className="truncate">{source.title || source.uri}</span>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

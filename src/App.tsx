@@ -5,8 +5,8 @@ import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { Terms } from './components/Terms';
 import { Chatbot } from './components/Chatbot';
 import { Calculator, Home as HomeIcon, PiggyBank, ShieldAlert, Building2 } from 'lucide-react';
-import { ThemeProvider, useTheme } from './context/ThemeContext';
-import { ViewModeProvider, useViewMode } from './context/ViewModeContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { ViewModeProvider } from './context/ViewModeContext';
 import { motion, AnimatePresence } from 'motion/react';
 
 const Home = lazy(() => import('./components/Home').then(m => ({ default: m.Home })));
@@ -20,170 +20,60 @@ const NotificationSystem = lazy(() => import('./components/NotificationSystem').
 function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { theme } = useTheme();
-  const { isBrowserMode, toggleViewMode } = useViewMode();
 
   const isCompanyActive = location.pathname === '/firma' || location.pathname === '/spolka' || location.pathname === '/krs' || location.pathname === '/analiza-firmy';
   const isProtocolActive = location.pathname === '/protokol' || location.pathname === '/funnel' || location.pathname === '/lejek' || location.pathname === '/audyt';
+  const isLoanActive = location.pathname === '/loan';
+  const isMortgageActive = location.pathname === '/mortgage';
+  const isSavingsActive = location.pathname === '/savings';
+
+  const mobileNavItems = [
+    { label: 'Kredyty', path: '/loan', active: isLoanActive, icon: Calculator },
+    { label: 'Hipoteka', path: '/mortgage', active: isMortgageActive, icon: HomeIcon },
+    { label: 'Oszczędź', path: '/savings', active: isSavingsActive, icon: PiggyBank },
+    { label: 'Protokół', path: '/protokol', active: isProtocolActive, icon: ShieldAlert },
+    { label: 'Firma / NIP', path: '/firma', active: isCompanyActive, icon: Building2 },
+  ];
 
   return (
-    <div className={`relative z-20 w-full flex-1 flex flex-col mx-auto transition-all duration-300 ${
-      isBrowserMode
-        ? 'max-w-7xl px-3 sm:px-6 lg:px-8 py-3'
-        : `max-w-[480px] sm:border-x sm:my-3 sm:rounded-[36px] sm:shadow-[0_0_50px_rgba(0,0,0,0.8)] ${
-            theme === 'high-contrast' ? 'bg-black border-white/10' : 'bg-[#18181b] border-white/10'
-          }`
-    }`}>
-      <Suspense fallback={<div className="flex items-center justify-center h-64 text-white/50">Ładowanie analizatora...</div>}>
+    <div className="relative z-20 w-full flex-1 flex flex-col mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-3 sm:py-6">
+      <Suspense fallback={<div className="flex items-center justify-center h-64 text-zinc-400 text-sm">Ładowanie modułu finansowego...</div>}>
         <div className="absolute top-4 right-4 z-50">
           <NotificationSystem />
         </div>
 
-        {/* Mobile-only Navigation Bar (shown when in mobile mode or on small screens) */}
-        {!isBrowserMode && (
-          <div className={`flex justify-between items-center transition-colors duration-300 border-b p-2 sm:p-4 z-40 rounded-t-3xl sm:rounded-none ${
-            theme === 'high-contrast'
-              ? 'bg-[#0a0a0a] border-white/5'
-              : 'bg-[#1e1e24] border-white/10'
-          }`}>
-            <button 
-              onClick={() => navigate('/loan')}
-              className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-2xl transition-all mx-0.5 ${
-                location.pathname === '/loan'
-                  ? (theme === 'high-contrast'
-                      ? 'bg-[#1a1114] border border-[#FF0033] text-[#FF0033] shadow-[0_0_15px_rgba(255,0,51,0.2)]'
-                      : 'bg-[#ff0033]/10 border border-[#dc143c]/30 text-[#dc143c]'
-                    )
-                  : (theme === 'high-contrast' ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-200')
-              }`}
-            >
-              <Calculator size={16} className="mb-0.5" />
-              <span className="text-[9px] font-bold uppercase tracking-wider">Kredyty</span>
-            </button>
-            <button 
-              onClick={() => navigate('/mortgage')}
-              className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-2xl transition-all mx-0.5 ${
-                location.pathname === '/mortgage' 
-                  ? (theme === 'high-contrast'
-                      ? 'bg-[#1a1114] border border-[#FF0033] text-[#FF0033] shadow-[0_0_15px_rgba(255,0,51,0.2)]'
-                      : 'bg-[#ff0033]/10 border border-[#dc143c]/30 text-[#dc143c]'
-                    )
-                  : (theme === 'high-contrast' ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-200')
-              }`}
-            >
-              <HomeIcon size={16} className="mb-0.5" />
-              <span className="text-[9px] font-bold uppercase tracking-wider">Hipoteka</span>
-            </button>
-            <button 
-              onClick={() => navigate('/savings')}
-              className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-2xl transition-all mx-0.5 ${
-                location.pathname === '/savings' 
-                  ? (theme === 'high-contrast'
-                      ? 'bg-[#1a1114] border border-[#FF0033] text-[#FF0033] shadow-[0_0_15px_rgba(255,0,51,0.2)]'
-                      : 'bg-[#ff0033]/10 border border-[#dc143c]/30 text-[#dc143c]'
-                    )
-                  : (theme === 'high-contrast' ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-200')
-              }`}
-            >
-              <PiggyBank size={16} className="mb-0.5" />
-              <span className="text-[9px] font-bold uppercase tracking-wider">Oszczędź</span>
-            </button>
-            <button 
-              onClick={() => navigate('/protokol')}
-              className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-2xl transition-all mx-0.5 ${
-                isProtocolActive
-                  ? (theme === 'high-contrast'
-                      ? 'bg-[#1a1114] border border-[#FF0033] text-[#FF0033] shadow-[0_0_15px_rgba(255,0,51,0.2)]'
-                      : 'bg-[#ff0033]/10 border border-[#dc143c]/30 text-[#dc143c]'
-                    )
-                  : (theme === 'high-contrast' ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-200')
-              }`}
-            >
-              <ShieldAlert size={16} className="mb-0.5" />
-              <span className="text-[9px] font-bold uppercase tracking-wider">Protokół</span>
-            </button>
-            <button 
-              onClick={() => navigate('/firma')}
-              className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-2xl transition-all mx-0.5 ${
-                isCompanyActive
-                  ? (theme === 'high-contrast'
-                      ? 'bg-[#1a1114] border border-[#FF0033] text-[#FF0033] shadow-[0_0_15px_rgba(255,0,51,0.2)]'
-                      : 'bg-[#ff0033]/10 border border-[#dc143c]/30 text-[#dc143c]'
-                    )
-                  : (theme === 'high-contrast' ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-200')
-              }`}
-            >
-              <Building2 size={16} className="mb-0.5" />
-              <span className="text-[9px] font-bold uppercase tracking-wider">Firma</span>
-            </button>
-          </div>
-        )}
-
-        {/* Browser Mode Top Sub-header / Quick bar on mobile/tablet if needed */}
-        {isBrowserMode && (
-          <div className="flex lg:hidden justify-between items-center bg-white/5 border border-white/10 rounded-2xl p-2 mb-4 overflow-x-auto gap-1">
-            <button 
-              onClick={() => navigate('/loan')}
-              className={`flex-1 min-w-[75px] flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-bold transition-all ${
-                location.pathname === '/loan' ? 'bg-[#DC143C] text-white' : 'text-white/60'
-              }`}
-            >
-              <Calculator size={14} />
-              <span>Kredyty</span>
-            </button>
-            <button 
-              onClick={() => navigate('/mortgage')}
-              className={`flex-1 min-w-[75px] flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-bold transition-all ${
-                location.pathname === '/mortgage' ? 'bg-[#DC143C] text-white' : 'text-white/60'
-              }`}
-            >
-              <HomeIcon size={14} />
-              <span>Hipoteka</span>
-            </button>
-            <button 
-              onClick={() => navigate('/savings')}
-              className={`flex-1 min-w-[75px] flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-bold transition-all ${
-                location.pathname === '/savings' ? 'bg-[#DC143C] text-white' : 'text-white/60'
-              }`}
-            >
-              <PiggyBank size={14} />
-              <span>Oszczędź</span>
-            </button>
-            <button 
-              onClick={() => navigate('/protokol')}
-              className={`flex-1 min-w-[75px] flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-bold transition-all ${
-                isProtocolActive ? 'bg-[#DC143C] text-white' : 'text-white/60'
-              }`}
-            >
-              <ShieldAlert size={14} />
-              <span>Protokół</span>
-            </button>
-            <button 
-              onClick={() => navigate('/firma')}
-              className={`flex-1 min-w-[75px] flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-bold transition-all ${
-                isCompanyActive ? 'bg-[#DC143C] text-white' : 'text-white/60'
-              }`}
-            >
-              <Building2 size={14} />
-              <span>Firma / NIP</span>
-            </button>
-          </div>
-        )}
+        {/* Mobile Navigation Bar (visible on small screens < md) */}
+        <div className="md:hidden flex items-center justify-between gap-1 p-1.5 mb-4 rounded-2xl bg-[#121216] border border-white/[0.08] shadow-lg">
+          {mobileNavItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                className={`flex-1 flex flex-col items-center justify-center py-2 rounded-xl transition-all ${
+                  item.active
+                    ? 'bg-[#DC143C] text-white shadow-sm'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <Icon size={15} className="mb-0.5" />
+                <span className="text-[9px] font-bold uppercase tracking-wider">{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
 
         {/* Content Container */}
-        <div className="flex-1 w-full relative min-h-0 flex flex-col">
+        <div className="flex-1 w-full relative flex flex-col">
           <AnimatePresence mode="wait">
             {location.pathname === '/' && (
               <motion.div
                 key="home"
-                initial={{ opacity: 0, y: 15 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -15 }}
-                transition={{ duration: 0.25, ease: "easeOut" }}
-                className={isBrowserMode 
-                  ? "w-full flex flex-col"
-                  : "w-full flex flex-col p-2 sm:p-4"
-                }
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="w-full flex flex-col"
               >
                 <Home />
               </motion.div>
@@ -191,14 +81,11 @@ function AppContent() {
             {isCompanyActive && (
               <motion.div
                 key="company"
-                initial={{ opacity: 0, y: 15 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -15 }}
-                transition={{ duration: 0.25, ease: "easeOut" }}
-                className={isBrowserMode 
-                  ? "w-full flex flex-col"
-                  : "w-full flex flex-col p-2 sm:p-4"
-                }
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="w-full flex flex-col"
               >
                 <CompanyAnalysis />
               </motion.div>
@@ -206,14 +93,11 @@ function AppContent() {
             {isProtocolActive && (
               <motion.div
                 key="protokol"
-                initial={{ opacity: 0, y: 15 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -15 }}
-                transition={{ duration: 0.25, ease: "easeOut" }}
-                className={isBrowserMode 
-                  ? "w-full flex flex-col"
-                  : "w-full flex flex-col p-2 sm:p-4"
-                }
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="w-full flex flex-col"
               >
                 <FinancialProtocolFunnel />
               </motion.div>
@@ -221,14 +105,11 @@ function AppContent() {
             {location.pathname === '/loan' && (
               <motion.div
                 key="loan"
-                initial={{ opacity: 0, y: 15 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -15 }}
-                transition={{ duration: 0.25, ease: "easeOut" }}
-                className={isBrowserMode 
-                  ? "w-full flex flex-col"
-                  : "w-full flex flex-col p-2 sm:p-4"
-                }
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="w-full flex flex-col"
               >
                 <LoanCalculator />
               </motion.div>
@@ -236,14 +117,11 @@ function AppContent() {
             {location.pathname === '/mortgage' && (
               <motion.div
                 key="mortgage"
-                initial={{ opacity: 0, y: 15 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -15 }}
-                transition={{ duration: 0.25, ease: "easeOut" }}
-                className={isBrowserMode 
-                  ? "w-full flex flex-col"
-                  : "w-full flex flex-col p-2 sm:p-4"
-                }
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="w-full flex flex-col"
               >
                 <MortgageSimulator />
               </motion.div>
@@ -251,14 +129,11 @@ function AppContent() {
             {location.pathname === '/savings' && (
               <motion.div
                 key="savings"
-                initial={{ opacity: 0, y: 15 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -15 }}
-                transition={{ duration: 0.25, ease: "easeOut" }}
-                className={isBrowserMode 
-                  ? "w-full flex flex-col"
-                  : "w-full flex flex-col p-2 sm:p-4"
-                }
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="w-full flex flex-col"
               >
                 <SavingsGoal />
               </motion.div>
@@ -273,12 +148,9 @@ function AppContent() {
 function AppLayout() {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
-  const { theme } = useTheme();
 
   return (
-    <main className={`relative min-h-screen w-full flex flex-col transition-colors duration-300 text-white ${
-      theme === 'high-contrast' ? 'bg-[#050505]' : 'bg-[#121215]'
-    }`}>
+    <main className="relative min-h-screen w-full flex flex-col bg-[#09090b] text-zinc-100 selection:bg-[#DC143C] selection:text-white">
       <Header />
       <AppContent />
       <Footer onPrivacyClick={() => setShowPrivacy(true)} onTermsClick={() => setShowTerms(true)} />
@@ -300,3 +172,4 @@ export default function App() {
     </ThemeProvider>
   );
 }
+

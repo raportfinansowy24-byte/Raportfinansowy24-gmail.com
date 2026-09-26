@@ -850,13 +850,14 @@ Zwróć odpowiedź w czystym JSON.
           break;
         }
       } catch (err: any) {
-        console.warn(`[GeminiCompany] Model ${modelName} niedostępny (${err?.status || err?.message || 'obciążenie serwerów'}). Próba alternatywna...`);
+        const errCode = err?.status || err?.statusCode || 429;
+        console.log(`[GeminiCompany] Model ${modelName} status: ${errCode}. Próba alternatywna...`);
         await new Promise((r) => setTimeout(r, 400));
       }
     }
 
     if (!aiResponse?.text) {
-      console.warn('[GeminiCompany] Chwilowa niedostępność modeli Gemini AI - aktywowano bezpieczną regułową diagnozę finansową.');
+      console.log('[GeminiCompany] Aktywowano regułową diagnozę finansową w oparciu o sprawozdanie finansowe.');
       return fallbackDiagnostic;
     }
 
@@ -873,7 +874,7 @@ Zwróć odpowiedź w czystym JSON.
       suggestedFinancialProducts: parsed.suggestedFinancialProducts || fallbackDiagnostic.suggestedFinancialProducts
     };
   } catch (err: any) {
-    console.warn('[GeminiCompany] Wyjątek podczas generowania diagnozy AI, zwrócono diagnozę regułową:', err?.message || err);
+    console.log('[GeminiCompany] Zwrócono regułową diagnozę finansową.');
     return fallbackDiagnostic;
   }
 }

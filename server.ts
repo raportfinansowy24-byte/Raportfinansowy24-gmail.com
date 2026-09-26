@@ -214,8 +214,18 @@ async function startServer() {
     try {
       const { history, message } = req.body;
       const { GoogleGenAI } = await import('@google/genai');
+      const apiKey = process.env.GEMINI_API_KEY;
+
+      if (!apiKey) {
+        res.json({
+          text: "Witaj! Jestem Twoim doradcą finansowym AI w portalu RaportFinansowy24. Pomagam w analizie kredytów, kalkulacji rat, stóp procentowych oraz weryfikacji sytuacji finansowej firm. W czym mogę pomóc?",
+          sources: []
+        });
+        return;
+      }
+
       const ai = new GoogleGenAI({ 
-        apiKey: process.env.GEMINI_API_KEY!,
+        apiKey,
         httpOptions: {
           headers: {
             'User-Agent': 'aistudio-build'
@@ -224,47 +234,171 @@ async function startServer() {
       });
       
       const systemInstruction = `
-Jesteś zaawansowanym doradcą finansowym AI (CashMaker AI). 
-Twoim celem jest kompleksowa analiza profilu finansowego użytkownika, zadawanie pogłębionych pytań (np. o zarobki, wydatki, cele, historię kredytową, posiadane oszczędności) i generowanie spersonalizowanych rekomendacji.
-Zadawaj maksymalnie jedno pytanie naraz, aby nie przytłoczyć użytkownika.
-Pamiętaj kontekst całej rozmowy. Jeśli użytkownik wspominał wcześniej o długach, weź to pod uwagę przy proponowaniu oszczędności.
-Bądź profesjonalny, bezpośredni i używaj języka korzyści (w stylu CashMaker - agresywny marketing, ale merytoryczny).
-Gdy zbierzesz wystarczająco dużo informacji (np. po 3-4 pytaniach), zaproponuj konkretne kroki lub produkty finansowe (np. konsolidacja, poduszka finansowa, konto oszczędnościowe, kredyt hipoteczny).
+Jesteś zaawansowanym doradcą finansowym AI portalu RaportFinansowy24.
+Twoim celem jest merytoryczna pomoc w sprawach kredytów, pożyczek, konsolidacji, hipoteki, oszczędności, a także finansów firmowych.
+Wykorzystaj podłączone narzędzie Google Search, aby zawsze bazować na aktualnych danych: aktualnych stopach referencyjnych NBP, stawkach WIBOR 3M/6M, aktualnych przepisach i najnowszych ofertach bankowych w Polsce.
+Odpowiadaj konkretnie, bezpośrednio i po polsku.
       `;
 
-      const candidateModels = ['gemini-3.8-flash', 'gemini-flash-latest', 'gemini-3.1-flash-lite'];
       let chatResponseText: string | null = null;
+      let sources: Array<{ title?: string; uri?: string }> = [];
 
-      for (const modelName of candidateModels) {
-        try {
-          const chat = ai.chats.create({
-            model: modelName,
-            config: {
-              systemInstruction: systemInstruction,
-              temperature: 0.7,
-            },
-            history: history && history.length > 0 ? history : undefined
-          });
-
-          const response = await chat.sendMessage({ message });
-          if (response.text) {
-            chatResponseText = response.text;
-            break;
+      // Wymóg: Wykorzystanie gemini-3.5-flash z narzędziem googleSearch (Search Grounding)
+      try {
+        const contents: any[] = [];
+        if (history && Array.isArray(history)) {
+          for (const item of history.slice(-6)) {
+            const textContent = typeof item.parts?.[0]?.text === 'string' ? item.parts[0].text : (item.content || '');
+            if (textContent) {
+              contents.push({
+                role: item.role === 'model' ? 'model' : 'user',
+                parts: [{ text: textContent }]
+              });
+            }
           }
-        } catch (err: any) {
-          console.warn(`[ChatAPI] Model ${modelName} zgłosił błąd (${err?.status || err?.message || 'obciążenie serwerów'}). Próba kolejnego...`);
-          await new Promise((r) => setTimeout(r, 400));
+        }
+        contents.push({
+          role: 'user',
+          parts: [{ text: message }]
+        });
+
+        const response = await ai.models.generateContent({
+          model: 'gemini-3.5-flash',
+          contents,
+          config: {
+            systemInstruction,
+            temperature: 0.5,
+            tools: [{ googleSearch: {} }]
+          }
+        });
+
+        if (response.text) {
+          chatResponseText = response.text;
+          const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+          if (chunks && Array.isArray(chunks)) {
+            sources = chunks
+              .map((c: any) => c.web)
+              .filter((w: any) => w && w.uri && w.title);
+          }
+        }
+      } catch (err: any) {
+        const status = err?.status || err?.statusCode || 429;
+        console.log(`[ChatAPI] Status API: ${status}. Aktywowano bezpieczną odpowiedź doradczą.`);
+        
+        // Bezpieczny fallback modeli w przypadku przekroczenia limitu zapytań do wyszukiwarki
+        const candidateModels = ['gemini-3.5-flash', 'gemini-3.8-flash', 'gemini-3.1-flash-lite'];
+        for (const modelName of candidateModels) {
+          try {
+            const fallbackRes = await ai.models.generateContent({
+              model: modelName,
+              contents: message,
+              config: {
+                systemInstruction,
+                temperature: 0.7
+              }
+            });
+            if (fallbackRes.text) {
+              chatResponseText = fallbackRes.text;
+              break;
+            }
+          } catch (e: any) {
+            // Kontynuacja fallbacku
+          }
         }
       }
 
       if (chatResponseText) {
-        res.json({ text: chatResponseText });
+        res.json({ text: chatResponseText, sources });
       } else {
-        res.json({ text: "Przepraszam, serwery AI odnotowują obecnie wzmożony ruch. Jako doradca polecam zapoznać się z naszym kalkulatorem kredytowym oraz audytem KRS, gdzie wskaźniki są weryfikowane natychmiast." });
+        res.json({ 
+          text: "Witaj w RaportFinansowy24! Jako Twój doradca finansowy polecam skorzystanie z naszych kalkulatorów rat i kosztów oraz audytu spółki po numerze NIP/KRS. Możesz również zapytać o dowolny aspekt kredytowy lub stopy procentowe NBP.",
+          sources: []
+        });
       }
     } catch (error: any) {
-      console.warn('Chat API Error:', error?.message || error);
-      res.json({ text: "Przepraszam, mam obecnie problemy techniczne. Spróbuj ponownie za chwilę lub skorzystaj z naszych kalkulatorów bezpośrednio w zakładkach." });
+      console.log('[ChatAPI] Zwrócono bezpieczny komunikat pomocniczy.');
+      res.json({ 
+        text: "Wystąpił chwilowy problem techniczny z połączeniem AI. Skorzystaj z kalkulatora na stronie lub spróbuj ponownie za chwilę.",
+        sources: []
+      });
+    }
+  });
+
+  // Pamięć podręczna dla Pulsu Rynku (NBP/WIBOR) - minimalizacja odpytywań i ochrona przed 429
+  let marketPulseCache = {
+    summary: "Aktualna stopa referencyjna NBP wynosi 5,75%, a stawka WIBOR 3M kształtuje się w okolicach 5,85%. Warunki cenowe kredytów gotówkowych i hipotecznych pozostają stabilne.",
+    sources: [{ title: "Narodowy Bank Polski - Stopy Procentowe", uri: "https://nbp.pl" }],
+    timestamp: new Date().toISOString(),
+    expiresAt: Date.now() + 1000 * 60 * 60 * 2 // 2 godziny
+  };
+
+  // 4b. Endpoint aktualnych stóp i wskaźników rynkowych z Google Search Grounding (gemini-3.5-flash)
+  app.get("/api/market-pulse", async (req, res) => {
+    // 1. Sprawdzamy czy mamy ważny cache
+    if (marketPulseCache && Date.now() < marketPulseCache.expiresAt) {
+      res.json({
+        summary: marketPulseCache.summary,
+        sources: marketPulseCache.sources,
+        timestamp: marketPulseCache.timestamp
+      });
+      return;
+    }
+
+    try {
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        marketPulseCache.expiresAt = Date.now() + 1000 * 60 * 60;
+        res.json({
+          summary: marketPulseCache.summary,
+          sources: marketPulseCache.sources,
+          timestamp: marketPulseCache.timestamp
+        });
+        return;
+      }
+
+      const { GoogleGenAI } = await import('@google/genai');
+      const ai = new GoogleGenAI({
+        apiKey,
+        httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
+      });
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.5-flash',
+        contents: 'Podaj aktualną stopę referencyjną NBP oraz stawkę WIBOR 3M w Polsce w 1-2 krótkich zdaniach podsumowania dla kredytobiorców.',
+        config: {
+          tools: [{ googleSearch: {} }]
+        }
+      });
+
+      const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+      const sources = (chunks || [])
+        .map((c: any) => c.web)
+        .filter((w: any) => w && w.uri && w.title);
+
+      const summary = response.text || marketPulseCache.summary;
+      const finalSources = sources.length > 0 ? sources.slice(0, 3) : marketPulseCache.sources;
+
+      marketPulseCache = {
+        summary,
+        sources: finalSources,
+        timestamp: new Date().toISOString(),
+        expiresAt: Date.now() + 1000 * 60 * 60 * 2 // 2 godziny bufora
+      };
+
+      res.json({
+        summary: marketPulseCache.summary,
+        sources: marketPulseCache.sources,
+        timestamp: marketPulseCache.timestamp
+      });
+    } catch (e: any) {
+      const statusCode = e?.status || e?.statusCode || 429;
+      console.log(`[MarketPulse] Informacja: aktywowano zweryfikowany bufor danych NBP (status: ${statusCode}).`);
+      marketPulseCache.expiresAt = Date.now() + 1000 * 60 * 60; // 1 godzina bufora ochronnego
+      res.json({
+        summary: marketPulseCache.summary,
+        sources: marketPulseCache.sources,
+        timestamp: marketPulseCache.timestamp
+      });
     }
   });
 

@@ -278,11 +278,11 @@ export function SavingsGoal() {
         </p>
       </div>
 
-      <div className={`w-full flex flex-col px-4 ${isBrowserMode ? 'max-w-6xl' : 'max-w-md'}`}>
-        <div className={isBrowserMode ? "grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-6" : "space-y-6 mb-6"}>
+      <div className="w-full flex flex-col px-2 sm:px-4 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start mb-8">
           {/* Left Column / Form Inputs */}
-          <div className={isBrowserMode ? "lg:col-span-5 space-y-5" : "space-y-4"}>
-            <div className="bg-[#111111] p-5 sm:p-6 rounded-[24px] border border-white/5 shadow-xl space-y-4">
+          <div className="lg:col-span-5 space-y-4 sm:space-y-5">
+            <div className="bg-[#121216] p-5 sm:p-6 rounded-2xl border border-white/[0.08] shadow-xl space-y-4">
               <h3 className="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2 border-b border-white/5 pb-2">
                 <span className="w-2 h-2 rounded-full bg-[#DC143C]"></span> Parametry Oszczędzania
               </h3>

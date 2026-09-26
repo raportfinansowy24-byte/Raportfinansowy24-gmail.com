@@ -357,12 +357,12 @@ export function MortgageSimulator() {
         </h2>
       </div>
 
-      {/* Main Content Layout - Two columns in browser mode, stacked in mobile mode */}
-      <div className={isBrowserMode ? "grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full text-left" : "flex flex-col gap-6 w-full"}>
+      {/* Main Content Layout - Two columns on desktop, stacked on mobile */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start w-full text-left max-w-6xl mx-auto">
         {/* Left Column: Sliders, Monthly Payment Action Card, and Matched Offer */}
-        <div className={isBrowserMode ? "lg:col-span-6 space-y-6" : "space-y-6"}>
+        <div className="lg:col-span-6 space-y-6">
           {/* Main Calculator Card */}
-          <div className="relative overflow-hidden rounded-[32px] bg-zinc-900 border border-white/10 shadow-2xl">
+          <div className="relative overflow-hidden rounded-2xl bg-[#121216] border border-white/[0.08] shadow-2xl">
             <div className="absolute inset-0 bg-gradient-to-br from-[#DC143C]/5 via-transparent to-transparent opacity-50"></div>
             
             <div className="p-6 space-y-6 relative z-10">

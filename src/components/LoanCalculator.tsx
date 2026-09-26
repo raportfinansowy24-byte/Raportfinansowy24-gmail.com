@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { m2mService, M2MOffer } from '../services/m2m.service';
-import { Zap, Gift, Briefcase, ShieldPlus, CreditCard, Shield, X, HelpCircle, Home, Car, Coins, Banknote, Wallet, Landmark, Clock, Calendar, Coffee, ThumbsUp, Minus, ThumbsDown, ArrowLeft, ArrowRight, PiggyBank, XCircle, Building2, ChevronDown, ChevronUp, TrendingUp, Download, Bookmark, ArrowLeftRight, FileText, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { Zap, Gift, Briefcase, ShieldPlus, CreditCard, Shield, X, HelpCircle, Home, Car, Coins, Banknote, Wallet, Landmark, Clock, Calendar, Coffee, ThumbsUp, Minus, ThumbsDown, ArrowLeft, ArrowRight, PiggyBank, XCircle, Building2, ChevronDown, ChevronUp, TrendingUp, Download, Bookmark, ArrowLeftRight, FileText, ShieldAlert, CheckCircle2, Percent } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import { getAiRecommendedOffers, Offer } from '../services/aiOfferService';
 import { AiOfferRecommendations } from './AiOfferRecommendations';
@@ -448,11 +448,31 @@ const ExpertTip = ({ quizData, savedQuizData }: { quizData: any, savedQuizData: 
   );
 };
 
+export type CurrencyCode = 'PLN' | 'EUR' | 'USD' | 'GBP';
+
+export interface CurrencyConfig {
+  code: CurrencyCode;
+  symbol: string;
+  rate: number;
+  label: string;
+  name: string;
+}
+
+export const CURRENCY_MAP: Record<CurrencyCode, CurrencyConfig> = {
+  PLN: { code: 'PLN', symbol: 'zł', rate: 1.0, label: 'PLN (zł)', name: 'Złoty polski' },
+  EUR: { code: 'EUR', symbol: '€', rate: 0.235, label: 'EUR (€)', name: 'Euro' },
+  USD: { code: 'USD', symbol: '$', rate: 0.253, label: 'USD ($)', name: 'Dolar amerykański' },
+  GBP: { code: 'GBP', symbol: '£', rate: 0.198, label: 'GBP (£)', name: 'Funt brytyjski' }
+};
+
 export function LoanCalculator() {
   const navigate = useNavigate();
   const { isBrowserMode } = useViewMode();
   const [step, setStep] = useState(0);
   const [quizStep, setQuizStep] = useState(0);
+  const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode>('PLN');
+  const [costBreakdownView, setCostBreakdownView] = useState<'monthly' | 'yearly' | 'total'>('monthly');
+  const [showAmortizationTable, setShowAmortizationTable] = useState(false);
   const [quizData, setQuizData] = useState<Record<string, any>>(() => loadFromLocalStorage('quizData') || {
     goal: '',
     amount: '',
@@ -794,9 +814,50 @@ export function LoanCalculator() {
 
   const renderResultsStep = () => {
     const visibleOffers = allOffers.filter(o => !excludedBanks.includes(o.name || ''));
-    const principal = quizData.amount === 'small' ? 3000 : quizData.amount === 'medium' ? 6500 : quizData.amount === 'big' ? 30000 : 75000;
-    const months = quizData.period === 'short' ? 12 : quizData.period === 'medium' ? 24 : quizData.period === 'long' ? 60 : 120;
+    const principal = quizData.rawAmount || (quizData.amount === 'small' ? 3000 : quizData.amount === 'medium' ? 6500 : quizData.amount === 'big' ? 30000 : 75000);
+    const months = quizData.rawPeriod || (quizData.period === 'short' ? 12 : quizData.period === 'medium' ? 24 : quizData.period === 'long' ? 60 : 120);
     
+    const annualInterestRate = 0.098; // 9.8% orientacyjne średnie rynkowe RRSO
+    const monthlyRate = annualInterestRate / 12;
+    const monthlyPayment = (principal * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -months));
+    const totalPayment = monthlyPayment * months;
+    const totalInterest = Math.max(0, totalPayment - principal);
+    const yearlyPayment = monthlyPayment * 12;
+    const yearlyInterest = totalInterest / Math.max(1, months / 12);
+
+    const currCfg = CURRENCY_MAP[selectedCurrency] || CURRENCY_MAP.PLN;
+
+    const formatMoney = (valInPln: number, withSymbol: boolean = true) => {
+      const converted = Math.round(valInPln * currCfg.rate);
+      const str = converted.toLocaleString('pl-PL');
+      return withSymbol ? `${str} ${currCfg.symbol}` : str;
+    };
+
+    const yearsCount = Math.max(1, Math.ceil(months / 12));
+    const scheduleItems = [];
+    let remPrincipal = principal;
+
+    for (let y = 1; y <= yearsCount; y++) {
+      const mInYear = Math.min(12, months - (y - 1) * 12);
+      let yearInterest = 0;
+      let yearPrincipal = 0;
+      for (let m = 1; m <= mInYear; m++) {
+        const intPart = remPrincipal * monthlyRate;
+        const princPart = monthlyPayment - intPart;
+        yearInterest += intPart;
+        yearPrincipal += princPart;
+        remPrincipal = Math.max(0, remPrincipal - princPart);
+      }
+      scheduleItems.push({
+        year: y,
+        monthsCount: mInYear,
+        instalmentsSum: yearPrincipal + yearInterest,
+        principalPaid: yearPrincipal,
+        interestPaid: yearInterest,
+        remainingPrincipal: remPrincipal
+      });
+    }
+
     const generatePdf = () => {
       const doc = new jsPDF();
       doc.setFontSize(18);
@@ -804,24 +865,23 @@ export function LoanCalculator() {
       
       doc.setFontSize(12);
       doc.text(`Cel: ${quizData.goal}`, 20, 35);
-      doc.text(`Szacowana kwota: ${principal} PLN`, 20, 42);
+      doc.text(`Szacowana kwota: ${formatMoney(principal)} (${currCfg.code})`, 20, 42);
       doc.text(`Okres spłaty: ${months} miesiecy`, 20, 49);
+      doc.text(`Szacowana rata: ${formatMoney(monthlyPayment)} / mc`, 20, 56);
+      doc.text(`Calkowity koszt odsetek: ${formatMoney(totalInterest)}`, 20, 63);
 
       doc.setFontSize(14);
-      doc.text("Najlepsze dopasowane wyliczenia:", 20, 65);
+      doc.text("Najlepsze dopasowane wyliczenia:", 20, 75);
       
       doc.setFontSize(12);
-      let yPos = 75;
+      let yPos = 85;
       if (aiOffer) {
         doc.text(`[REKOMENDACJA AI] ${aiOffer.name}`, 20, yPos);
         doc.setFontSize(10);
-        const rrsoStr = aiOffer.rrso || "10%";
-        const rrsoVal = parseFloat(rrsoStr.replace(',', '.').replace('%', '')) || 10;
-        const monthlyRate = rrsoVal / 100 / 12;
-        const estimatedPayment = (principal * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -months));
+        const rrsoStr = aiOffer.rrso || "9.8%";
         
-        doc.text(`RRSO: ${rrsoStr} | Szacowana rata: ${estimatedPayment.toFixed(2)} PLN/mc`, 20, yPos + 7);
-        doc.text(`Calkowity koszt: ${(estimatedPayment * months).toFixed(2)} PLN`, 20, yPos + 14);
+        doc.text(`RRSO: ${rrsoStr} | Szacowana rata: ${formatMoney(monthlyPayment)}/mc`, 20, yPos + 7);
+        doc.text(`Calkowity koszt: ${formatMoney(totalPayment)}`, 20, yPos + 14);
         
         const splitDescription = doc.splitTextToSize(`Powod: ${aiOffer.description}`, 170);
         doc.text(splitDescription, 20, yPos + 21);
@@ -879,7 +939,7 @@ export function LoanCalculator() {
     ];
 
     return (
-      <div className={`flex-1 w-full ${isBrowserMode ? 'max-w-5xl' : 'max-w-md'} mx-auto space-y-6 animate-in zoom-in duration-500 p-4 pb-6 overflow-y-auto relative custom-scrollbar`}>
+      <div className="flex-1 w-full max-w-5xl mx-auto space-y-6 animate-in zoom-in duration-500 p-2 sm:p-4 pb-12 relative">
         <div className="flex items-center justify-between mb-2 pt-2 gap-2 flex-wrap">
           <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ type: "spring", stiffness: 400, damping: 17 }} 
             onClick={reset} 
@@ -892,27 +952,27 @@ export function LoanCalculator() {
 
           <div className="flex items-center gap-2 flex-wrap">
             {visibleOffers.length > 0 && (
-               <button onClick={() => setShowReportModal(true)} className="flex items-center gap-1 text-[10px] uppercase font-black tracking-widest text-[#DC143C] hover:text-white transition-colors bg-[#DC143C]/10 px-3 py-1.5 rounded-full border border-[#DC143C]/30 shadow-[0_0_10px_rgba(220,20,60,0.2)]">
+               <button onClick={() => setShowReportModal(true)} className="flex items-center gap-1 text-[10px] uppercase font-black tracking-widest text-[#DC143C] hover:text-white transition-colors bg-[#DC143C]/10 px-3 py-1.5 rounded-full border border-[#DC143C]/30 shadow-[0_0_10px_rgba(220,20,60,0.2)] cursor-pointer">
                  <FileText className="w-3 h-3 text-[#DC143C]" /> Raport Tekstowy
                </button>
             )}
           {visibleOffers.length > 0 && (
-             <button onClick={saveSimulation} className="flex items-center gap-1 text-[10px] uppercase font-black tracking-widest text-white hover:text-[#DC143C] transition-colors bg-white/5 px-3 py-1.5 rounded-full border border-white/10">
+             <button onClick={saveSimulation} className="flex items-center gap-1 text-[10px] uppercase font-black tracking-widest text-white hover:text-[#DC143C] transition-colors bg-white/5 px-3 py-1.5 rounded-full border border-white/10 cursor-pointer">
                <Bookmark className="w-3 h-3" /> Zapisz
              </button>
           )}
           {savedSimulation && (
-             <button onClick={() => setShowSavedComparison(true)} className="flex items-center gap-1 text-[10px] uppercase font-black tracking-widest text-[#DC143C] hover:text-white transition-colors bg-[#DC143C]/10 px-3 py-1.5 rounded-full border border-[#DC143C]/20">
+             <button onClick={() => setShowSavedComparison(true)} className="flex items-center gap-1 text-[10px] uppercase font-black tracking-widest text-[#DC143C] hover:text-white transition-colors bg-[#DC143C]/10 px-3 py-1.5 rounded-full border border-[#DC143C]/20 cursor-pointer">
                <ArrowLeftRight className="w-3 h-3" /> Porównaj z zapisaną
              </button>
           )}
           {visibleOffers.length > 0 && (
-             <button onClick={generatePdf} className="flex items-center gap-1 text-[10px] uppercase font-black tracking-widest text-white hover:text-[#DC143C] transition-colors bg-white/5 px-3 py-1.5 rounded-full border border-white/10">
+             <button onClick={generatePdf} className="flex items-center gap-1 text-[10px] uppercase font-black tracking-widest text-white hover:text-[#DC143C] transition-colors bg-white/5 px-3 py-1.5 rounded-full border border-white/10 cursor-pointer">
                <Download className="w-3 h-3" /> PDF
              </button>
           )}
           {visibleOffers.length > 0 && (
-            <button onClick={() => { setFilterBank(''); setShowFilterModal(true); }} className="text-[10px] uppercase font-black tracking-widest text-[#DC143C] hover:text-white transition-colors bg-[#DC143C]/5 px-3 py-1 rounded-full border border-[#DC143C]/20">
+            <button onClick={() => { setFilterBank(''); setShowFilterModal(true); }} className="text-[10px] uppercase font-black tracking-widest text-[#DC143C] hover:text-white transition-colors bg-[#DC143C]/5 px-3 py-1 rounded-full border border-[#DC143C]/20 cursor-pointer">
               Filtruj Wyniki
             </button>
           )}
@@ -920,13 +980,212 @@ export function LoanCalculator() {
         </div>
         {aiOffer && <AiOfferRecommendations offers={[aiOffer]} />}
         
-        <div className={isBrowserMode ? "grid grid-cols-1 lg:grid-cols-2 gap-6 items-start" : ""}>
+        {/* ========================================================
+            KOSZT ODSETKOWY & PRZEŁĄCZNIK WALUT (NOWA FUNKCJA)
+            ======================================================== */}
+        <div className="bg-[#121216] p-5 sm:p-6 rounded-2xl border border-white/[0.08] shadow-2xl relative overflow-hidden">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-white/[0.08]">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="p-1 rounded-md bg-[#DC143C]/10 text-[#DC143C] border border-[#DC143C]/20">
+                  <Percent size={13} />
+                </span>
+                <span className="text-[11px] font-bold text-[#DC143C] uppercase tracking-wider">
+                  Kalkulacja Odsetek & Kosztów Kredytu
+                </span>
+              </div>
+              <h3 className="text-lg sm:text-xl font-black text-white tracking-tight">
+                Rozbicie kosztu finansowania
+              </h3>
+              <p className="text-xs text-zinc-400 mt-0.5">
+                Przełączaj walutę oraz ujęcie miesięczne, roczne i całkowite.
+              </p>
+            </div>
+
+            {/* Currency Selector & Period Controls */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5">
+              {/* Currency pills */}
+              <div className="flex items-center gap-1 bg-black/50 p-1 rounded-xl border border-white/[0.08]">
+                {(Object.keys(CURRENCY_MAP) as CurrencyCode[]).map((cCode) => {
+                  const item = CURRENCY_MAP[cCode];
+                  const isActive = selectedCurrency === cCode;
+                  return (
+                    <button
+                      key={cCode}
+                      onClick={() => setSelectedCurrency(cCode)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        isActive
+                          ? 'bg-[#DC143C] text-white shadow-sm'
+                          : 'text-zinc-400 hover:text-white hover:bg-white/[0.06]'
+                      }`}
+                      title={item.name}
+                    >
+                      {item.code} ({item.symbol})
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Breakdown mode pills */}
+              <div className="flex items-center gap-1 bg-black/50 p-1 rounded-xl border border-white/[0.08]">
+                <button
+                  onClick={() => setCostBreakdownView('monthly')}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    costBreakdownView === 'monthly'
+                      ? 'bg-white/15 text-white'
+                      : 'text-zinc-400 hover:text-white hover:bg-white/[0.06]'
+                  }`}
+                >
+                  Miesięcznie
+                </button>
+                <button
+                  onClick={() => setCostBreakdownView('yearly')}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    costBreakdownView === 'yearly'
+                      ? 'bg-white/15 text-white'
+                      : 'text-zinc-400 hover:text-white hover:bg-white/[0.06]'
+                  }`}
+                >
+                  Rocznie
+                </button>
+                <button
+                  onClick={() => setCostBreakdownView('total')}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    costBreakdownView === 'total'
+                      ? 'bg-white/15 text-white'
+                      : 'text-zinc-400 hover:text-white hover:bg-white/[0.06]'
+                  }`}
+                >
+                  Całkowicie
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 3 Metrics KPI Tiles */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-5 pb-5">
+            <div className="p-4 rounded-xl bg-black/40 border border-white/[0.06] flex flex-col justify-between">
+              <span className="text-[10px] text-zinc-400 uppercase font-semibold tracking-wider">
+                {costBreakdownView === 'monthly' ? 'Rata miesięczna łączna' : costBreakdownView === 'yearly' ? 'Roczna suma rat' : 'Całkowita kwota spłaty'}
+              </span>
+              <div className="text-xl sm:text-2xl font-black text-white mt-1.5 font-mono">
+                {costBreakdownView === 'monthly'
+                  ? `${formatMoney(monthlyPayment)} / mc`
+                  : costBreakdownView === 'yearly'
+                  ? `${formatMoney(yearlyPayment)} / rok`
+                  : formatMoney(totalPayment)}
+              </div>
+              <span className="text-[10px] text-zinc-500 mt-1">Kapitał + odsetki łącznie</span>
+            </div>
+
+            <div className="p-4 rounded-xl bg-[#DC143C]/10 border border-[#DC143C]/20 flex flex-col justify-between">
+              <span className="text-[10px] text-[#DC143C] uppercase font-semibold tracking-wider flex items-center gap-1">
+                <Percent size={11} />
+                {costBreakdownView === 'monthly' ? 'Koszt odsetek / miesiąc' : costBreakdownView === 'yearly' ? 'Roczny koszt odsetek' : 'Całkowity koszt odsetek'}
+              </span>
+              <div className="text-xl sm:text-2xl font-black text-white mt-1.5 font-mono">
+                {costBreakdownView === 'monthly'
+                  ? `${formatMoney(totalInterest / months)} / mc`
+                  : costBreakdownView === 'yearly'
+                  ? `${formatMoney(yearlyInterest)} / rok`
+                  : formatMoney(totalInterest)}
+              </div>
+              <span className="text-[10px] text-zinc-400 mt-1">Średni koszt długu (~9.8%)</span>
+            </div>
+
+            <div className="p-4 rounded-xl bg-black/40 border border-white/[0.06] flex flex-col justify-between">
+              <span className="text-[10px] text-zinc-400 uppercase font-semibold tracking-wider">
+                {costBreakdownView === 'monthly' ? 'Część kapitałowa / mc' : costBreakdownView === 'yearly' ? 'Roczny kapitał' : 'Wypłacony kapitał netto'}
+              </span>
+              <div className="text-xl sm:text-2xl font-black text-white mt-1.5 font-mono">
+                {costBreakdownView === 'monthly'
+                  ? `${formatMoney(principal / months)} / mc`
+                  : costBreakdownView === 'yearly'
+                  ? `${formatMoney(principal / Math.max(1, months / 12))} / rok`
+                  : formatMoney(principal)}
+              </div>
+              <span className="text-[10px] text-zinc-500 mt-1">Środki trafiające do dyspozycji</span>
+            </div>
+          </div>
+
+          {/* Visual Share Bar: Principal vs Interest */}
+          <div className="p-4 rounded-xl bg-black/30 border border-white/[0.06] space-y-2">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-zinc-400"></span>
+                <span className="text-zinc-300 font-medium">Kapitał pożyczki:</span>
+                <span className="text-white font-mono font-bold">{Math.round((principal / totalPayment) * 100)}% ({formatMoney(principal)})</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#DC143C]"></span>
+                <span className="text-zinc-300 font-medium">Koszt odsetkowy:</span>
+                <span className="text-[#DC143C] font-mono font-bold">{Math.round((totalInterest / totalPayment) * 100)}% ({formatMoney(totalInterest)})</span>
+              </div>
+            </div>
+            <div className="w-full h-3 bg-zinc-800 rounded-full overflow-hidden flex">
+              <div 
+                className="h-full bg-zinc-400 transition-all duration-500" 
+                style={{ width: `${(principal / totalPayment) * 100}%` }}
+                title="Część kapitałowa"
+              />
+              <div 
+                className="h-full bg-[#DC143C] transition-all duration-500" 
+                style={{ width: `${(totalInterest / totalPayment) * 100}%` }}
+                title="Część odsetkowa"
+              />
+            </div>
+          </div>
+
+          {/* Toggle Amortization Schedule Drawer */}
+          <div className="pt-3">
+            <button
+              onClick={() => setShowAmortizationTable(prev => !prev)}
+              className="flex items-center justify-between w-full py-2.5 px-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs font-bold text-zinc-300 hover:text-white transition-all cursor-pointer"
+            >
+              <div className="flex items-center gap-2">
+                <Calendar size={14} className="text-[#DC143C]" />
+                <span>Szczegółowy harmonogram spłat rocznych ({currCfg.code})</span>
+              </div>
+              {showAmortizationTable ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </button>
+
+            {showAmortizationTable && (
+              <div className="mt-3 overflow-x-auto rounded-xl border border-white/[0.08] bg-black/40">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-white/[0.04] text-[10px] uppercase tracking-wider text-zinc-400 border-b border-white/[0.08]">
+                    <tr>
+                      <th className="py-2.5 px-3">Okres</th>
+                      <th className="py-2.5 px-3">Liczba rat</th>
+                      <th className="py-2.5 px-3">Suma wpłat</th>
+                      <th className="py-2.5 px-3">Spłacony kapitał</th>
+                      <th className="py-2.5 px-3 text-[#DC143C]">Spłacone odsetki</th>
+                      <th className="py-2.5 px-3">Pozostały kapitał</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/[0.05] font-mono text-[11px]">
+                    {scheduleItems.map((item) => (
+                      <tr key={item.year} className="hover:bg-white/[0.02]">
+                        <td className="py-2.5 px-3 font-sans font-bold text-white">Rok {item.year}</td>
+                        <td className="py-2.5 px-3 text-zinc-400">{item.monthsCount} mc</td>
+                        <td className="py-2.5 px-3 text-white">{formatMoney(item.instalmentsSum)}</td>
+                        <td className="py-2.5 px-3 text-zinc-300">{formatMoney(item.principalPaid)}</td>
+                        <td className="py-2.5 px-3 text-[#DC143C] font-bold">{formatMoney(item.interestPaid)}</td>
+                        <td className="py-2.5 px-3 text-zinc-400">{formatMoney(item.remainingPrincipal)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           {chartData.length > 0 && (
-            <div className="mt-8 mb-4 bg-[#111111] p-5 rounded-[24px] border border-white/5 shadow-2xl relative overflow-hidden group hover:border-[#DC143C]/30 transition-all">
-              <div className="absolute inset-0 bg-gradient-to-br from-[#DC143C]/5 via-transparent to-transparent opacity-50"></div>
-              <h3 className="text-sm font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2 relative z-10">
+            <div className="bg-[#121216] p-5 rounded-2xl border border-white/[0.08] shadow-xl relative overflow-hidden group hover:border-[#DC143C]/30 transition-all">
+              <h3 className="text-xs font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2 relative z-10">
                 <TrendingUp className="w-4 h-4 text-[#DC143C]" />
-                Szansa na akceptację (%)
+                Szansa na akceptację wniosku (%)
               </h3>
               <div className="h-48 w-full relative z-10">
                 <ResponsiveContainer width="100%" height="100%">
@@ -951,43 +1210,78 @@ export function LoanCalculator() {
             </div>
           )}
 
-          <AmortizationChart principal={principal} annualRate={0.10} months={months} />
+          <AmortizationChart 
+            principal={principal} 
+            annualRate={annualInterestRate} 
+            months={months} 
+            currencySymbol={currCfg.symbol}
+            currencyRate={currCfg.rate}
+          />
         </div>
 
         {visibleOffers.length > 0 && (
           <div className="mt-8 space-y-4">
-            <h3 className="text-lg font-black text-white uppercase italic text-center w-full block mb-4 border-b border-white/10 pb-2">
-              Pozostałe Dopasowane Oferty
-            </h3>
-            <div className={isBrowserMode ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" : "space-y-4"}>
+            <div className="flex items-center justify-between border-b border-white/[0.08] pb-3 mb-4">
+              <h3 className="text-base sm:text-lg font-black text-white uppercase tracking-wider">
+                Dopasowane Oferty Instytucji Finansowych
+              </h3>
+              <span className="text-xs text-zinc-400 font-mono">Liczba ofert: {visibleOffers.length} ({currCfg.code})</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {visibleOffers.map((offer, idx) => (
-                <div key={idx} className="bg-[#111111] p-5 sm:p-6 rounded-[24px] border border-white/5 flex flex-col gap-5 group hover:border-[#DC143C]/50 hover:shadow-[0_0_15px_rgba(220,20,60,0.15)] transition-all relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#DC143C]/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  <div className="flex items-center justify-center relative min-h-[64px] z-10">
-                    <h4 className="text-white font-bold text-base sm:text-lg text-center px-6 leading-snug tracking-tight group-hover:text-[#DC143C] transition-colors line-clamp-2">{offer.name}</h4>
-                    <div className="absolute right-0 top-1/2 -translate-y-1/2 text-[#DC143C] opacity-80 group-hover:opacity-100 transition-opacity">
-                      {getOfferIcon(offer.category || '')}
+                <div key={idx} className="bg-[#121216] p-5 rounded-2xl border border-white/[0.08] flex flex-col justify-between group hover:border-[#DC143C]/40 hover:shadow-xl transition-all relative">
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white/5 text-zinc-300 border border-white/10">
+                        {offer.category || 'Kredyt'}
+                      </span>
+                      <div className="text-[#DC143C]">
+                        {getOfferIcon(offer.category || '')}
+                      </div>
                     </div>
+                    <h4 className="text-white font-bold text-base leading-snug group-hover:text-[#DC143C] transition-colors line-clamp-2 mb-2">
+                      {offer.name}
+                    </h4>
+
+                    {/* Converted Estimated Instalment */}
+                    <div className="flex items-baseline justify-between mb-3 px-2.5 py-1.5 rounded-lg bg-black/30 border border-white/[0.05]">
+                      <span className="text-[10px] text-zinc-400 font-medium">Orientacyjna rata:</span>
+                      <span className="text-xs font-mono font-bold text-white group-hover:text-[#DC143C] transition-colors">
+                        ~{formatMoney(monthlyPayment)} <span className="text-[9px] text-zinc-500 font-sans font-normal">/ mc</span>
+                      </span>
+                    </div>
+
+                    {offer.features && offer.features.length > 0 && (
+                      <div className="space-y-1 mb-4">
+                        {offer.features.slice(0, 2).map((feat: string, fIdx: number) => (
+                          <div key={fIdx} className="text-xs text-zinc-400 flex items-center gap-1.5">
+                            <span className="w-1 h-1 rounded-full bg-[#DC143C]"></span>
+                            <span className="truncate">{feat}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <div className="flex flex-col items-center w-full z-10 gap-2 mt-auto">
-                    <OfferCountdown initialMinutes={14} />  
+
+                  <div className="flex flex-col gap-2 pt-3 border-t border-white/[0.06] mt-auto">
                     <button 
                       onClick={() => toggleCompare(offer)}
-                      className={`w-full py-2 text-[10px] sm:text-xs font-bold uppercase tracking-widest rounded-lg border transition-all ${
+                      className={`w-full py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg border transition-all cursor-pointer ${
                         comparedOffers.find(o => o.id === offer.id)
-                          ? 'bg-[#DC143C] border-[#DC143C] text-white'
-                          : 'bg-transparent border-white/20 text-white/50 hover:text-white hover:border-white/40'
+                          ? 'bg-[#DC143C]/20 border-[#DC143C] text-white'
+                          : 'bg-transparent border-white/15 text-zinc-400 hover:text-white hover:border-white/30'
                       }`}
                     >
-                      {comparedOffers.find(o => o.id === offer.id) ? 'Wybrano do porównania' : 'Porównaj'}
+                      {comparedOffers.find(o => o.id === offer.id) ? '✓ Wybrano do porównania' : 'Porównaj ofertę'}
                     </button>
                     <a 
                       href={`/api/go?offerId=${encodeURIComponent(offer.id || '')}&source=loan`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full py-4 sm:py-4 bg-[#1a1a1a] hover:bg-[#DC143C] border border-white/10 group-hover:border-transparent text-white text-[13px] sm:text-sm font-black uppercase tracking-[0.2em] rounded-xl flex items-center justify-center gap-2 transition-all duration-300 min-h-[48px] shadow-lg group-hover:shadow-[#DC143C]/30"
+                      className="w-full py-3 bg-[#DC143C] hover:bg-[#b01030] text-white text-xs font-black uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all min-h-[44px] shadow-md shadow-[#DC143C]/20 active:scale-95"
                     >
-                      Dalej <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      <span>Złóż wniosek</span>
+                      <ArrowRight className="w-4 h-4" />
                     </a>
                   </div>
                 </div>
@@ -1332,8 +1626,8 @@ export function LoanCalculator() {
                 )}
               </div>
             ) : (
-              <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 pb-4 min-h-0">
-                <div className="grid grid-cols-2 gap-3 sm:gap-4 px-2">
+              <div className="w-full max-w-xl mx-auto pb-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 px-1">
                   {currentQuestions[quizStep].options.map((option: any) => {
                     const Icon = option.icon;
                     const isSelected = quizData[currentQuestions[quizStep].id] === option.value;
@@ -1341,17 +1635,16 @@ export function LoanCalculator() {
                       <button
                         key={option.value}
                         onClick={() => handleOptionSelect(option.value)}
-                        className={`flex flex-col items-center justify-center gap-3 p-3 sm:p-5 rounded-2xl sm:rounded-3xl bg-gradient-to-br transition-all duration-300 group text-center min-h-[105px] sm:min-h-[135px] relative overflow-hidden ${
+                        className={`flex flex-col items-center justify-center gap-3 p-4 sm:p-5 rounded-2xl transition-all duration-200 group text-center min-h-[110px] sm:min-h-[130px] cursor-pointer active:scale-95 ${
                           isSelected
-                            ? 'from-[#DC143C]/20 to-transparent border-2 border-[#FF0033] shadow-[0_0_25px_rgba(255,0,51,0.3)]'
-                            : 'from-white/[0.08] to-transparent border border-[#FF0033]/30 shadow-[0_4px_20px_rgba(0,0,0,0.5),inset_1px_1px_0_rgba(255,255,255,0.15)] hover:border-[#FF0033]/80 hover:shadow-[0_0_25px_rgba(255,0,51,0.25)]'
+                            ? 'bg-[#DC143C]/15 border-2 border-[#DC143C] shadow-lg shadow-[#DC143C]/20'
+                            : 'bg-[#121216] border border-white/[0.08] hover:border-white/20 hover:bg-[#18181e]'
                         }`}
                       >
-                        <div className="absolute inset-0 bg-[#0a0a0a] z-[-1] opacity-60"></div>
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                          <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-[#FF0033] drop-shadow-[0_0_8px_rgba(255,0,51,0.6)] group-hover:drop-shadow-[0_0_12px_rgba(255,0,51,1)] transition-all" />
+                        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-[#DC143C]" />
                         </div>
-                        <span className="text-white font-bold text-xs sm:text-sm leading-tight px-1 z-10">{option.label}</span>
+                        <span className="text-zinc-100 font-bold text-xs sm:text-sm leading-tight px-1">{option.label}</span>
                       </button>
                     );
                   })}

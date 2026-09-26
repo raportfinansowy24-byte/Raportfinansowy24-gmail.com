@@ -12,7 +12,8 @@ import {
   Search, 
   Sparkles,
   CheckCircle2,
-  ChevronRight
+  ChevronRight,
+  Globe
 } from 'lucide-react';
 import { fetchOffersFromApi } from '../services/apiClient';
 import { validateNip, cleanNip, formatNip } from '../services/companyClient';
@@ -38,6 +39,7 @@ export function Home() {
   // Stan sekcji 4: Dostępne oferty (maksymalnie 3 wyróżnione)
   const [offers, setOffers] = useState<any[]>([]);
   const [loadingOffers, setLoadingOffers] = useState<boolean>(true);
+  const [marketPulse, setMarketPulse] = useState<{ summary?: string; sources?: Array<{ title?: string; uri?: string }> } | null>(null);
 
   // Stan sekcji 6: Sprawdzanie firmy po NIP
   const [nipInput, setNipInput] = useState<string>('');
@@ -69,7 +71,24 @@ export function Home() {
         }
       }
     }
+
+    async function loadMarketPulse() {
+      try {
+        const res = await fetch('/api/market-pulse');
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted) {
+            setMarketPulse(data);
+          }
+        }
+      } catch {
+        // Cichy fallback
+      }
+    }
+
     loadOffers();
+    loadMarketPulse();
+
     return () => {
       isMounted = false;
     };
@@ -176,6 +195,44 @@ export function Home() {
           </button>
         </div>
       </section>
+
+      {/* ========================================================
+          PULS RYNKU — GOOGLE SEARCH GROUNDING (gemini-3.5-flash)
+          ======================================================== */}
+      {marketPulse?.summary && (
+        <section className="max-w-4xl mx-auto px-4 w-full">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-[#18181b] border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-lg">
+            <div className="flex items-start sm:items-center gap-2.5">
+              <span className="p-1.5 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0">
+                <Globe size={16} />
+              </span>
+              <div>
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="font-bold text-white text-[11px] uppercase tracking-wider">Aktualny Puls Rynku NBP / WIBOR</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-medium">
+                    Google Search Data
+                  </span>
+                </div>
+                <p className="text-zinc-300 text-xs leading-relaxed">{marketPulse.summary}</p>
+              </div>
+            </div>
+            {marketPulse.sources && marketPulse.sources.length > 0 && (
+              <div className="flex items-center gap-2 shrink-0 self-end sm:self-center pt-1.5 sm:pt-0 border-t sm:border-t-0 border-white/5 w-full sm:w-auto justify-end">
+                <span className="text-[10px] text-zinc-400">Źródło:</span>
+                <a
+                  href={marketPulse.sources[0].uri}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] font-semibold text-zinc-300 hover:text-white underline truncate max-w-[150px] inline-flex items-center gap-1"
+                >
+                  <span className="truncate">{marketPulse.sources[0].title || 'NBP'}</span>
+                  <ArrowRight size={10} />
+                </a>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* ========================================================
           SEKCJA 2 — SZYBKIE NARZĘDZIA (6 KART — 2 kolumny mobile)
