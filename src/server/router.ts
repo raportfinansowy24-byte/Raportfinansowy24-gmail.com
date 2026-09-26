@@ -271,6 +271,27 @@ export async function getOffersForProfile(profile: any): Promise<Offer[]> {
 }
 
 export async function routeOffer(offerId: string): Promise<Offer | undefined> {
+  if (!offerId) return undefined;
+  
+  if (offerId === "downsell-stop-komornik") {
+    return {
+      id: "downsell-stop-komornik",
+      name: "Stop Komornik",
+      category: "POMOC PRAWNA",
+      url: "https://tmlead.pl/redirect/388900_1090",
+      features: ["Wstrzymanie egzekucji", "Czyszczenie BIK", "Ochrona majątku"]
+    };
+  }
+
+  if (offerId === "gotowkowe-default") {
+    return {
+      id: "gotowkowe-default",
+      name: "Kredyt gotówkowy",
+      category: "Kredyt",
+      url: "https://toomasz-money.oferty-kredytowe.pl/kredyty-gotowkowe"
+    };
+  }
+
   const allOffers = await getLiveOffers();
   return allOffers.find(o => o.id === offerId);
 }

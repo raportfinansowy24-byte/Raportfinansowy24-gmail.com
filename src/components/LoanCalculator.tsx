@@ -597,6 +597,19 @@ export function LoanCalculator() {
     // Re-calculate questions based on new data to see if next steps changed
     const nextPossibleQuestions = allPossibleQuestions.filter(q => !(q as any).condition || (q as any).condition(newData));
 
+    // Jeśli użytkownik przyszedł z szybkiego kalkulatora z Home i ma już wybraną kwotę oraz okres:
+    if (currentQuestion.id === 'goal' && quizData.fromHomeQuickCalc && newData.amount && newData.period) {
+      newData.fromHomeQuickCalc = false;
+      setQuizData(newData);
+      const amountIdx = nextPossibleQuestions.findIndex(q => q.id === 'amount');
+      const periodIdx = nextPossibleQuestions.findIndex(q => q.id === 'period');
+      const maxIdx = Math.max(amountIdx, periodIdx);
+      if (maxIdx !== -1 && maxIdx + 1 < nextPossibleQuestions.length) {
+        setQuizStep(maxIdx + 1);
+        return;
+      }
+    }
+
     if (quizStep < nextPossibleQuestions.length - 1) {
       setQuizStep(quizStep + 1);
     } else {
@@ -842,9 +855,10 @@ export function LoanCalculator() {
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-4 animate-in fade-in duration-500 relative">
           <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ type: "spring", stiffness: 400, damping: 17 }} 
             onClick={reset} 
-            className="absolute top-0 left-4 text-white/50 hover:text-white transition-colors p-2"
+            className="absolute top-0 left-4 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold transition-all group"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4 text-[#DC143C] group-hover:-translate-x-1 transition-transform" />
+            <span>Wstecz</span>
           </motion.button>
           <HelpCircle className="w-12 h-12 text-white/20 mb-2" />
           <h3 className="text-lg font-bold text-white uppercase">Brak dostępnych ofert</h3>
@@ -866,18 +880,22 @@ export function LoanCalculator() {
 
     return (
       <div className={`flex-1 w-full ${isBrowserMode ? 'max-w-5xl' : 'max-w-md'} mx-auto space-y-6 animate-in zoom-in duration-500 p-4 pb-6 overflow-y-auto relative custom-scrollbar`}>
-        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ type: "spring", stiffness: 400, damping: 17 }} 
-          onClick={reset} 
-          className="absolute top-0 left-4 text-white/50 hover:text-white transition-colors p-2 z-20"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </motion.button>
-        <div className="flex items-center justify-end mb-2 pt-2 pr-2 gap-2 flex-wrap">
-          {visibleOffers.length > 0 && (
-             <button onClick={() => setShowReportModal(true)} className="flex items-center gap-1 text-[10px] uppercase font-black tracking-widest text-[#DC143C] hover:text-white transition-colors bg-[#DC143C]/10 px-3 py-1.5 rounded-full border border-[#DC143C]/30 shadow-[0_0_10px_rgba(220,20,60,0.2)]">
-               <FileText className="w-3 h-3 text-[#DC143C]" /> Raport Tekstowy
-             </button>
-          )}
+        <div className="flex items-center justify-between mb-2 pt-2 gap-2 flex-wrap">
+          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ type: "spring", stiffness: 400, damping: 17 }} 
+            onClick={reset} 
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-zinc-900/90 hover:bg-[#DC143C]/20 border border-white/20 hover:border-[#DC143C]/50 text-white text-xs font-bold transition-all shadow-md group cursor-pointer"
+            title="Wróć do nowej kalkulacji"
+          >
+            <ArrowLeft className="w-4 h-4 text-[#DC143C] group-hover:-translate-x-1 transition-transform" />
+            <span>Wstecz / Nowa kalkulacja</span>
+          </motion.button>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {visibleOffers.length > 0 && (
+               <button onClick={() => setShowReportModal(true)} className="flex items-center gap-1 text-[10px] uppercase font-black tracking-widest text-[#DC143C] hover:text-white transition-colors bg-[#DC143C]/10 px-3 py-1.5 rounded-full border border-[#DC143C]/30 shadow-[0_0_10px_rgba(220,20,60,0.2)]">
+                 <FileText className="w-3 h-3 text-[#DC143C]" /> Raport Tekstowy
+               </button>
+            )}
           {visibleOffers.length > 0 && (
              <button onClick={saveSimulation} className="flex items-center gap-1 text-[10px] uppercase font-black tracking-widest text-white hover:text-[#DC143C] transition-colors bg-white/5 px-3 py-1.5 rounded-full border border-white/10">
                <Bookmark className="w-3 h-3" /> Zapisz
@@ -898,6 +916,7 @@ export function LoanCalculator() {
               Filtruj Wyniki
             </button>
           )}
+          </div>
         </div>
         {aiOffer && <AiOfferRecommendations offers={[aiOffer]} />}
         
@@ -963,7 +982,7 @@ export function LoanCalculator() {
                       {comparedOffers.find(o => o.id === offer.id) ? 'Wybrano do porównania' : 'Porównaj'}
                     </button>
                     <a 
-                      href={`/api/go?offerId=${offer.id || idx}`}
+                      href={`/api/go?offerId=${encodeURIComponent(offer.id || '')}&source=loan`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full py-4 sm:py-4 bg-[#1a1a1a] hover:bg-[#DC143C] border border-white/10 group-hover:border-transparent text-white text-[13px] sm:text-sm font-black uppercase tracking-[0.2em] rounded-xl flex items-center justify-center gap-2 transition-all duration-300 min-h-[48px] shadow-lg group-hover:shadow-[#DC143C]/30"
@@ -1183,18 +1202,30 @@ export function LoanCalculator() {
 
           <div className="flex items-center justify-between mb-4 sm:mb-6">
             {quizStep > 0 ? (
-              <button onClick={() => setQuizStep(quizStep - 1)} className="text-white/50 hover:text-white transition-colors">
-                <ArrowLeft className="w-5 h-5" />
+              <button 
+                onClick={() => setQuizStep(quizStep - 1)} 
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold transition-all shadow-sm group active:scale-95 cursor-pointer"
+                title="Wróć do poprzedniego pytania"
+              >
+                <ArrowLeft className="w-4 h-4 text-[#DC143C] group-hover:-translate-x-1 transition-transform" />
+                <span>Wstecz</span>
               </button>
             ) : (
-              <div className="w-5 h-5" />
+              <button 
+                onClick={() => setStep(0)} 
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-zinc-300 hover:text-white text-xs font-bold transition-all group active:scale-95 cursor-pointer"
+                title="Wróć do wyboru kwoty"
+              >
+                <ArrowLeft className="w-4 h-4 text-[#DC143C] group-hover:-translate-x-1 transition-transform" />
+                <span>Wstecz</span>
+              </button>
             )}
             <div className="flex gap-1.5">
               {currentQuestions.map((_, idx) => (
                 <div key={idx} className={`h-1.5 rounded-full transition-all duration-300 ${idx === quizStep ? 'w-6 bg-[#DC143C]' : idx < quizStep ? 'w-2 bg-[#DC143C]/50' : 'w-2 bg-white/10'}`} />
               ))}
             </div>
-            <div className="w-5 h-5" />
+            <div className="w-16 hidden sm:block" />
           </div>
 
           <div className="flex-1 flex flex-col animate-in slide-in-from-right duration-500 min-h-0">
@@ -1305,11 +1336,16 @@ export function LoanCalculator() {
                 <div className="grid grid-cols-2 gap-3 sm:gap-4 px-2">
                   {currentQuestions[quizStep].options.map((option: any) => {
                     const Icon = option.icon;
+                    const isSelected = quizData[currentQuestions[quizStep].id] === option.value;
                     return (
                       <button
                         key={option.value}
                         onClick={() => handleOptionSelect(option.value)}
-                        className="flex flex-col items-center justify-center gap-3 p-3 sm:p-5 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-white/[0.08] to-transparent border border-[#FF0033]/30 shadow-[0_4px_20px_rgba(0,0,0,0.5),inset_1px_1px_0_rgba(255,255,255,0.15)] hover:border-[#FF0033]/80 hover:shadow-[0_0_25px_rgba(255,0,51,0.25)] transition-all duration-300 group text-center min-h-[105px] sm:min-h-[135px] relative overflow-hidden"
+                        className={`flex flex-col items-center justify-center gap-3 p-3 sm:p-5 rounded-2xl sm:rounded-3xl bg-gradient-to-br transition-all duration-300 group text-center min-h-[105px] sm:min-h-[135px] relative overflow-hidden ${
+                          isSelected
+                            ? 'from-[#DC143C]/20 to-transparent border-2 border-[#FF0033] shadow-[0_0_25px_rgba(255,0,51,0.3)]'
+                            : 'from-white/[0.08] to-transparent border border-[#FF0033]/30 shadow-[0_4px_20px_rgba(0,0,0,0.5),inset_1px_1px_0_rgba(255,255,255,0.15)] hover:border-[#FF0033]/80 hover:shadow-[0_0_25px_rgba(255,0,51,0.25)]'
+                        }`}
                       >
                         <div className="absolute inset-0 bg-[#0a0a0a] z-[-1] opacity-60"></div>
                         <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
@@ -1339,9 +1375,11 @@ export function LoanCalculator() {
         <div className="flex-1 w-full flex flex-col items-center justify-center p-6 space-y-4 animate-in fade-in duration-500 relative">
           <button 
             onClick={() => setStep(0)} 
-            className="absolute top-0 left-4 text-white/50 hover:text-white transition-colors p-2"
+            className="absolute top-0 left-4 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold transition-all group cursor-pointer"
+            title="Wróć do początku"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4 text-[#DC143C] group-hover:-translate-x-1 transition-transform" />
+            <span>Wstecz</span>
           </button>
           <div className="text-center mb-4">
             <h2 className="text-xl font-bold text-white mb-1">Ostatni krok</h2>
@@ -1413,9 +1451,11 @@ export function LoanCalculator() {
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-4 relative">
           <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ type: "spring", stiffness: 400, damping: 17 }} 
             onClick={reset} 
-            className="absolute top-0 left-4 text-white/50 hover:text-white transition-colors p-2"
+            className="absolute top-0 left-4 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold transition-all group cursor-pointer"
+            title="Wróć do początku"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4 text-[#DC143C] group-hover:-translate-x-1 transition-transform" />
+            <span>Wstecz</span>
           </motion.button>
           <ShieldPlus className="w-12 h-12 text-[#DC143C] mb-2" />
           <h3 className="text-xl font-bold text-white uppercase">Wymagana dodatkowa weryfikacja</h3>

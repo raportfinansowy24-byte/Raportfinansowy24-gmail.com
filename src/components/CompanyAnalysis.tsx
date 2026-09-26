@@ -30,14 +30,23 @@ import {
   Area 
 } from 'recharts';
 import { CompanyRecord, CompanyFinancials, AiCompanyDiagnostic, CompanyAuditReport } from '../types/company';
-import { fetchCompanyData, fetchCompanyDiagnostic, registerCompanyMonitoring, generateCompanyAuditPdf } from '../services/companyClient';
+import { 
+  fetchCompanyData, 
+  fetchCompanyDiagnostic, 
+  registerCompanyMonitoring, 
+  generateCompanyAuditPdf,
+  validateNip,
+  cleanNip,
+  formatNip
+} from '../services/companyClient';
 import { useTheme } from '../context/ThemeContext';
 
 export function CompanyAnalysis() {
   const { theme } = useTheme();
   const isHighContrast = theme === 'high-contrast';
 
-  const [query, setQuery] = useState('7342867148'); // Default CD Projekt NIP
+  // Formatowany stan wejściowy NIP w UI
+  const [nipInput, setNipInput] = useState('734-286-71-48'); // Domyślnie CD Projekt S.A.
   const [loading, setLoading] = useState(false);
   const [analyzingAi, setAnalyzingAi] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,23 +60,53 @@ export function CompanyAnalysis() {
   const [monitorEmail, setMonitorEmail] = useState('');
   const [monitorLoading, setMonitorLoading] = useState(false);
   const [monitorSuccess, setMonitorSuccess] = useState(false);
+  const [monitorError, setMonitorError] = useState<string | null>(null);
 
   // PDF Export state
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [pdfDownloaded, setPdfDownloaded] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
 
-  // Initial load
+  // Walidacja NIP w locie
+  const nipValidation = validateNip(nipInput);
+  const cleanDigits = cleanNip(nipInput);
+
+  // Initial load z poprawnym NIP z parametru lub domyślnym
   useEffect(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const nipParam = urlParams.get('nip') || sessionStorage.getItem('pending_nip_search');
+      if (nipParam) {
+        sessionStorage.removeItem('pending_nip_search');
+        const clean = cleanNip(nipParam);
+        if (clean.length === 10) {
+          setNipInput(formatNip(clean));
+          handleSearch(clean);
+          return;
+        }
+      }
+    } catch {
+      // ignore
+    }
     handleSearch('7342867148');
   }, []);
 
-  const handleSearch = async (searchQuery: string) => {
-    if (!searchQuery.trim()) return;
+  const handleSearch = async (searchNip?: string) => {
+    const rawTarget = searchNip !== undefined ? searchNip : nipInput;
+    const validation = validateNip(rawTarget);
+
+    // Blokada zapytania do API dla niepoprawnego NIP
+    if (!validation.isValid) {
+      setError(validation.error || 'Wpisz poprawny 10-cyfrowy numer NIP.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      const data = await fetchCompanyData(searchQuery);
+      // Backend zawsze otrzymuje 10 cyfr bez separatorów (spacji, myślników)
+      const data = await fetchCompanyData(validation.cleanNip);
       setCompany(data.company);
       setFinancials(data.financials);
 
@@ -82,9 +121,38 @@ export function CompanyAnalysis() {
         setAnalyzingAi(false);
       }
     } catch (err: any) {
-      setError(err.message || 'Nie udało się odnaleźć spółki. Sprawdź poprawność numeru NIP lub KRS.');
+      setError(err.message || 'Nie udało się pobrać danych firmy. Spróbuj ponownie.');
+      // W przypadku braku firmy lub błędu nie pokazujemy fikcyjnych danych
+      setCompany(null);
+      setFinancials(null);
+      setDiagnostic(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSelectPreset = (presetNip: string) => {
+    const formatted = formatNip(presetNip);
+    setNipInput(formatted);
+    handleSearch(presetNip);
+  };
+
+  const handleNipChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    const clean = cleanNip(val);
+
+    // Automatyczne formatowanie do XXX-XXX-XX-XX po osiągnięciu 10 cyfr
+    if (/^\d{10}$/.test(clean) && !val.includes('-')) {
+      setNipInput(formatNip(clean));
+    } else {
+      setNipInput(val);
+    }
+  };
+
+  const handleNipBlur = () => {
+    const clean = cleanNip(nipInput);
+    if (/^\d{10}$/.test(clean)) {
+      setNipInput(formatNip(clean));
     }
   };
 
@@ -139,7 +207,8 @@ export function CompanyAnalysis() {
       setTimeout(() => setPdfDownloaded(false), 3500);
     } catch (err) {
       console.error('Błąd generowania PDF:', err);
-      alert('Nie udało się wygenerować raportu PDF. Spróbuj ponownie.');
+      setPdfError('Nie udało się wygenerować raportu PDF. Spróbuj ponownie.');
+      setTimeout(() => setPdfError(null), 4000);
     } finally {
       setDownloadingPdf(false);
     }
@@ -149,6 +218,7 @@ export function CompanyAnalysis() {
     e.preventDefault();
     if (!monitorEmail || !company) return;
     setMonitorLoading(true);
+    setMonitorError(null);
     try {
       await registerCompanyMonitoring({
         email: monitorEmail,
@@ -164,7 +234,7 @@ export function CompanyAnalysis() {
         setMonitorEmail('');
       }, 2500);
     } catch (err) {
-      alert('Wystąpił błąd podczas rejestracji monitoringu.');
+      setMonitorError('Wystąpił błąd podczas rejestracji monitoringu. Spróbuj ponownie.');
     } finally {
       setMonitorLoading(false);
     }
@@ -195,7 +265,7 @@ export function CompanyAnalysis() {
   })) || [];
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 py-4 space-y-6">
+    <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 py-4 space-y-6 overflow-x-hidden">
       
       {/* Top Banner / Hero Bar */}
       <div className={`rounded-3xl p-4 sm:p-6 border shadow-2xl relative overflow-hidden ${
@@ -209,13 +279,13 @@ export function CompanyAnalysis() {
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#DC143C]/15 border border-[#DC143C]/30 text-[#FF0033] text-xs font-black uppercase tracking-wider mb-2">
               <Sparkles size={13} />
-              <span>Moduł B2B • Rejestr KRS & Sprawozdania Finansowe</span>
+              <span>Moduł B2B • Weryfikacja Rejestrów MF i KRS</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              Audyt Finansowy Spółki <span className="text-[#DC143C]">AI 24</span>
+              SPRAWDŹ FIRMĘ PO <span className="text-[#DC143C]">NIP</span>
             </h1>
             <p className="text-zinc-400 text-xs sm:text-sm mt-1 max-w-2xl">
-              Wyszukaj dowolną polską spółkę po <strong>NIP, KRS, REGON lub nazwie</strong>. Pobierz bilans, wskaźniki rentowności i wygeneruj syntetyczną diagnozę ryzyka Gemini AI.
+              Wpisz 10-cyfrowy NIP podmiotu gospodarczego. System weryfikuje sumę kontrolną w czasie rzeczywistym i pobiera oficjalne dane finansowe z rejestrów publicznych.
             </p>
           </div>
 
@@ -223,75 +293,126 @@ export function CompanyAnalysis() {
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[11px] text-zinc-500 font-bold uppercase tracking-wider">Przetestuj na:</span>
             <button 
-              onClick={() => { setQuery('7342867148'); handleSearch('7342867148'); }}
-              className="px-3 py-1 rounded-full text-xs font-bold bg-white/5 hover:bg-white/15 border border-white/10 text-white transition-all"
+              type="button"
+              onClick={() => handleSelectPreset('7342867148')}
+              className="px-3 py-1 rounded-full text-xs font-bold bg-white/5 hover:bg-white/15 border border-white/10 text-white transition-all cursor-pointer"
             >
               CD Projekt
             </button>
             <button 
-              onClick={() => { setQuery('6972164361'); handleSearch('6972164361'); }}
-              className="px-3 py-1 rounded-full text-xs font-bold bg-white/5 hover:bg-white/15 border border-white/10 text-white transition-all"
+              type="button"
+              onClick={() => handleSelectPreset('6211766191')}
+              className="px-3 py-1 rounded-full text-xs font-bold bg-white/5 hover:bg-white/15 border border-white/10 text-white transition-all cursor-pointer"
             >
               Dino Polska
             </button>
             <button 
-              onClick={() => { setQuery('5220003782'); handleSearch('5220003782'); }}
-              className="px-3 py-1 rounded-full text-xs font-bold bg-white/5 hover:bg-white/15 border border-white/10 text-white transition-all"
+              type="button"
+              onClick={() => handleSelectPreset('5220003782')}
+              className="px-3 py-1 rounded-full text-xs font-bold bg-white/5 hover:bg-white/15 border border-white/10 text-white transition-all cursor-pointer"
             >
               Asseco Poland
             </button>
             <button 
-              onClick={() => { setQuery('5252819001'); handleSearch('5252819001'); }}
-              className="px-3 py-1 rounded-full text-xs font-bold bg-white/5 hover:bg-white/15 border border-white/10 text-white transition-all"
+              type="button"
+              onClick={() => handleSelectPreset('5252819009')}
+              className="px-3 py-1 rounded-full text-xs font-bold bg-white/5 hover:bg-white/15 border border-white/10 text-white transition-all cursor-pointer"
             >
               MŚP IT (Tech)
             </button>
           </div>
         </div>
 
-        {/* Search Input Bar */}
+        {/* Search Input Bar - SPRAWDŹ FIRMĘ PO NIP */}
         <div className="mt-5 relative z-10">
           <form 
-            onSubmit={(e) => { e.preventDefault(); handleSearch(query); }}
-            className="flex flex-col sm:flex-row items-stretch gap-2"
+            onSubmit={(e) => { 
+              e.preventDefault(); 
+              if (nipValidation.isValid && !loading) {
+                handleSearch(); 
+              }
+            }}
+            className="flex flex-col sm:flex-row items-stretch gap-3"
           >
+            {/* Input z walidacją w czasie rzeczywistym */}
             <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" size={18} />
               <input
                 type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Wpisz NIP (10 cyfr), numer KRS (np. 0000006865) lub nazwę spółki..."
-                className="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-black/50 border border-white/15 text-white placeholder:text-zinc-500 text-sm font-medium focus:outline-none focus:border-[#DC143C] focus:ring-1 focus:ring-[#DC143C] transition-all"
+                value={nipInput}
+                onChange={handleNipChange}
+                onBlur={handleNipBlur}
+                placeholder="Wpisz NIP firmy"
+                aria-label="Wpisz NIP firmy"
+                className={`w-full pl-11 pr-36 py-3.5 sm:py-4 rounded-2xl bg-black/60 border text-white placeholder:text-zinc-500 text-base font-medium focus:outline-none transition-all ${
+                  cleanDigits.length === 10 && nipValidation.isValid
+                    ? 'border-emerald-500/60 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/50'
+                    : ((cleanDigits.length === 10 && !nipValidation.isValid) || cleanDigits.length > 10 || (cleanDigits.length > 0 && !/^\d+$/.test(cleanDigits)))
+                    ? 'border-rose-500/60 focus:border-rose-400 focus:ring-1 focus:ring-rose-400/50'
+                    : 'border-white/15 focus:border-[#DC143C] focus:ring-1 focus:ring-[#DC143C]'
+                }`}
               />
-              {query.length === 10 && !isNaN(Number(query)) && (
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                  Wykryto NIP
-                </span>
-              )}
+
+              {/* Status walidacji wewnątrz pola (desktop i mobile) */}
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
+                {cleanDigits.length === 10 && nipValidation.isValid && (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    <Check size={13} className="stroke-[3]" />
+                    <span>✓ Poprawny NIP</span>
+                  </span>
+                )}
+                {((cleanDigits.length === 10 && !nipValidation.isValid) || cleanDigits.length > 10 || (cleanDigits.length > 0 && !/^\d+$/.test(cleanDigits))) && (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                    <AlertTriangle size={13} />
+                    <span>Nieprawidłowy NIP</span>
+                  </span>
+                )}
+                {cleanDigits.length > 0 && cleanDigits.length < 10 && /^\d+$/.test(cleanDigits) && (
+                  <span className="text-[11px] font-semibold text-zinc-400 px-2 py-0.5">
+                    {cleanDigits.length}/10 cyfr
+                  </span>
+                )}
+              </div>
             </div>
 
+            {/* Przycisk Analizy - aktywny wyłącznie dla poprawnego NIP */}
             <button
               type="submit"
-              disabled={loading}
-              className="px-6 py-3.5 rounded-2xl bg-[#DC143C] hover:bg-[#b01030] text-white font-bold text-sm tracking-wide transition-all shadow-[0_0_20px_rgba(220,20,60,0.3)] flex items-center justify-center gap-2 shrink-0 disabled:opacity-50"
+              disabled={!nipValidation.isValid || loading}
+              className="w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl bg-[#DC143C] hover:bg-[#b01030] text-white font-bold text-base tracking-wide transition-all shadow-[0_0_20px_rgba(220,20,60,0.3)] flex items-center justify-center gap-2 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               {loading ? (
                 <>
-                  <RefreshCw size={16} className="animate-spin" />
+                  <RefreshCw size={18} className="animate-spin" />
                   <span>Weryfikacja w rejestrach...</span>
                 </>
               ) : (
                 <>
-                  <Search size={16} />
-                  <span>Generuj Audyt Spółki</span>
+                  <span>ANALIZUJ FIRMĘ →</span>
                 </>
               )}
             </button>
           </form>
+
+          {/* Pomocniczy komunikat błędu walidacji dla urządzeń mobilnych */}
+          {((cleanDigits.length === 10 && !nipValidation.isValid) || cleanDigits.length > 10 || (cleanDigits.length > 0 && !/^\d+$/.test(cleanDigits))) && (
+            <div className="mt-2 text-xs text-rose-400 font-semibold flex items-center gap-1.5 pl-2">
+              <AlertTriangle size={13} className="shrink-0" />
+              <span>Nieprawidłowy NIP — upewnij się, że wpisujesz dokładnie 10 cyfr i suma kontrolna jest poprawna.</span>
+            </div>
+          )}
         </div>
       </div>
 
+      {/* Komunikat o błędzie PDF */}
+      {pdfError && (
+        <div className="p-4 rounded-2xl bg-amber-950/40 border border-amber-500/30 text-amber-200 text-sm flex items-center gap-3">
+          <AlertTriangle size={18} className="text-amber-400 shrink-0" />
+          <span>{pdfError}</span>
+        </div>
+      )}
+
+      {/* Komunikat błędu z API */}
       {error && (
         <div className="p-4 rounded-2xl bg-red-950/40 border border-red-500/30 text-red-200 text-sm flex items-center gap-3">
           <AlertTriangle size={18} className="text-red-400 shrink-0" />
@@ -812,6 +933,12 @@ export function CompanyAnalysis() {
                 </div>
               ) : (
                 <form onSubmit={handleMonitoringSubmit} className="space-y-4">
+                  {monitorError && (
+                    <div className="p-2.5 rounded-xl bg-red-950/50 border border-red-500/30 text-red-200 text-xs flex items-center gap-2">
+                      <AlertTriangle size={14} className="text-red-400 shrink-0" />
+                      <span>{monitorError}</span>
+                    </div>
+                  )}
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-zinc-300">Twój adres e-mail (do wysyłki alertów B2B):</label>
                     <input

@@ -19,61 +19,86 @@ async function startServer() {
       const userProfile = req.body;
       const offers = await getOffersForProfile(userProfile);
       
-      // Sprawdzamy czy mamy oferty (zastępcze dla wskaźnika akceptacji)
+      // Sprawdzamy czy mamy oferty (zastępcze dla wskaźnika akceptacji - zawsze zwracamy tablicę)
       if (offers.length === 0) {
-        res.json({ url: "https://tmlead.pl/redirect/388900_1090", status: "downsell", name: "Stop Komornik", features: ["Wstrzymanie egzekucji", "Czyszczenie BIK", "Ochrona majątku"] });
+        res.json([{
+          id: "downsell-stop-komornik",
+          url: "https://tmlead.pl/redirect/388900_1090",
+          status: "downsell",
+          name: "Stop Komornik",
+          category: "POMOC PRAWNA",
+          features: ["Wstrzymanie egzekucji", "Czyszczenie BIK", "Ochrona majątku"]
+        }]);
         return;
       }
 
       console.log(`[API] Znaleziono ${offers.length} ofert dla profilu:`, userProfile.goal, userProfile.score);
       res.json(offers);
     } catch (error) {
-      console.error(error);
+      console.error("[API] Błąd silnika ofert:", error);
       res.status(500).json({ error: "Błąd silnika ofert" });
     }
   });
 
-  // 2. Endpoint przekierowujący (Twój dawny "/")
+  // 2. Endpoint przekierowujący (Afiliacja i tracking parametrów epi)
   app.get("/api/go", async (req, res) => {
     try {
       const offerId = req.query.offerId as string;
+      if (!offerId) {
+        res.redirect("https://toomasz-money.oferty-kredytowe.pl/");
+        return;
+      }
+
       const offer = await routeOffer(offerId);
       
       if (!offer) {
-        res.status(404).send("Oferta niedostępna");
+        console.warn(`[API /api/go] Nie znaleziono oferty dla offerId: ${offerId}. Przekierowanie do katalogu głównego.`);
+        res.redirect("https://toomasz-money.oferty-kredytowe.pl/");
         return;
       }
 
       // Zapisujemy kliknięcie w Supabase
       const clickid = await trackClick(req, offer);
 
-      // Bezpieczne dodawanie parametru clickid
+      // Bezpieczne dodawanie parametrów afiliacyjnych Money2Money:
+      // - epi: nasz unikalny clickid (UUIDv4)
+      // - epi2: kontekst / źródło kliknięcia (np. home, loan, mortgage)
+      // - clickid: wsteczna kompatybilność wewnętrzna
       const redirectUrl = new URL(offer.url);
-      redirectUrl.searchParams.append("clickid", clickid);
+      redirectUrl.searchParams.set("epi", clickid);
+      
+      const source = typeof req.query.source === 'string' && req.query.source
+        ? req.query.source.slice(0, 30)
+        : 'raport-finansowy';
+      redirectUrl.searchParams.set("epi2", source);
+      redirectUrl.searchParams.set("clickid", clickid);
 
+      console.log(`[Affiliate] Przekierowanie: offerId=${offer.id}, clickid/epi=${clickid}, source=${source}`);
       res.redirect(redirectUrl.toString());
     } catch (error) {
-      console.error(error);
+      console.error("[API /api/go] Błąd przekierowania:", error);
       res.status(500).send("Błąd przekierowania");
     }
   });
 
-  // 3. Postback z sieci afiliacyjnej (Money2Money)
+  // 3. Postback z sieci afiliacyjnej (Money2Money / uniwersalny webhook)
   app.get("/api/postback", async (req, res) => {
     try {
-      const { clickid, payout } = req.query;
+      // Obsługujemy zarówno clickid, jak i epi / subid
+      const clickid = (req.query.clickid || req.query.epi || req.query.subid) as string;
+      const payout = req.query.payout || req.query.commission || req.query.rate || 0;
       
       if (!clickid) {
-        res.status(400).send("Brak clickid");
+        res.status(400).send("Brak identyfikatora kliknięcia (clickid / epi)");
         return;
       }
 
       // Zapisujemy konwersję w Supabase
-      await trackConversion(clickid as string, Number(payout));
-      
+      await trackConversion(clickid, Number(payout));
+      console.log(`[Postback] Zarejestrowano konwersję dla id/epi: ${clickid}, payout: ${payout}`);
       res.send("ok");
     } catch (error) {
-      console.error(error);
+      console.error("[Postback] Błąd postbacka:", error);
       res.status(500).send("Błąd postbacka");
     }
   });
@@ -143,7 +168,8 @@ async function startServer() {
       res.json(result);
     } catch (error: any) {
       console.error("Błąd wyszukiwania spółki:", error);
-      res.status(500).json({ error: error.message || "Błąd pobierania danych spółki" });
+      const statusCode = typeof error.status === 'number' ? error.status : 500;
+      res.status(statusCode).json({ error: error.message || "Nie udało się pobrać danych firmy. Spróbuj ponownie." });
     }
   });
 

@@ -4,11 +4,12 @@ import { Header, Footer } from './components/Layout';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { Terms } from './components/Terms';
 import { Chatbot } from './components/Chatbot';
-import { Calculator, Home, PiggyBank, ShieldAlert, Building2 } from 'lucide-react';
+import { Calculator, Home as HomeIcon, PiggyBank, ShieldAlert, Building2 } from 'lucide-react';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { ViewModeProvider, useViewMode } from './context/ViewModeContext';
 import { motion, AnimatePresence } from 'motion/react';
 
+const Home = lazy(() => import('./components/Home').then(m => ({ default: m.Home })));
 const CompanyAnalysis = lazy(() => import('./components/CompanyAnalysis').then(m => ({ default: m.CompanyAnalysis })));
 const FinancialProtocolFunnel = lazy(() => import('./components/FinancialProtocolFunnel').then(m => ({ default: m.FinancialProtocolFunnel })));
 const LoanCalculator = lazy(() => import('./components/LoanCalculator').then(m => ({ default: m.LoanCalculator })));
@@ -29,7 +30,7 @@ function AppContent() {
     <div className={`relative z-20 w-full flex-1 flex flex-col mx-auto transition-all duration-300 ${
       isBrowserMode
         ? 'max-w-7xl px-3 sm:px-6 lg:px-8 py-3'
-        : `max-w-[480px] sm:border-x sm:my-3 sm:rounded-[36px] sm:shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden ${
+        : `max-w-[480px] sm:border-x sm:my-3 sm:rounded-[36px] sm:shadow-[0_0_50px_rgba(0,0,0,0.8)] ${
             theme === 'high-contrast' ? 'bg-black border-white/10' : 'bg-[#18181b] border-white/10'
           }`
     }`}>
@@ -46,37 +47,9 @@ function AppContent() {
               : 'bg-[#1e1e24] border-white/10'
           }`}>
             <button 
-              onClick={() => navigate('/firma')}
-              className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-2xl transition-all ${
-                isCompanyActive
-                  ? (theme === 'high-contrast'
-                      ? 'bg-[#1a1114] border border-[#FF0033] text-[#FF0033] shadow-[0_0_15px_rgba(255,0,51,0.2)]'
-                      : 'bg-[#ff0033]/10 border border-[#dc143c]/30 text-[#dc143c]'
-                    )
-                  : (theme === 'high-contrast' ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-200')
-              }`}
-            >
-              <Building2 size={16} className="mb-0.5" />
-              <span className="text-[9px] font-bold uppercase tracking-wider">Firma</span>
-            </button>
-            <button 
-              onClick={() => navigate('/protokol')}
-              className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-2xl transition-all mx-1 ${
-                isProtocolActive
-                  ? (theme === 'high-contrast'
-                      ? 'bg-[#1a1114] border border-[#FF0033] text-[#FF0033] shadow-[0_0_15px_rgba(255,0,51,0.2)]'
-                      : 'bg-[#ff0033]/10 border border-[#dc143c]/30 text-[#dc143c]'
-                    )
-                  : (theme === 'high-contrast' ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-200')
-              }`}
-            >
-              <ShieldAlert size={16} className="mb-0.5" />
-              <span className="text-[9px] font-bold uppercase tracking-wider">Protokół</span>
-            </button>
-            <button 
               onClick={() => navigate('/loan')}
-              className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-2xl transition-all mx-1 ${
-                location.pathname === '/loan' || location.pathname === '/' 
+              className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-2xl transition-all mx-0.5 ${
+                location.pathname === '/loan'
                   ? (theme === 'high-contrast'
                       ? 'bg-[#1a1114] border border-[#FF0033] text-[#FF0033] shadow-[0_0_15px_rgba(255,0,51,0.2)]'
                       : 'bg-[#ff0033]/10 border border-[#dc143c]/30 text-[#dc143c]'
@@ -89,7 +62,7 @@ function AppContent() {
             </button>
             <button 
               onClick={() => navigate('/mortgage')}
-              className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-2xl transition-all mx-1 ${
+              className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-2xl transition-all mx-0.5 ${
                 location.pathname === '/mortgage' 
                   ? (theme === 'high-contrast'
                       ? 'bg-[#1a1114] border border-[#FF0033] text-[#FF0033] shadow-[0_0_15px_rgba(255,0,51,0.2)]'
@@ -98,12 +71,12 @@ function AppContent() {
                   : (theme === 'high-contrast' ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-200')
               }`}
             >
-              <Home size={16} className="mb-0.5" />
+              <HomeIcon size={16} className="mb-0.5" />
               <span className="text-[9px] font-bold uppercase tracking-wider">Hipoteka</span>
             </button>
             <button 
               onClick={() => navigate('/savings')}
-              className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-2xl transition-all ${
+              className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-2xl transition-all mx-0.5 ${
                 location.pathname === '/savings' 
                   ? (theme === 'high-contrast'
                       ? 'bg-[#1a1114] border border-[#FF0033] text-[#FF0033] shadow-[0_0_15px_rgba(255,0,51,0.2)]'
@@ -115,6 +88,34 @@ function AppContent() {
               <PiggyBank size={16} className="mb-0.5" />
               <span className="text-[9px] font-bold uppercase tracking-wider">Oszczędź</span>
             </button>
+            <button 
+              onClick={() => navigate('/protokol')}
+              className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-2xl transition-all mx-0.5 ${
+                isProtocolActive
+                  ? (theme === 'high-contrast'
+                      ? 'bg-[#1a1114] border border-[#FF0033] text-[#FF0033] shadow-[0_0_15px_rgba(255,0,51,0.2)]'
+                      : 'bg-[#ff0033]/10 border border-[#dc143c]/30 text-[#dc143c]'
+                    )
+                  : (theme === 'high-contrast' ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-200')
+              }`}
+            >
+              <ShieldAlert size={16} className="mb-0.5" />
+              <span className="text-[9px] font-bold uppercase tracking-wider">Protokół</span>
+            </button>
+            <button 
+              onClick={() => navigate('/firma')}
+              className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-2xl transition-all mx-0.5 ${
+                isCompanyActive
+                  ? (theme === 'high-contrast'
+                      ? 'bg-[#1a1114] border border-[#FF0033] text-[#FF0033] shadow-[0_0_15px_rgba(255,0,51,0.2)]'
+                      : 'bg-[#ff0033]/10 border border-[#dc143c]/30 text-[#dc143c]'
+                    )
+                  : (theme === 'high-contrast' ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-200')
+              }`}
+            >
+              <Building2 size={16} className="mb-0.5" />
+              <span className="text-[9px] font-bold uppercase tracking-wider">Firma</span>
+            </button>
           </div>
         )}
 
@@ -122,27 +123,9 @@ function AppContent() {
         {isBrowserMode && (
           <div className="flex lg:hidden justify-between items-center bg-white/5 border border-white/10 rounded-2xl p-2 mb-4 overflow-x-auto gap-1">
             <button 
-              onClick={() => navigate('/firma')}
-              className={`flex-1 min-w-[75px] flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-bold transition-all ${
-                isCompanyActive ? 'bg-[#DC143C] text-white' : 'text-white/60'
-              }`}
-            >
-              <Building2 size={14} />
-              <span>Firma B2B</span>
-            </button>
-            <button 
-              onClick={() => navigate('/protokol')}
-              className={`flex-1 min-w-[75px] flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-bold transition-all ${
-                isProtocolActive ? 'bg-[#DC143C] text-white' : 'text-white/60'
-              }`}
-            >
-              <ShieldAlert size={14} />
-              <span>Protokół</span>
-            </button>
-            <button 
               onClick={() => navigate('/loan')}
               className={`flex-1 min-w-[75px] flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-bold transition-all ${
-                location.pathname === '/loan' || location.pathname === '/' ? 'bg-[#DC143C] text-white' : 'text-white/60'
+                location.pathname === '/loan' ? 'bg-[#DC143C] text-white' : 'text-white/60'
               }`}
             >
               <Calculator size={14} />
@@ -154,7 +137,7 @@ function AppContent() {
                 location.pathname === '/mortgage' ? 'bg-[#DC143C] text-white' : 'text-white/60'
               }`}
             >
-              <Home size={14} />
+              <HomeIcon size={14} />
               <span>Hipoteka</span>
             </button>
             <button 
@@ -166,14 +149,45 @@ function AppContent() {
               <PiggyBank size={14} />
               <span>Oszczędź</span>
             </button>
+            <button 
+              onClick={() => navigate('/protokol')}
+              className={`flex-1 min-w-[75px] flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-bold transition-all ${
+                isProtocolActive ? 'bg-[#DC143C] text-white' : 'text-white/60'
+              }`}
+            >
+              <ShieldAlert size={14} />
+              <span>Protokół</span>
+            </button>
+            <button 
+              onClick={() => navigate('/firma')}
+              className={`flex-1 min-w-[75px] flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-bold transition-all ${
+                isCompanyActive ? 'bg-[#DC143C] text-white' : 'text-white/60'
+              }`}
+            >
+              <Building2 size={14} />
+              <span>Firma / NIP</span>
+            </button>
           </div>
         )}
 
         {/* Content Container */}
-        <div className={`flex-1 w-full relative min-h-0 flex flex-col ${
-          isBrowserMode ? 'overflow-visible' : 'overflow-hidden'
-        }`}>
+        <div className="flex-1 w-full relative min-h-0 flex flex-col">
           <AnimatePresence mode="wait">
+            {location.pathname === '/' && (
+              <motion.div
+                key="home"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+                className={isBrowserMode 
+                  ? "w-full flex flex-col"
+                  : "w-full flex flex-col p-2 sm:p-4"
+                }
+              >
+                <Home />
+              </motion.div>
+            )}
             {isCompanyActive && (
               <motion.div
                 key="company"
@@ -183,7 +197,7 @@ function AppContent() {
                 transition={{ duration: 0.25, ease: "easeOut" }}
                 className={isBrowserMode 
                   ? "w-full flex flex-col"
-                  : "absolute inset-0 w-full h-full overflow-y-auto flex flex-col p-2 sm:p-4"
+                  : "w-full flex flex-col p-2 sm:p-4"
                 }
               >
                 <CompanyAnalysis />
@@ -198,13 +212,13 @@ function AppContent() {
                 transition={{ duration: 0.25, ease: "easeOut" }}
                 className={isBrowserMode 
                   ? "w-full flex flex-col"
-                  : "absolute inset-0 w-full h-full overflow-y-auto flex flex-col p-2 sm:p-4"
+                  : "w-full flex flex-col p-2 sm:p-4"
                 }
               >
                 <FinancialProtocolFunnel />
               </motion.div>
             )}
-            {(location.pathname === '/' || location.pathname === '/loan') && (
+            {location.pathname === '/loan' && (
               <motion.div
                 key="loan"
                 initial={{ opacity: 0, y: 15 }}
@@ -213,7 +227,7 @@ function AppContent() {
                 transition={{ duration: 0.25, ease: "easeOut" }}
                 className={isBrowserMode 
                   ? "w-full flex flex-col"
-                  : "absolute inset-0 w-full h-full overflow-hidden flex flex-col p-2 sm:p-4"
+                  : "w-full flex flex-col p-2 sm:p-4"
                 }
               >
                 <LoanCalculator />
@@ -228,7 +242,7 @@ function AppContent() {
                 transition={{ duration: 0.25, ease: "easeOut" }}
                 className={isBrowserMode 
                   ? "w-full flex flex-col"
-                  : "absolute inset-0 w-full h-full overflow-hidden flex flex-col p-2 sm:p-4"
+                  : "w-full flex flex-col p-2 sm:p-4"
                 }
               >
                 <MortgageSimulator />
@@ -243,7 +257,7 @@ function AppContent() {
                 transition={{ duration: 0.25, ease: "easeOut" }}
                 className={isBrowserMode 
                   ? "w-full flex flex-col"
-                  : "absolute inset-0 w-full h-full overflow-hidden flex flex-col p-2 sm:p-4"
+                  : "w-full flex flex-col p-2 sm:p-4"
                 }
               >
                 <SavingsGoal />

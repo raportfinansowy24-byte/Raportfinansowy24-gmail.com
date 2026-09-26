@@ -111,7 +111,9 @@ export async function fetchOffersFromPanel(): Promise<ScrapedOffer[]> {
 
       console.log(`[Scraper] Kategoria ${cat} (${dataKey}): otrzymano ${json.length} elementów.`);
 
-      json.forEach((htmlString, i) => {
+      const seenIds = new Set<string>();
+
+      json.forEach((htmlString) => {
         const $ = cheerio.load(htmlString);
         
         // Szukamy nazwy w tekście linku lub w atrybucie data-title przycisku
@@ -137,7 +139,20 @@ export async function fetchOffersFromPanel(): Promise<ScrapedOffer[]> {
         });
 
         if (name && link) {
-          const id = `${cat}-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${i}`;
+          // Unikalne, deterministyczne ID oparte o kampanię i nazwę (niezależne od kolejności w szablonie)
+          const campaignMatch = link.match(/redirect\/[0-9]+_([a-zA-Z0-9]+)/);
+          const campaignPart = campaignMatch ? campaignMatch[1] : '';
+          const cleanName = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+          const baseId = campaignPart ? `${cat}-${cleanName}-${campaignPart}` : `${cat}-${cleanName}`;
+          
+          let id = baseId;
+          let counter = 1;
+          while (seenIds.has(id)) {
+            id = `${baseId}-${counter}`;
+            counter++;
+          }
+          seenIds.add(id);
+
           const finalComment = generateContextualComment(cat, name, features);
           
           allOffers.push({

@@ -160,7 +160,7 @@ export function AiOfferRecommendations({ offers }: { offers: Offer[] }) {
                   <div className="space-y-3">
                     <OfferCountdown initialMinutes={14} />
                     <a
-                      href={`/api/go?offerId=${offer.id}`}
+                      href={`/api/go?offerId=${encodeURIComponent(offer.id || '')}&source=ai-recommendation`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="group/btn relative flex items-center justify-center w-full py-4 bg-[#DC143C] hover:bg-[#FF0000] text-white font-black text-lg rounded-xl shadow-[0_10px_25px_rgba(220,20,60,0.4)] transform hover:-translate-y-1 transition-all duration-300 uppercase tracking-tight"

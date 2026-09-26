@@ -17,7 +17,11 @@ import {
   Calculator,
   RefreshCw,
   TrendingDown,
-  ExternalLink
+  ExternalLink,
+  Terminal,
+  Activity,
+  Cpu,
+  ArrowLeft
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useViewMode } from '../context/ViewModeContext';
@@ -50,6 +54,25 @@ export const FinancialProtocolFunnel: React.FC<FinancialProtocolFunnelProps> = (
     "Weryfikacja algorytmiczna ofert o najwyższym wskaźniku akceptacji...",
     "Generowanie indywidualnego protokołu optymalizacji kosztów..."
   ];
+
+  // Obsługa nawigacji wstecz
+  const handleBack = () => {
+    if (currentStep === 1) {
+      if (window.history.length > 1) {
+        navigate(-1);
+      } else {
+        navigate('/loan');
+      }
+    } else if (currentStep === 2) {
+      setCurrentStep(1);
+    } else if (currentStep === 3) {
+      setCurrentStep(2);
+    } else if (currentStep === 4) {
+      setCurrentStep(3);
+    } else if (currentStep === 5) {
+      setCurrentStep(3);
+    }
+  };
 
   // Obsługa wyboru progu straty
   const handleSelectLossTier = (tier: string, label: string, annualLoss: string) => {
@@ -150,30 +173,176 @@ export const FinancialProtocolFunnel: React.FC<FinancialProtocolFunnelProps> = (
     }
   };
 
+  const stepsMeta = [
+    { num: 1, id: '01', tag: 'INSPEKCJA', name: 'Weryfikacja Strat', code: 'PROBE_LOSS' },
+    { num: 2, id: '02', tag: 'KALKULACJA', name: 'Roczny Przeciek', code: 'CALC_BURNDOWN' },
+    { num: 3, id: '03', tag: 'AUTORYZACJA', name: 'Gotowość Optym.', code: 'AUTH_OVERRIDE' },
+    { num: 4, id: '04', tag: 'SKANOWANIE', name: 'Silnik Zero-Fee', code: 'EXEC_AI_SCAN' },
+    { num: 5, id: '05', tag: 'ODBLOKOWANIE', name: 'Raport & Oferty', code: 'UNLOCK_ACCESS' }
+  ];
+
   return (
     <div className={`w-full mx-auto flex flex-col items-center justify-center p-3 sm:p-6 transition-all duration-300 ${
-      isBrowserMode ? 'max-w-4xl py-8' : 'max-w-md py-4'
+      isBrowserMode ? 'max-w-4xl py-6' : 'max-w-md py-4'
     }`}>
-      {/* Dynamiczny pasek statusu protokołu */}
-      <div className="w-full mb-6">
-        <div className="flex items-center justify-between text-xs text-white/50 mb-2 px-1">
-          <span className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-[#DC143C]">
-            <ShieldAlert size={14} className="animate-pulse text-[#FF0033]" />
-            Protokół Anty-Prowizyjny AI
+      {/* Top Navigation Row: Distinct Back Button */}
+      <div className="w-full flex items-center justify-between mb-3 px-0.5">
+        <button
+          onClick={handleBack}
+          className="flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl bg-zinc-900/90 hover:bg-[#1f1619] border border-white/20 hover:border-[#FF0033]/60 text-white font-mono text-xs sm:text-sm font-bold shadow-[0_2px_12px_rgba(0,0,0,0.5)] hover:shadow-[0_0_15px_rgba(255,0,51,0.25)] transition-all duration-200 group active:scale-95 cursor-pointer"
+          title={currentStep > 1 ? `Wróć do poprzedniego etapu (${currentStep - 1})` : 'Wróć do kalkulatora'}
+        >
+          <ArrowLeft size={16} className="text-[#FF0033] group-hover:-translate-x-1 transition-transform" />
+          <span className="tracking-wide uppercase font-black">WSTECZ</span>
+          {currentStep > 1 && (
+            <span className="text-[11px] text-zinc-400 font-sans font-medium hidden sm:inline">
+              (do etapu 0{currentStep === 5 ? 3 : currentStep - 1})
+            </span>
+          )}
+        </button>
+
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-mono text-zinc-400 hidden sm:inline-flex items-center gap-1.5 bg-white/5 px-2.5 py-1.5 rounded-lg border border-white/10">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>KROK <strong className="text-white">{currentStep}</strong> / 5</span>
           </span>
-          <span className="font-mono text-zinc-400">
-            Krok {Math.min(currentStep, 4)} z 4
-          </span>
+          <button
+            onClick={() => navigate('/loan')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 hover:text-white text-xs font-semibold transition-all"
+            title="Przejdź do standardowego kalkulatora"
+          >
+            <Calculator size={13} />
+            <span className="hidden sm:inline">Kalkulator Kredytów</span>
+          </button>
         </div>
-        <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
-          <motion.div 
-            className="h-full bg-gradient-to-r from-[#DC143C] via-red-500 to-amber-400"
-            initial={{ width: '25%' }}
-            animate={{ 
-              width: currentStep === 1 ? '25%' : currentStep === 2 ? '50%' : currentStep === 3 ? '75%' : '100%' 
-            }}
-            transition={{ duration: 0.35 }}
-          />
+      </div>
+
+      {/* Terminal Step Indicator & Status Console Header */}
+      <div className="w-full mb-5 font-mono">
+        {/* Terminal Header Bar */}
+        <div className="rounded-t-xl bg-[#09090b] border border-white/10 border-b-0 px-3 py-2 flex items-center justify-between text-[11px] select-none">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleBack}
+              className="flex items-center gap-1 text-[10px] font-mono font-bold text-zinc-300 hover:text-white bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded border border-white/10 hover:border-[#DC143C]/40 transition-colors"
+              title="Cofnij"
+            >
+              <ArrowLeft size={10} className="text-[#FF0033]" />
+              <span>WSTECZ</span>
+            </button>
+            <span className="text-zinc-600">|</span>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#FF0033]/80 border border-[#FF0033] shadow-[0_0_6px_rgba(255,0,51,0.6)]" />
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80 border border-amber-500" />
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80 border border-emerald-500" />
+            </div>
+            <span className="text-zinc-500 mx-1">|</span>
+            <div className="flex items-center gap-1.5 text-zinc-300 font-semibold">
+              <Terminal size={12} className="text-[#FF0033]" />
+              <span className="text-white/80">CORE_PROTOCOL://</span>
+              <span className="text-[#FF0033]">AUDYT_ANTY_PROWIZJA</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:inline-flex items-center gap-1 text-[10px] text-zinc-500 bg-white/5 px-2 py-0.5 rounded border border-white/5">
+              <Activity size={10} className="text-emerald-400 animate-pulse" />
+              LIVE_FEED
+            </span>
+            <span className="text-[10px] font-bold text-zinc-400 bg-white/5 px-2 py-0.5 rounded border border-white/10">
+              ETAP [{currentStep}/05]
+            </span>
+          </div>
+        </div>
+
+        {/* Terminal Step Indicator Pills */}
+        <div className="bg-[#0e0e12] border border-white/10 px-2 sm:px-3 py-2.5">
+          <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+            {stepsMeta.map((s) => {
+              const isPassed = currentStep > s.num;
+              const isCurrent = currentStep === s.num;
+              const isPending = currentStep < s.num;
+
+              return (
+                <div
+                  key={s.num}
+                  className={`relative rounded-lg p-1.5 sm:p-2 border transition-all duration-300 flex flex-col justify-between overflow-hidden ${
+                    isCurrent
+                      ? 'bg-[#181114] border-[#DC143C] shadow-[0_0_15px_rgba(220,20,60,0.35)]'
+                      : isPassed
+                      ? 'bg-emerald-950/25 border-emerald-500/30 text-emerald-400'
+                      : 'bg-black/40 border-white/5 text-zinc-600 opacity-60'
+                  }`}
+                >
+                  {/* Top line with stage ID & Status Indicator */}
+                  <div className="flex items-center justify-between text-[9px] sm:text-[10px] font-bold leading-none mb-1">
+                    <span className={isCurrent ? 'text-[#FF0033]' : isPassed ? 'text-emerald-400' : 'text-zinc-500'}>
+                      {s.id}
+                    </span>
+                    {isPassed ? (
+                      <span className="text-emerald-400 text-[10px] sm:text-xs">✓</span>
+                    ) : isCurrent ? (
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#FF0033] animate-ping" />
+                    ) : (
+                      <span className="text-[8px] text-zinc-600">•</span>
+                    )}
+                  </div>
+
+                  {/* Step Name */}
+                  <div className="truncate">
+                    <div className={`text-[10px] sm:text-[11px] font-bold truncate tracking-tight ${
+                      isCurrent ? 'text-white' : isPassed ? 'text-emerald-300/90' : 'text-zinc-500'
+                    }`}>
+                      {s.tag}
+                    </div>
+                    <div className="hidden md:block text-[9px] text-zinc-500 truncate">
+                      {s.name}
+                    </div>
+                  </div>
+
+                  {/* Active bottom glow bar */}
+                  {isCurrent && (
+                    <motion.div 
+                      layoutId="terminal-active-step"
+                      className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#DC143C] via-[#FF0033] to-amber-400"
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Sub-terminal Command Line Stream */}
+          <div className="mt-2.5 pt-2 border-t border-white/5 flex items-center justify-between text-[10px] sm:text-[11px] text-zinc-400 px-1">
+            <div className="flex items-center gap-1.5 truncate">
+              <span className="text-[#DC143C] font-bold">&gt;</span>
+              <span className="text-zinc-500">SYS_EXEC:</span>
+              <span className="text-white font-mono truncate">
+                {currentStep === 1 && 'AUDYT_RYZYKA: analiza_prowizji_i_marz.sh --deep'}
+                {currentStep === 2 && 'SZACUNEK_STRAT: calc_compound_annual_bleed.py --annual'}
+                {currentStep === 3 && 'KONTROLA_DECYZJI: authorize_protocol_bypass.sh --force'}
+                {currentStep === 4 && 'ENGINE_SCAN: zero_fee_matching_algorithm.exec'}
+                {currentStep === 5 && 'STATUS_READY: unlock_session_token.enc --success'}
+              </span>
+            </div>
+            <div className="hidden sm:flex items-center gap-1 text-[10px] text-zinc-500 shrink-0">
+              <Cpu size={11} className="text-[#DC143C]" />
+              <span>THREAD_OK</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Continuous Segmented Progress Line */}
+        <div className="rounded-b-xl bg-[#09090b] border border-white/10 border-t-0 p-1">
+          <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden">
+            <motion.div 
+              className="h-full bg-gradient-to-r from-[#DC143C] via-[#FF0033] to-emerald-400 shadow-[0_0_8px_rgba(255,0,51,0.6)]"
+              initial={{ width: '20%' }}
+              animate={{ 
+                width: currentStep === 1 ? '20%' : currentStep === 2 ? '40%' : currentStep === 3 ? '60%' : currentStep === 4 ? '80%' : '100%' 
+              }}
+              transition={{ duration: 0.35, ease: 'easeOut' }}
+            />
+          </div>
         </div>
       </div>
 
@@ -318,12 +487,21 @@ export const FinancialProtocolFunnel: React.FC<FinancialProtocolFunnelProps> = (
                   <ArrowRight size={20} />
                 </button>
 
-                <button
-                  onClick={() => setShowExitWarning(true)}
-                  className="w-full py-2.5 text-xs sm:text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
-                >
-                  Nie, wolę dalej tracić swoje pieniądze
-                </button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    onClick={handleBack}
+                    className="py-3 px-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 hover:border-white/30 active:scale-95"
+                  >
+                    <ArrowLeft size={16} className="text-[#FF0033]" />
+                    <span>Wróć do wyboru kwoty</span>
+                  </button>
+                  <button
+                    onClick={() => setShowExitWarning(true)}
+                    className="py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
+                  >
+                    Nie, rezygnuję
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}
@@ -378,12 +556,21 @@ export const FinancialProtocolFunnel: React.FC<FinancialProtocolFunnelProps> = (
                   <span>TAK, uruchom protokół naprawczy</span>
                 </button>
 
-                <button
-                  onClick={() => setShowExitWarning(true)}
-                  className="w-full py-2.5 text-xs sm:text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
-                >
-                  Nie, rezygnuję z optymalizacji
-                </button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    onClick={handleBack}
+                    className="py-3 px-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 hover:border-white/30 active:scale-95"
+                  >
+                    <ArrowLeft size={16} className="text-[#FF0033]" />
+                    <span>Wróć do wyliczenia strat</span>
+                  </button>
+                  <button
+                    onClick={() => setShowExitWarning(true)}
+                    className="py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
+                  >
+                    Nie, rezygnuję
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}
@@ -518,6 +705,15 @@ export const FinancialProtocolFunnel: React.FC<FinancialProtocolFunnelProps> = (
                         <span>ODBLOKUJ MOJĄ OFERTĘ & RAPORT</span>
                       </>
                     )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    className="w-full py-2.5 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/15 text-white/80 hover:text-white text-xs font-bold transition-all flex items-center justify-center gap-2 active:scale-95"
+                  >
+                    <ArrowLeft size={15} className="text-[#FF0033]" />
+                    <span>Wróć do etapu autoryzacji</span>
                   </button>
 
                   <p className="text-[10px] text-zinc-500 text-center leading-relaxed">

@@ -3,17 +3,18 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { useViewMode } from '../context/ViewModeContext';
 import { ViewModeSwitch } from './ViewModeSwitch';
-import { Eye, Calculator, Home, PiggyBank, ShieldAlert, Building2 } from 'lucide-react';
+import { Calculator, Home, PiggyBank, ShieldAlert, Building2 } from 'lucide-react';
 
 export const Header = () => {
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   const { isBrowserMode } = useViewMode();
   const location = useLocation();
   const navigate = useNavigate();
 
+  const isHomeActive = location.pathname === '/';
   const isCompanyActive = location.pathname === '/firma' || location.pathname === '/spolka' || location.pathname === '/krs' || location.pathname === '/analiza-firmy';
   const isProtocolActive = location.pathname === '/protokol' || location.pathname === '/lejek' || location.pathname === '/funnel' || location.pathname === '/audyt';
-  const isLoanActive = location.pathname === '/' || location.pathname === '/loan';
+  const isLoanActive = location.pathname === '/loan';
   const isMortgageActive = location.pathname === '/mortgage';
   const isSavingsActive = location.pathname === '/savings';
 
@@ -28,7 +29,7 @@ export const Header = () => {
       }`}>
         {/* Logo */}
         <div 
-          onClick={() => navigate('/firma')}
+          onClick={() => navigate('/')}
           className="flex items-center gap-2 cursor-pointer group select-none"
         >
           <div className="text-xl sm:text-2xl font-black text-white tracking-widest font-montserrat uppercase">
@@ -36,7 +37,7 @@ export const Header = () => {
           </div>
           {isBrowserMode && (
             <span className="hidden md:inline-block px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-white/5 border border-white/10 text-white/50 group-hover:text-white/80 transition-colors">
-              B2B & Finanse
+              Finanse & Narzędzia
             </span>
           )}
         </div>
@@ -44,30 +45,6 @@ export const Header = () => {
         {/* Center Desktop Navigation when in Browser Mode */}
         {isBrowserMode && (
           <nav className="hidden lg:flex items-center gap-1 bg-white/5 p-1 rounded-full border border-white/10">
-            <button
-              onClick={() => navigate('/firma')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all ${
-                isCompanyActive
-                  ? 'bg-[#DC143C] text-white shadow-[0_0_12px_rgba(220,20,60,0.4)]'
-                  : 'text-white/60 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <Building2 size={14} className={isCompanyActive ? 'text-white' : 'text-[#FF0033]'} />
-              <span>Analiza Spółek</span>
-              <span className="text-[9px] px-1.5 py-0.2 bg-emerald-500/20 text-emerald-300 rounded font-black uppercase">KRS / B2B</span>
-            </button>
-            <button
-              onClick={() => navigate('/protokol')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all ${
-                isProtocolActive
-                  ? 'bg-[#DC143C] text-white shadow-[0_0_12px_rgba(220,20,60,0.4)]'
-                  : 'text-white/60 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <ShieldAlert size={14} className={isProtocolActive ? 'animate-pulse' : 'text-[#FF0033]'} />
-              <span>Protokół AI</span>
-              <span className="text-[9px] px-1.5 py-0.2 bg-red-500/20 text-red-300 rounded font-black uppercase">Audyt</span>
-            </button>
             <button
               onClick={() => navigate('/loan')}
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all ${
@@ -99,29 +76,36 @@ export const Header = () => {
               }`}
             >
               <PiggyBank size={14} />
-              <span>Oszczędności</span>
+              <span>Oszczędności i Lokaty</span>
+            </button>
+            <button
+              onClick={() => navigate('/protokol')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all ${
+                isProtocolActive
+                  ? 'bg-[#DC143C] text-white shadow-[0_0_12px_rgba(220,20,60,0.4)]'
+                  : 'text-white/60 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <ShieldAlert size={14} className={isProtocolActive ? 'animate-pulse' : 'text-[#FF0033]'} />
+              <span>Protokół AI</span>
+            </button>
+            <button
+              onClick={() => navigate('/firma')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all ${
+                isCompanyActive
+                  ? 'bg-[#DC143C] text-white shadow-[0_0_12px_rgba(220,20,60,0.4)]'
+                  : 'text-white/60 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Building2 size={14} className={isCompanyActive ? 'text-white' : 'text-zinc-400'} />
+              <span>Firma / NIP</span>
             </button>
           </nav>
         )}
 
-        {/* Right side controls: View Mode Switch & Theme Toggle */}
+        {/* Right side controls: View Mode Switch */}
         <div className="flex items-center gap-2 sm:gap-3">
           <ViewModeSwitch compact={!isBrowserMode} />
-
-          <button
-            onClick={toggleTheme}
-            title={theme === 'high-contrast' ? 'Przełącz na łagodny ciemny' : 'Przełącz na wysoki kontrast'}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all duration-300 border ${
-              theme === 'high-contrast'
-                ? 'bg-[#1a1114] border-[#FF0033] text-[#FF0033] shadow-[0_0_10px_rgba(255,0,51,0.2)]'
-                : 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10'
-            }`}
-          >
-            <Eye size={12} className={theme === 'high-contrast' ? 'animate-pulse' : ''} />
-            <span className="hidden sm:inline text-[9px] sm:text-[10px]">
-              {theme === 'high-contrast' ? 'Kontrast' : 'Łagodny'}
-            </span>
-          </button>
         </div>
       </div>
     </header>

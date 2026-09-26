@@ -1,13 +1,60 @@
 import { jsPDF } from 'jspdf';
 import { CompanyRecord, CompanyFinancials, AiCompanyDiagnostic, CompanyAuditReport } from '../types/company';
+import { cleanNip, validateNip, formatNip, isValidNip, NipValidationResult } from '../utils/nipValidator';
+
+export { cleanNip, validateNip, formatNip, isValidNip };
+export type { NipValidationResult };
 
 export async function fetchCompanyData(query: string): Promise<{ company: CompanyRecord; financials: CompanyFinancials }> {
-  const response = await fetch(`/api/company/search?q=${encodeURIComponent(query)}`);
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || 'Nie udało się pobrać danych spółki');
+  // Backend ZAWSZE otrzymuje czyste 10 cyfr bez separatorów (spacji, myślników)
+  const clean = cleanNip(query);
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 sekund timeoutu
+
+  try {
+    const response = await fetch(`/api/company/search?q=${encodeURIComponent(clean)}`, {
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error('Nie znaleźliśmy firmy o podanym numerze NIP.');
+      }
+      if (response.status === 429) {
+        throw new Error('Źródło danych jest chwilowo przeciążone. Spróbuj ponownie za chwilę.');
+      }
+      if (response.status === 400) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Podany numer NIP jest nieprawidłowy.');
+      }
+      if (response.status >= 500) {
+        throw new Error('Nie udało się pobrać danych firmy. Spróbuj ponownie.');
+      }
+      throw new Error('Nie udało się pobrać danych firmy. Spróbuj ponownie.');
+    }
+
+    return await response.json();
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      throw new Error('Pobieranie danych trwa zbyt długo. Spróbuj ponownie.');
+    }
+    // Jeżeli błąd ma już przygotowany czytelny komunikat, przekazujemy go dalej
+    if (
+      err.message &&
+      (err.message === 'Nie znaleźliśmy firmy o podanym numerze NIP.' ||
+       err.message === 'Źródło danych jest chwilowo przeciążone. Spróbuj ponownie za chwilę.' ||
+       err.message === 'Podany numer NIP jest nieprawidłowy.' ||
+       err.message === 'Nie udało się pobrać danych firmy. Spróbuj ponownie.' ||
+       err.message === 'Pobieranie danych trwa zbyt długo. Spróbuj ponownie.')
+    ) {
+      throw err;
+    }
+    console.error('[fetchCompanyData] Błąd komunikacji z API:', err);
+    throw new Error('Nie udało się pobrać danych firmy. Spróbuj ponownie.');
   }
-  return await response.json();
 }
 
 export async function fetchCompanyDiagnostic(company: CompanyRecord, financials: CompanyFinancials): Promise<AiCompanyDiagnostic> {

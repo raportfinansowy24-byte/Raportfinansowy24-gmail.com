@@ -1,4 +1,5 @@
 import { CompanyRecord, CompanyFinancials, AiCompanyDiagnostic } from '../types/company.js';
+import { validateNip } from '../utils/nipValidator.js';
 
 // Curated Polish companies for rapid verification & high-detail financial statements
 export const CURATED_COMPANIES: Array<{ company: CompanyRecord; financials: CompanyFinancials }> = [
@@ -107,7 +108,7 @@ export const CURATED_COMPANIES: Array<{ company: CompanyRecord; financials: Comp
     company: {
       name: "DINO POLSKA SPÓŁKA AKCYJNA",
       krs: "0000408273",
-      nip: "6972164361",
+      nip: "6211766191",
       regon: "251347071",
       legalForm: "Spółka Akcyjna",
       registrationDate: "2012-02-28",
@@ -405,7 +406,7 @@ export async function searchAndFetchCompany(query: string): Promise<{ company: C
   // 1. Check curated companies first for fast high-accuracy matches
   const curatedMatch = CURATED_COMPANIES.find(item => {
     const c = item.company;
-    if (digitsOnly && (c.nip === digitsOnly || c.krs.endsWith(digitsOnly) || c.regon === digitsOnly)) {
+    if (digitsOnly && (c.nip === digitsOnly || (c.nip === "6211766191" && digitsOnly === "6972164361") || c.krs.endsWith(digitsOnly) || c.regon === digitsOnly)) {
       return true;
     }
     const searchLower = cleaned.toLowerCase();
@@ -416,13 +417,26 @@ export async function searchAndFetchCompany(query: string): Promise<{ company: C
     return curatedMatch;
   }
 
-  // 2. If it's a 10-digit number, try Biała Lista MF (NIP)
+  // 2. If it's a 10-digit number, treat strictly as NIP search
   if (digitsOnly.length === 10) {
+    // Sprawdź poprawność sumy kontrolnej NIP
+    const nipValidation = validateNip(digitsOnly);
+    if (!nipValidation.isValid) {
+      const err: any = new Error("Podany numer NIP jest nieprawidłowy.");
+      err.status = 400;
+      throw err;
+    }
+
     try {
       const today = new Date().toISOString().split('T')[0];
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
+
       const mfRes = await fetch(`https://wl-api.mf.gov.pl/api/search/nip/${digitsOnly}?date=${today}`, {
-        headers: { 'User-Agent': 'RaportFinansowy24-B2B-Audit/1.0' }
+        headers: { 'User-Agent': 'RaportFinansowy24-B2B-Audit/1.0' },
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
       if (mfRes.ok) {
         const mfData = await mfRes.json();
         const subject = mfData?.result?.subject;
@@ -466,10 +480,25 @@ export async function searchAndFetchCompany(query: string): Promise<{ company: C
           const financials = generateEstimatedFinancials(company);
           return { company, financials };
         }
+      } else if (mfRes.status === 429) {
+        const err: any = new Error("Źródło danych jest chwilowo przeciążone. Spróbuj ponownie za chwilę.");
+        err.status = 429;
+        throw err;
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        const timeoutErr: any = new Error("Pobieranie danych trwa zbyt długo. Spróbuj ponownie.");
+        timeoutErr.status = 504;
+        throw timeoutErr;
+      }
+      if (err.status) throw err;
       console.warn('[CompanySearch] Biała Lista MF error:', err);
     }
+
+    // Blokada fikcyjnego fallbacku dla ścieżki NIP
+    const notFoundErr: any = new Error("Nie znaleźliśmy firmy o podanym numerze NIP.");
+    notFoundErr.status = 404;
+    throw notFoundErr;
   }
 
   // 3. If query might be a KRS number (or up to 10 digits)

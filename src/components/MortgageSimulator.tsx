@@ -308,10 +308,11 @@ export function MortgageSimulator() {
             whileTap={{ scale: 0.95 }}
             transition={{ type: "spring", stiffness: 400, damping: 17 }}
             onClick={() => navigate('/loan')}
-            className="flex items-center gap-2 text-white/30 hover:text-[#DC143C] transition-colors text-[10px] font-bold uppercase tracking-widest group"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white hover:text-white text-xs font-bold transition-all group cursor-pointer"
+            title="Wróć do kalkulatora kredytów"
           >
-            <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
-            Wróć do analizy
+            <ArrowLeft size={14} className="text-[#DC143C] group-hover:-translate-x-1 transition-transform" />
+            <span>Wstecz / Kredyty</span>
           </motion.button>
           
           <div className="flex items-center gap-2">

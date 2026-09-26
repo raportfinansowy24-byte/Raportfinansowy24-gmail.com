@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AiOfferRecommendations } from './AiOfferRecommendations';
 import { Offer } from '../services/aiOfferService';
 import { fetchOffersFromApi } from '../services/apiClient';
-import { Zap, TrendingUp, FileText } from 'lucide-react';
+import { Zap, TrendingUp, FileText, ArrowLeft } from 'lucide-react';
 import { motion, useMotionValue, useTransform, animate } from 'motion/react';
 import * as d3 from 'd3';
 import { FinancialReportModal } from './FinancialReportModal';
@@ -155,6 +156,7 @@ const SavingsChart: React.FC<SavingsChartProps> = ({ currentSavings, monthlyCont
 };
 
 export function SavingsGoal() {
+  const navigate = useNavigate();
   const { isBrowserMode } = useViewMode();
   const [targetAmount, setTargetAmount] = useState<number>(50000);
   const [currentSavings, setCurrentSavings] = useState<number>(5000);
@@ -246,10 +248,22 @@ export function SavingsGoal() {
   };
 
   return (
-    <div className="w-full h-full flex flex-col items-center font-sans relative overflow-hidden px-2 pb-2">
+    <div className="w-full min-h-full flex flex-col items-center font-sans relative px-2 pb-2">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-32 bg-[#DC143C]/10 blur-[80px] pointer-events-none"></div>
 
-      <div className="text-center pt-2 pb-1 w-full flex-shrink-0">
+      {/* Top back button */}
+      <div className="w-full flex items-center justify-between mb-2 px-2 max-w-6xl z-10">
+        <button
+          onClick={() => navigate('/loan')}
+          className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold transition-all group cursor-pointer"
+          title="Wróć do kalkulatora kredytów"
+        >
+          <ArrowLeft size={14} className="text-[#DC143C] group-hover:-translate-x-1 transition-transform" />
+          <span>Wstecz / Kredyty</span>
+        </button>
+      </div>
+
+      <div className="text-center pt-1 pb-1 w-full flex-shrink-0">
         <div className="flex justify-center mb-1.5">
           <div className="w-6 h-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-sm">
             <span className="text-white/80 font-bold text-[9px] tracking-widest">FF</span>
@@ -264,7 +278,7 @@ export function SavingsGoal() {
         </p>
       </div>
 
-      <div className={`flex-1 w-full flex flex-col min-h-0 px-4 overflow-y-auto custom-scrollbar ${isBrowserMode ? 'max-w-6xl' : 'max-w-md'}`}>
+      <div className={`w-full flex flex-col px-4 ${isBrowserMode ? 'max-w-6xl' : 'max-w-md'}`}>
         <div className={isBrowserMode ? "grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-6" : "space-y-6 mb-6"}>
           {/* Left Column / Form Inputs */}
           <div className={isBrowserMode ? "lg:col-span-5 space-y-5" : "space-y-4"}>
