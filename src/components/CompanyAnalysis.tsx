@@ -27,7 +27,10 @@ import {
   ResponsiveContainer, 
   CartesianGrid, 
   AreaChart, 
-  Area 
+  Area,
+  Line,
+  ComposedChart,
+  Legend
 } from 'recharts';
 import { CompanyRecord, CompanyFinancials, AiCompanyDiagnostic, CompanyAuditReport } from '../types/company';
 import { 
@@ -66,6 +69,10 @@ export function CompanyAnalysis() {
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [pdfDownloaded, setPdfDownloaded] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
+
+  // Financial view tab (table or compact charts)
+  const [financialViewTab, setFinancialViewTab] = useState<'table' | 'charts'>('table');
+  const [financialChartMode, setFinancialChartMode] = useState<'revenue_profit' | 'costs' | 'margins'>('revenue_profit');
 
   // Walidacja NIP w locie
   const nipValidation = validateNip(nipInput);
@@ -250,18 +257,20 @@ export function CompanyAnalysis() {
 
   // Chart data preparation
   const chartData = financials?.historical.map(item => ({
-    rok: item.year,
-    przychody: item.revenue / 1000000,
-    koszty: item.operatingCosts / 1000000,
-    ebitda: item.ebitda / 1000000,
-    zyskNetto: item.netProfit / 1000000
+    rok: String(item.year),
+    przychody: Number((item.revenue / 1000000).toFixed(2)),
+    koszty: Number((item.operatingCosts / 1000000).toFixed(2)),
+    ebitda: Number((item.ebitda / 1000000).toFixed(2)),
+    zyskNetto: Number((item.netProfit / 1000000).toFixed(2)),
+    marzaNetto: item.revenue > 0 ? Number(((item.netProfit / item.revenue) * 100).toFixed(1)) : 0,
+    marzaEbitda: item.revenue > 0 ? Number(((item.ebitda / item.revenue) * 100).toFixed(1)) : 0
   })) || [];
 
   const balanceChartData = financials?.historical.map(item => ({
-    rok: item.year,
-    aktywa: item.assets / 1000000,
-    kapitalWlasny: item.equity / 1000000,
-    zobowiazania: item.liabilities / 1000000
+    rok: String(item.year),
+    aktywa: Number((item.assets / 1000000).toFixed(2)),
+    kapitalWlasny: Number((item.equity / 1000000).toFixed(2)),
+    zobowiazania: Number((item.liabilities / 1000000).toFixed(2))
   })) || [];
 
   return (
@@ -673,71 +682,7 @@ export function CompanyAnalysis() {
             ) : null}
           </div>
 
-          {/* 3. CHARTS & FINANCIAL STATEMENTS */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            
-            {/* Chart 1: Revenue vs Costs */}
-            <div className="rounded-3xl p-5 bg-[#16161c] border border-white/10 shadow-xl space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-sm font-bold text-white">Przychody ze sprzedaży vs Koszty</h4>
-                  <p className="text-[11px] text-zinc-400">Wartości w mln PLN za lata 2022–2024</p>
-                </div>
-                <div className="text-xs text-zinc-400 font-semibold flex items-center gap-3">
-                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-[#DC143C]" /> Przychody</span>
-                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-zinc-600" /> Koszty</span>
-                </div>
-              </div>
-
-              <div className="h-64 w-full pt-2">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-                    <XAxis dataKey="rok" stroke="#71717a" fontSize={11} tickLine={false} />
-                    <YAxis stroke="#71717a" fontSize={11} tickLine={false} tickFormatter={(v) => `${v}M`} />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#18181e', borderColor: '#ffffff20', borderRadius: '12px', fontSize: '12px', color: '#fff' }}
-                      formatter={(value: any) => [`${Number(value).toFixed(2)} mln zł`]}
-                    />
-                    <Bar dataKey="przychody" name="Przychody" fill="#DC143C" radius={[6, 6, 0, 0]} />
-                    <Bar dataKey="koszty" name="Koszty operacyjne" fill="#52525b" radius={[6, 6, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Chart 2: Balance Sheet Structure */}
-            <div className="rounded-3xl p-5 bg-[#16161c] border border-white/10 shadow-xl space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-sm font-bold text-white">Struktura Bilansu: Kapitał vs Zobowiązania</h4>
-                  <p className="text-[11px] text-zinc-400">Wartości w mln PLN</p>
-                </div>
-                <div className="text-xs text-zinc-400 font-semibold flex items-center gap-3">
-                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-500" /> Kapitał własny</span>
-                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-amber-500" /> Zobowiązania</span>
-                </div>
-              </div>
-
-              <div className="h-64 w-full pt-2">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={balanceChartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-                    <XAxis dataKey="rok" stroke="#71717a" fontSize={11} tickLine={false} />
-                    <YAxis stroke="#71717a" fontSize={11} tickLine={false} tickFormatter={(v) => `${v}M`} />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#18181e', borderColor: '#ffffff20', borderRadius: '12px', fontSize: '12px', color: '#fff' }}
-                      formatter={(value: any) => [`${Number(value).toFixed(2)} mln zł`]}
-                    />
-                    <Area type="monotone" dataKey="kapitalWlasny" name="Kapitał własny" stroke="#10B981" fill="#10B98125" />
-                    <Area type="monotone" dataKey="zobowiazania" name="Zobowiązania" stroke="#F59E0B" fill="#F59E0B25" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-
-          {/* 4. Full Financial Statement Table */}
+          {/* 3. FULL FINANCIAL STATEMENT & CHARTS (TABBED & COMPACT) */}
           <div className="rounded-3xl p-5 bg-[#16161c] border border-white/10 shadow-xl space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
@@ -748,82 +693,216 @@ export function CompanyAnalysis() {
                 <p className="text-xs text-zinc-400">Dane ze złożonych sprawozdań finansowych w Repozytorium Dokumentów Finansowych (RDF)</p>
               </div>
 
-              <button
-                id="btn-download-pdf-table"
-                onClick={handleDownloadPdf}
-                disabled={downloadingPdf}
-                className="self-start sm:self-auto px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white font-semibold text-xs flex items-center gap-1.5 transition-all shadow-sm"
-                title="Eksportuj pełne zestawienie finansowe do PDF"
-              >
-                <Download size={14} className="text-[#DC143C]" />
-                <span>Eksportuj do PDF</span>
-              </button>
+              {/* View Switcher: Table vs Charts + PDF Button */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="inline-flex rounded-xl bg-black/50 p-1 border border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setFinancialViewTab('table')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      financialViewTab === 'table'
+                        ? 'bg-[#DC143C] text-white shadow-sm'
+                        : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    <FileText size={13} />
+                    <span>Tabela</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFinancialViewTab('charts')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      financialViewTab === 'charts'
+                        ? 'bg-[#DC143C] text-white shadow-sm'
+                        : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    <TrendingUp size={13} />
+                    <span>Wykresy & Trendy</span>
+                  </button>
+                </div>
+
+                <button
+                  id="btn-download-pdf-table"
+                  onClick={handleDownloadPdf}
+                  disabled={downloadingPdf}
+                  className="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white font-semibold text-xs flex items-center gap-1.5 transition-all shadow-sm"
+                  title="Eksportuj pełne zestawienie finansowe do PDF"
+                >
+                  <Download size={14} className="text-[#DC143C]" />
+                  <span className="hidden sm:inline">Eksportuj do PDF</span>
+                  <span className="sm:hidden">PDF</span>
+                </button>
+              </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-zinc-300">
-                <thead className="bg-white/5 uppercase text-[10px] font-black text-zinc-400 border-b border-white/10">
-                  <tr>
-                    <th className="py-3 px-4">Pozycja sprawozdania</th>
-                    <th className="py-3 px-4 text-right">2022</th>
-                    <th className="py-3 px-4 text-right">2023</th>
-                    <th className="py-3 px-4 text-right">2024 (Ostatni)</th>
-                    <th className="py-3 px-4 text-right">Zmiana r/r</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  <tr className="hover:bg-white/5 transition-colors font-semibold text-white">
-                    <td className="py-3 px-4">Przychody netto ze sprzedaży</td>
-                    <td className="py-3 px-4 text-right">{formatPLN(financials.historical[0]?.revenue)}</td>
-                    <td className="py-3 px-4 text-right">{formatPLN(financials.historical[1]?.revenue)}</td>
-                    <td className="py-3 px-4 text-right">{formatPLN(financials.historical[2]?.revenue)}</td>
-                    <td className="py-3 px-4 text-right text-emerald-400 font-bold">+{financials.summary.yoyRevenueGrowth}%</td>
-                  </tr>
-                  <tr className="hover:bg-white/5 transition-colors">
-                    <td className="py-2.5 px-4">Koszty działalności operacyjnej</td>
-                    <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[0]?.operatingCosts)}</td>
-                    <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[1]?.operatingCosts)}</td>
-                    <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[2]?.operatingCosts)}</td>
-                    <td className="py-2.5 px-4 text-right text-zinc-400">-</td>
-                  </tr>
-                  <tr className="hover:bg-white/5 transition-colors font-bold text-emerald-300 bg-emerald-950/10">
-                    <td className="py-2.5 px-4">EBITDA (Wynik operacyjny powiększony o amortyzację)</td>
-                    <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[0]?.ebitda)}</td>
-                    <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[1]?.ebitda)}</td>
-                    <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[2]?.ebitda)}</td>
-                    <td className="py-2.5 px-4 text-right text-emerald-400">Stabilna</td>
-                  </tr>
-                  <tr className="hover:bg-white/5 transition-colors font-semibold text-white">
-                    <td className="py-2.5 px-4">Zysk netto</td>
-                    <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[0]?.netProfit)}</td>
-                    <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[1]?.netProfit)}</td>
-                    <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[2]?.netProfit)}</td>
-                    <td className="py-2.5 px-4 text-right text-emerald-400 font-bold">{financials.summary.netMarginPercent}% marży</td>
-                  </tr>
-                  <tr className="hover:bg-white/5 transition-colors">
-                    <td className="py-2.5 px-4">Aktywa razem (Suma bilansowa)</td>
-                    <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[0]?.assets)}</td>
-                    <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[1]?.assets)}</td>
-                    <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[2]?.assets)}</td>
-                    <td className="py-2.5 px-4 text-right text-zinc-400">-</td>
-                  </tr>
-                  <tr className="hover:bg-white/5 transition-colors">
-                    <td className="py-2.5 px-4">Kapitał własny</td>
-                    <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[0]?.equity)}</td>
-                    <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[1]?.equity)}</td>
-                    <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[2]?.equity)}</td>
-                    <td className="py-2.5 px-4 text-right text-zinc-400">-</td>
-                  </tr>
-                  <tr className="hover:bg-white/5 transition-colors">
-                    <td className="py-2.5 px-4">Zobowiązania ogółem</td>
-                    <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[0]?.liabilities)}</td>
-                    <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[1]?.liabilities)}</td>
-                    <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[2]?.liabilities)}</td>
-                    <td className="py-2.5 px-4 text-right text-zinc-400">-</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            {financialViewTab === 'table' ? (
+              /* TABELA SPRAWOZDANIA FINANSOWEGO */
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-zinc-300">
+                  <thead className="bg-white/5 uppercase text-[10px] font-black text-zinc-400 border-b border-white/10">
+                    <tr>
+                      <th className="py-3 px-4">Pozycja sprawozdania</th>
+                      <th className="py-3 px-4 text-right">2022</th>
+                      <th className="py-3 px-4 text-right">2023</th>
+                      <th className="py-3 px-4 text-right">2024 (Ostatni)</th>
+                      <th className="py-3 px-4 text-right">Zmiana r/r</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    <tr className="hover:bg-white/5 transition-colors font-semibold text-white">
+                      <td className="py-3 px-4">Przychody netto ze sprzedaży</td>
+                      <td className="py-3 px-4 text-right">{formatPLN(financials.historical[0]?.revenue)}</td>
+                      <td className="py-3 px-4 text-right">{formatPLN(financials.historical[1]?.revenue)}</td>
+                      <td className="py-3 px-4 text-right">{formatPLN(financials.historical[2]?.revenue)}</td>
+                      <td className="py-3 px-4 text-right text-emerald-400 font-bold">+{financials.summary.yoyRevenueGrowth}%</td>
+                    </tr>
+                    <tr className="hover:bg-white/5 transition-colors">
+                      <td className="py-2.5 px-4">Koszty działalności operacyjnej</td>
+                      <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[0]?.operatingCosts)}</td>
+                      <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[1]?.operatingCosts)}</td>
+                      <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[2]?.operatingCosts)}</td>
+                      <td className="py-2.5 px-4 text-right text-zinc-400">-</td>
+                    </tr>
+                    <tr className="hover:bg-white/5 transition-colors font-bold text-emerald-300 bg-emerald-950/10">
+                      <td className="py-2.5 px-4">EBITDA (Wynik operacyjny powiększony o amortyzację)</td>
+                      <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[0]?.ebitda)}</td>
+                      <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[1]?.ebitda)}</td>
+                      <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[2]?.ebitda)}</td>
+                      <td className="py-2.5 px-4 text-right text-emerald-400">Stabilna</td>
+                    </tr>
+                    <tr className="hover:bg-white/5 transition-colors font-semibold text-white">
+                      <td className="py-2.5 px-4">Zysk netto</td>
+                      <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[0]?.netProfit)}</td>
+                      <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[1]?.netProfit)}</td>
+                      <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[2]?.netProfit)}</td>
+                      <td className="py-2.5 px-4 text-right text-emerald-400 font-bold">{financials.summary.netMarginPercent}% marży</td>
+                    </tr>
+                    <tr className="hover:bg-white/5 transition-colors">
+                      <td className="py-2.5 px-4">Aktywa razem (Suma bilansowa)</td>
+                      <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[0]?.assets)}</td>
+                      <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[1]?.assets)}</td>
+                      <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[2]?.assets)}</td>
+                      <td className="py-2.5 px-4 text-right text-zinc-400">-</td>
+                    </tr>
+                    <tr className="hover:bg-white/5 transition-colors">
+                      <td className="py-2.5 px-4">Kapitał własny</td>
+                      <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[0]?.equity)}</td>
+                      <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[1]?.equity)}</td>
+                      <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[2]?.equity)}</td>
+                      <td className="py-2.5 px-4 text-right text-zinc-400">-</td>
+                    </tr>
+                    <tr className="hover:bg-white/5 transition-colors">
+                      <td className="py-2.5 px-4">Zobowiązania ogółem</td>
+                      <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[0]?.liabilities)}</td>
+                      <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[1]?.liabilities)}</td>
+                      <td className="py-2.5 px-4 text-right">{formatPLN(financials.historical[2]?.liabilities)}</td>
+                      <td className="py-2.5 px-4 text-right text-zinc-400">-</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              /* KOMPAKTOWE WYKRESY RECHARTS W RAMACH ZAKŁADKI */
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2">
+                
+                {/* Chart 1: Revenue & Profit */}
+                <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                        <TrendingUp size={14} className="text-[#DC143C]" />
+                        <span>Przychody i Wynik Netto</span>
+                      </div>
+                      <div className="text-[10px] text-zinc-400">2022–2024 (w mln PLN)</div>
+                    </div>
+
+                    <div className="inline-flex rounded-lg bg-white/5 p-0.5 border border-white/10 self-start sm:self-auto">
+                      <button
+                        type="button"
+                        onClick={() => setFinancialChartMode('revenue_profit')}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          financialChartMode === 'revenue_profit' ? 'bg-[#DC143C] text-white' : 'text-zinc-400'
+                        }`}
+                      >
+                        Przychody/Zysk
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFinancialChartMode('margins')}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          financialChartMode === 'margins' ? 'bg-[#DC143C] text-white' : 'text-zinc-400'
+                        }`}
+                      >
+                        Marża %
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="h-48 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      {financialChartMode === 'revenue_profit' ? (
+                        <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                          <XAxis dataKey="rok" stroke="#71717a" fontSize={10} tickLine={false} />
+                          <YAxis stroke="#71717a" fontSize={10} tickLine={false} tickFormatter={(v) => `${v}M`} />
+                          <Tooltip 
+                            contentStyle={{ backgroundColor: '#18181e', borderColor: '#ffffff20', borderRadius: '8px', fontSize: '11px', color: '#fff' }}
+                            formatter={(value: any, name: string) => [
+                              `${Number(value).toFixed(2)} mln zł`,
+                              name === 'przychody' ? 'Przychody' : name === 'zyskNetto' ? 'Zysk Netto' : 'EBITDA'
+                            ]}
+                          />
+                          <Bar dataKey="przychody" name="przychody" fill="#DC143C" radius={[4, 4, 0, 0]} maxBarSize={35} />
+                          <Line type="monotone" dataKey="zyskNetto" name="zyskNetto" stroke="#34D399" strokeWidth={2.5} dot={{ r: 4, fill: '#10B981' }} />
+                        </ComposedChart>
+                      ) : (
+                        <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                          <XAxis dataKey="rok" stroke="#71717a" fontSize={10} tickLine={false} />
+                          <YAxis stroke="#71717a" fontSize={10} tickLine={false} tickFormatter={(v) => `${v}%`} />
+                          <Tooltip 
+                            contentStyle={{ backgroundColor: '#18181e', borderColor: '#ffffff20', borderRadius: '8px', fontSize: '11px', color: '#fff' }}
+                            formatter={(value: any) => [`${Number(value).toFixed(1)}%`, 'Marża Netto']}
+                          />
+                          <Line type="monotone" dataKey="marzaNetto" name="marzaNetto" stroke="#34D399" strokeWidth={2.5} dot={{ r: 4, fill: '#10B981' }} />
+                        </ComposedChart>
+                      )}
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Chart 2: Balance structure */}
+                <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-3">
+                  <div>
+                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Landmark size={14} className="text-emerald-400" />
+                      <span>Kapitał Własny vs Zobowiązania</span>
+                    </div>
+                    <div className="text-[10px] text-zinc-400">Pasywa bilansowe w mln PLN</div>
+                  </div>
+
+                  <div className="h-48 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={balanceChartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                        <XAxis dataKey="rok" stroke="#71717a" fontSize={10} tickLine={false} />
+                        <YAxis stroke="#71717a" fontSize={10} tickLine={false} tickFormatter={(v) => `${v}M`} />
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: '#18181e', borderColor: '#ffffff20', borderRadius: '8px', fontSize: '11px', color: '#fff' }}
+                          formatter={(value: any, name: string) => [
+                            `${Number(value).toFixed(2)} mln zł`,
+                            name === 'kapitalWlasny' ? 'Kapitał własny' : 'Zobowiązania'
+                          ]}
+                        />
+                        <Area type="monotone" dataKey="kapitalWlasny" name="kapitalWlasny" stroke="#10B981" fill="#10B98120" />
+                        <Area type="monotone" dataKey="zobowiazania" name="zobowiazania" stroke="#F59E0B" fill="#F59E0B20" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* 5. Board Members & Legal Representation */}

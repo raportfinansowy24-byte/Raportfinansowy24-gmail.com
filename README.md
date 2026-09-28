@@ -1,4 +1,4 @@
-# Raport-Finansowy24.pl 🚀
+# Financial Freedom - My to Sukces 🚀
 
 Zaawansowana aplikacja internetowa do symulacji finansowych i generowania spersonalizowanych ofert przy użyciu AI. Projekt pozwala na kalkulację kredytów, symulację hipotek, planowanie oszczędności.  
 

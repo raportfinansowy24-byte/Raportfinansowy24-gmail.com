@@ -14,6 +14,7 @@ export const PrivacyPolicy = ({ onClose }: { onClose: () => void }) => (
         <h1 className="text-white font-bold text-lg">Polityka prywatności</h1>
         <p>Dane są przetwarzane przez Raport Finansowy 24 Sp. z o.o.</p>
         <p>Email: raportfinansowy24@gmail.com</p>
+        <p>Telefon: +49 177 8466985</p>
       </div>
     </div>
   </div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Calculator, Home, PiggyBank, ShieldAlert, Building2, ArrowRight } from 'lucide-react';
+import { Calculator, Home, PiggyBank, ShieldAlert, Building2, ArrowRight, Mail, Phone } from 'lucide-react';
 
 export const Header = () => {
   const location = useLocation();
@@ -103,6 +103,29 @@ export const Footer = ({ onPrivacyClick, onTermsClick }: { onPrivacyClick: () =>
           <p className="text-[11px] text-zinc-400">
             © {new Date().getFullYear()} RaportFinansowy24.pl – Niezależna analityka finansowa i algorytmy AI.
           </p>
+        </div>
+
+        {/* Contact info: Email & Phone */}
+        <div className="flex items-center gap-4 text-[11px] flex-wrap justify-center">
+          <a 
+            href="mailto:raportfinansowy24@gmail.com" 
+            className="flex items-center gap-1.5 text-zinc-300 hover:text-white transition-colors"
+            title="Napisz do nas"
+          >
+            <Mail size={13} className="text-[#DC143C]" />
+            <span>raportfinansowy24@gmail.com</span>
+          </a>
+
+          <span className="text-white/20 hidden sm:inline">•</span>
+
+          <a 
+            href="tel:+491778466985" 
+            className="flex items-center gap-1.5 text-zinc-300 hover:text-white transition-colors"
+            title="Zadzwoń do nas"
+          >
+            <Phone size={13} className="text-[#DC143C]" />
+            <span>+49 177 8466985</span>
+          </a>
         </div>
 
         <div className="flex items-center gap-4 text-[11px]">
