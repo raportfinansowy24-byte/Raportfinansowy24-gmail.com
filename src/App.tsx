@@ -1,9 +1,11 @@
-import React, { useState, Suspense, lazy } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter, useLocation, useNavigate } from 'react-router-dom';
 import { Header, Footer } from './components/Layout';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { Terms } from './components/Terms';
 import { Chatbot } from './components/Chatbot';
+import { ReferralModal } from './components/ReferralModal';
+import { ReferralBanner } from './components/ReferralBanner';
 import { Calculator, Home as HomeIcon, PiggyBank, ShieldAlert, Building2 } from 'lucide-react';
 import { ThemeProvider } from './context/ThemeContext';
 import { ViewModeProvider } from './context/ViewModeContext';
@@ -15,7 +17,6 @@ const FinancialProtocolFunnel = lazy(() => import('./components/FinancialProtoco
 const LoanCalculator = lazy(() => import('./components/LoanCalculator').then(m => ({ default: m.LoanCalculator })));
 const MortgageSimulator = lazy(() => import('./components/MortgageSimulator').then(m => ({ default: m.MortgageSimulator })));
 const SavingsGoal = lazy(() => import('./components/SavingsGoal').then(m => ({ default: m.SavingsGoal })));
-const NotificationSystem = lazy(() => import('./components/NotificationSystem').then(m => ({ default: m.NotificationSystem })));
 
 function AppContent() {
   const location = useLocation();
@@ -32,32 +33,28 @@ function AppContent() {
     { label: 'Hipoteka', path: '/mortgage', active: isMortgageActive, icon: HomeIcon },
     { label: 'Oszczędź', path: '/savings', active: isSavingsActive, icon: PiggyBank },
     { label: 'Protokół', path: '/protokol', active: isProtocolActive, icon: ShieldAlert },
-    { label: 'Firma / NIP', path: '/firma', active: isCompanyActive, icon: Building2 },
+    { label: 'NIP / KRS', path: '/firma', active: isCompanyActive, icon: Building2 },
   ];
 
   return (
-    <div className="relative z-20 w-full flex-1 flex flex-col mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-3 sm:py-6">
+    <div className="relative z-20 w-full flex-1 flex flex-col mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-2.5 sm:py-6 pb-20 sm:pb-8">
       <Suspense fallback={<div className="flex items-center justify-center h-64 text-zinc-400 text-sm">Ładowanie modułu finansowego...</div>}>
-        <div className="absolute top-4 right-4 z-50">
-          <NotificationSystem />
-        </div>
-
         {/* Mobile Navigation Bar (visible on small screens < md) */}
-        <div className="md:hidden flex items-center justify-between gap-1 p-1.5 mb-4 rounded-2xl bg-[#121216] border border-white/[0.08] shadow-lg">
+        <div className="md:hidden grid grid-cols-5 gap-1 p-1 mb-3.5 rounded-2xl bg-[#121216]/95 backdrop-blur-md border border-white/[0.08] shadow-lg">
           {mobileNavItems.map((item) => {
             const Icon = item.icon;
             return (
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`flex-1 flex flex-col items-center justify-center py-2 rounded-xl transition-all ${
+                className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl transition-all cursor-pointer ${
                   item.active
-                    ? 'bg-[#DC143C] text-white shadow-sm'
-                    : 'text-zinc-400 hover:text-zinc-200'
+                    ? 'bg-[#DC143C] text-white shadow-sm shadow-[#DC143C]/30'
+                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03]'
                 }`}
               >
-                <Icon size={15} className="mb-0.5" />
-                <span className="text-[9px] font-bold uppercase tracking-wider">{item.label}</span>
+                <Icon size={16} className="mb-0.5" />
+                <span className="text-[9px] font-bold tracking-tight truncate w-full text-center">{item.label}</span>
               </button>
             );
           })}
@@ -148,14 +145,27 @@ function AppContent() {
 function AppLayout() {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
+  const [showReferral, setShowReferral] = useState(false);
+
+  useEffect(() => {
+    const handleOpenReferral = () => setShowReferral(true);
+    window.addEventListener('open_referral_modal', handleOpenReferral);
+    return () => window.removeEventListener('open_referral_modal', handleOpenReferral);
+  }, []);
 
   return (
     <main className="relative min-h-screen w-full flex flex-col bg-[#09090b] text-zinc-100 selection:bg-[#DC143C] selection:text-white">
-      <Header />
+      <ReferralBanner onOpenModal={() => setShowReferral(true)} />
+      <Header onOpenReferral={() => setShowReferral(true)} />
       <AppContent />
-      <Footer onPrivacyClick={() => setShowPrivacy(true)} onTermsClick={() => setShowTerms(true)} />
+      <Footer 
+        onPrivacyClick={() => setShowPrivacy(true)} 
+        onTermsClick={() => setShowTerms(true)} 
+        onOpenReferral={() => setShowReferral(true)}
+      />
       {showPrivacy && <PrivacyPolicy onClose={() => setShowPrivacy(false)} />}
       {showTerms && <Terms onClose={() => setShowTerms(false)} />}
+      <ReferralModal isOpen={showReferral} onClose={() => setShowReferral(false)} />
       <Chatbot />
     </main>
   );

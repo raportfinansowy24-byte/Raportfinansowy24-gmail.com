@@ -1,10 +1,21 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Calculator, Home, PiggyBank, ShieldAlert, Building2, ArrowRight, Mail, Phone } from 'lucide-react';
+import { 
+  Calculator, Home, PiggyBank, ShieldAlert, Building2, 
+  ArrowRight, Mail, Phone, Gift, Crown, Sparkles 
+} from 'lucide-react';
+import { referralService, ReferralState } from '../services/referral.service';
+import { NotificationSystem } from './NotificationSystem';
 
-export const Header = () => {
+export const Header = ({ onOpenReferral }: { onOpenReferral?: () => void }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [refState, setRefState] = useState<ReferralState>(referralService.getState());
+
+  useEffect(() => {
+    const unsub = referralService.subscribe(setRefState);
+    return () => unsub();
+  }, []);
 
   const isHomeActive = location.pathname === '/';
   const isCompanyActive = location.pathname === '/firma' || location.pathname === '/spolka' || location.pathname === '/krs' || location.pathname === '/analiza-firmy';
@@ -22,22 +33,22 @@ export const Header = () => {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full transition-colors duration-300 border-b border-white/[0.08] bg-[#09090b]/85 backdrop-blur-xl">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-50 w-full transition-colors duration-300 border-b border-white/[0.08] bg-[#09090b]/90 backdrop-blur-xl">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
         {/* Brand Logo */}
         <div 
           onClick={() => navigate('/')}
-          className="flex items-center gap-2.5 cursor-pointer group select-none shrink-0"
+          className="flex items-center gap-2 cursor-pointer group select-none shrink-0"
         >
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#DC143C] to-[#8B0000] flex items-center justify-center font-black text-white text-sm shadow-md shadow-[#DC143C]/20 group-hover:scale-105 transition-transform">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-br from-[#DC143C] to-[#8B0000] flex items-center justify-center font-black text-white text-xs sm:text-sm shadow-md shadow-[#DC143C]/20 group-hover:scale-105 transition-transform">
             24
           </div>
           <div className="flex flex-col">
-            <span className="text-base sm:text-lg font-black text-white tracking-wider font-montserrat uppercase leading-none">
+            <span className="text-sm sm:text-base md:text-lg font-black text-white tracking-wider font-montserrat uppercase leading-none">
               RaportFinansowy<span className="text-[#DC143C]">24</span>
             </span>
-            <span className="text-[9px] text-zinc-400 font-medium tracking-widest uppercase">
-              Fintech & AI Analytics
+            <span className="text-[8px] sm:text-[9px] text-zinc-400 font-medium tracking-widest uppercase">
+              Fintech & AI
             </span>
           </div>
         </div>
@@ -63,26 +74,51 @@ export const Header = () => {
           })}
         </nav>
 
-        {/* Right CTA */}
-        <div className="flex items-center gap-2 shrink-0">
+        {/* Right CTA, Referral & Notification */}
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {/* Notifications in header */}
+          <div className="flex items-center">
+            <NotificationSystem />
+          </div>
+
+          {/* Viral Referral Program Button */}
+          <button
+            onClick={onOpenReferral}
+            className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer active:scale-95 shadow-sm"
+            title="Program Poleceń - Odbierz Raporty Premium"
+          >
+            <Gift size={13} className="text-amber-400 animate-bounce" />
+            <span className="hidden sm:inline">Poleć</span>
+            {refState.isVipUnlimited ? (
+              <span className="px-1 py-0.2 text-[8px] sm:text-[9px] bg-gradient-to-r from-amber-400 to-amber-600 text-black font-black rounded uppercase flex items-center gap-0.5">
+                <Crown size={8} /> VIP
+              </span>
+            ) : (
+              <span className="px-1.5 py-0.2 text-[8px] sm:text-[9px] bg-[#DC143C] text-white font-black rounded-full shadow-sm">
+                +{refState.premiumCredits}
+              </span>
+            )}
+          </button>
+
+          {/* Right Action Button */}
           <button
             onClick={() => navigate(isCompanyActive ? '/loan' : '/firma')}
-            className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold text-white bg-white/[0.07] hover:bg-white/[0.12] border border-white/[0.12] transition-all cursor-pointer active:scale-95"
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold text-white bg-white/[0.07] hover:bg-white/[0.12] border border-white/[0.12] transition-all cursor-pointer active:scale-95"
           >
             {isCompanyActive ? (
               <>
-                <Calculator size={14} className="text-[#DC143C]" />
+                <Calculator size={13} className="text-[#DC143C]" />
                 <span className="hidden sm:inline">Kalkulator rat</span>
                 <span className="sm:hidden">Kalkulator</span>
               </>
             ) : (
               <>
-                <Building2 size={14} className="text-[#DC143C]" />
-                <span className="hidden sm:inline">Sprawdź firmę po NIP</span>
-                <span className="sm:hidden">Audyt NIP</span>
+                <Building2 size={13} className="text-[#DC143C]" />
+                <span className="hidden sm:inline">Sprawdź NIP</span>
+                <span className="sm:hidden">NIP</span>
               </>
             )}
-            <ArrowRight size={13} className="text-zinc-400" />
+            <ArrowRight size={11} className="text-zinc-400 hidden xs:inline" />
           </button>
         </div>
       </div>
@@ -90,7 +126,15 @@ export const Header = () => {
   );
 };
 
-export const Footer = ({ onPrivacyClick, onTermsClick }: { onPrivacyClick: () => void, onTermsClick: () => void }) => {
+export const Footer = ({ 
+  onPrivacyClick, 
+  onTermsClick,
+  onOpenReferral
+}: { 
+  onPrivacyClick: () => void; 
+  onTermsClick: () => void;
+  onOpenReferral?: () => void;
+}) => {
   return (
     <footer className="w-full py-8 px-4 sm:px-6 lg:px-8 bg-[#070709] border-t border-white/[0.08] text-zinc-400 text-xs mt-auto">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
@@ -128,7 +172,19 @@ export const Footer = ({ onPrivacyClick, onTermsClick }: { onPrivacyClick: () =>
           </a>
         </div>
 
-        <div className="flex items-center gap-4 text-[11px]">
+        <div className="flex items-center gap-4 text-[11px] flex-wrap justify-center">
+          {onOpenReferral && (
+            <>
+              <button 
+                onClick={onOpenReferral} 
+                className="text-amber-300 hover:text-amber-200 transition-colors cursor-pointer font-bold flex items-center gap-1"
+              >
+                <Gift size={12} className="text-amber-400" />
+                <span>Program Poleceń (Zyskaj Premium)</span>
+              </button>
+              <span className="text-white/20">|</span>
+            </>
+          )}
           <button 
             onClick={onPrivacyClick} 
             className="hover:text-white transition-colors underline cursor-pointer"

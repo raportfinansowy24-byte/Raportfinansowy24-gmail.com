@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Copy, Check, Bot, Download, FileText, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { ReportFeedbackSurvey } from './ReportFeedbackSurvey';
 
 interface FinancialReportModalProps {
   isOpen: boolean;
@@ -78,10 +79,17 @@ export function FinancialReportModal({
           </div>
 
           {/* Report Body */}
-          <div className="p-4 flex-1 overflow-y-auto custom-scrollbar bg-black/40">
+          <div className="p-4 flex-1 overflow-y-auto custom-scrollbar bg-black/40 space-y-4">
             <div className="bg-zinc-900/80 border border-white/10 rounded-xl p-4 font-mono text-xs text-zinc-200 whitespace-pre-wrap leading-relaxed selection:bg-[#DC143C] selection:text-white">
               {reportText}
             </div>
+
+            {/* Ankieta przydatności raportu */}
+            <ReportFeedbackSurvey 
+              reportType="financial_plan"
+              targetName={title}
+              className="mt-2"
+            />
           </div>
 
           {/* Actions */}

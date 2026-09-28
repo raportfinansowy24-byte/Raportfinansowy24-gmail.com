@@ -13,7 +13,9 @@ import {
   Sparkles,
   CheckCircle2,
   ChevronRight,
-  Globe
+  Globe,
+  Gift,
+  Crown
 } from 'lucide-react';
 import { fetchOffersFromApi } from '../services/apiClient';
 import { validateNip, cleanNip, formatNip } from '../services/companyClient';
@@ -177,20 +179,20 @@ export function Home() {
         </p>
 
         {/* Dwa główne CTA: Primary & Secondary */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5 sm:gap-3.5 max-w-md mx-auto w-full">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2 sm:gap-3.5 max-w-md mx-auto w-full">
           <button
             onClick={() => navigate('/loan')}
-            className="min-h-[48px] px-6 py-3.5 rounded-xl bg-[#DC143C] hover:bg-[#b01030] text-white font-bold text-sm sm:text-base transition-all duration-200 shadow-md shadow-[#DC143C]/20 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+            className="min-h-[44px] sm:min-h-[48px] px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl bg-[#DC143C] hover:bg-[#b01030] text-white font-bold text-sm sm:text-base transition-all duration-200 shadow-md shadow-[#DC143C]/20 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
           >
             <span>Potrzebuję finansowania</span>
-            <ArrowRight size={17} />
+            <ArrowRight size={16} />
           </button>
           
           <button
             onClick={() => navigate('/firma')}
-            className="min-h-[48px] px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white font-bold text-sm sm:text-base transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+            className="min-h-[44px] sm:min-h-[48px] px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white font-bold text-sm sm:text-base transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
           >
-            <Building2 size={17} className="text-zinc-300" />
+            <Building2 size={16} className="text-zinc-300" />
             <span>Sprawdzam firmę</span>
           </button>
         </div>
@@ -600,6 +602,44 @@ export function Home() {
             className="min-h-[44px] w-full sm:w-auto px-5 py-2.5 rounded-xl bg-white/10 hover:bg-[#DC143C] text-white font-bold text-xs sm:text-sm transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 shrink-0 active:scale-95 focus-visible:ring-2 focus-visible:ring-[#DC143C] focus-visible:outline-none"
           >
             <span>Uruchom audyt</span>
+            <ArrowRight size={14} />
+          </button>
+        </div>
+      </section>
+
+      {/* ========================================================
+          SEKCJA VIRAL — PROGRAM POLECEŃ (Zyskaj Raporty Premium)
+          ======================================================== */}
+      <section className="max-w-4xl mx-auto w-full px-4">
+        <div className="relative overflow-hidden p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-[#1c1216] via-[#16161d] to-[#111116] border border-[#DC143C]/30 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-[#DC143C]/10 rounded-full blur-2xl pointer-events-none" />
+
+          <div className="flex items-start gap-3.5 relative z-10">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#DC143C] to-[#8B0000] flex items-center justify-center text-white shrink-0 shadow-lg shadow-[#DC143C]/30 mt-0.5">
+              <Gift size={22} className="animate-bounce" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30 flex items-center gap-1">
+                  <Crown size={10} /> Program Poleceń
+                </span>
+                <span className="text-xs text-emerald-400 font-semibold">+2 Raporty za znajomego</span>
+              </div>
+              <h2 className="text-base sm:text-lg font-black text-white tracking-tight mt-1">
+                Polecaj i Odbieraj Raporty Premium B2B
+              </h2>
+              <p className="text-xs text-zinc-300 mt-0.5 leading-relaxed max-w-lg">
+                Zyskaj nielimitowany dostęp do oficjalnych audytów PDF i wskaźników ryzyka upadłości Altman Z-Score. Każde polecenie daje darmowe raporty dla Ciebie i znajomego.
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('open_referral_modal'))}
+            className="min-h-[44px] w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:opacity-95 text-black font-black text-xs sm:text-sm transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 shrink-0 active:scale-95 shadow-md shadow-amber-500/20 relative z-10"
+          >
+            <Gift size={15} />
+            <span>Twój kod & bonus</span>
             <ArrowRight size={14} />
           </button>
         </div>

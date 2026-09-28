@@ -16,7 +16,12 @@ import {
   Sparkles,
   RefreshCw,
   Check,
-  ChevronRight
+  ChevronRight,
+  Gift,
+  Crown,
+  Lock,
+  Unlock,
+  Share2
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -42,6 +47,8 @@ import {
   cleanNip,
   formatNip
 } from '../services/companyClient';
+import { referralService, ReferralState } from '../services/referral.service';
+import { ReportFeedbackSurvey } from './ReportFeedbackSurvey';
 import { useTheme } from '../context/ThemeContext';
 
 export function CompanyAnalysis() {
@@ -73,6 +80,70 @@ export function CompanyAnalysis() {
   // Financial view tab (table or compact charts)
   const [financialViewTab, setFinancialViewTab] = useState<'table' | 'charts'>('table');
   const [financialChartMode, setFinancialChartMode] = useState<'revenue_profit' | 'costs' | 'margins'>('revenue_profit');
+
+  // Viral Referral & Premium reports state
+  const [referralState, setReferralState] = useState<ReferralState>(referralService.getState());
+  const [unlockToast, setUnlockToast] = useState<{ message: string; success: boolean } | null>(null);
+
+  useEffect(() => {
+    const unsub = referralService.subscribe(setReferralState);
+    return () => unsub();
+  }, []);
+
+  const isReportUnlocked = company ? referralService.hasPremiumAccess(company.nip) : false;
+
+  const calculateAltmanScore = (fin: CompanyFinancials) => {
+    const rev = fin.summary.revenue || 1;
+    const ebitda = fin.summary.ebitda || 0;
+    const netProfit = fin.summary.netProfit || 0;
+    const assets = fin.summary.totalAssets || rev * 0.8;
+    const equity = fin.summary.equity || assets * 0.5;
+    const liabilities = fin.summary.liabilities || Math.max(1, assets - equity);
+    const currentRatio = fin.summary.currentRatio || 1.2;
+
+    // Model E. Mączyńskiej dla polskich przedsiębiorstw:
+    // Z = 1.5*X1 + 0.08*X2 + 10*X3 + 0.1*X4 + 0.1*X5
+    const x1 = assets > 0 ? (ebitda / assets) : 0;
+    const x2 = assets > 0 ? (equity / assets) : 0;
+    const x3 = liabilities > 0 ? ((netProfit + ebitda * 0.2) / liabilities) : 0;
+    const x4 = currentRatio;
+    const x5 = assets > 0 ? (rev / assets) : 1;
+
+    const z = (1.5 * x1) + (0.08 * x2) + (10 * x3) + (0.1 * x4) + (0.1 * x5);
+    const roundedZ = Math.round(z * 100) / 100;
+
+    let zone: 'safe' | 'warning' | 'danger' = 'safe';
+    let zoneLabel = 'Strefa Bezpieczna (Bardzo niskie ryzyko)';
+    let zoneColor = 'text-emerald-400';
+    let zoneBg = 'bg-emerald-950/20 border-emerald-500/30';
+
+    if (roundedZ < 0) {
+      zone = 'danger';
+      zoneLabel = 'Strefa Ryzyka Niewypłacalności';
+      zoneColor = 'text-rose-400';
+      zoneBg = 'bg-rose-950/20 border-rose-500/30';
+    } else if (roundedZ < 0.6) {
+      zone = 'warning';
+      zoneLabel = 'Strefa Ostrzegawcza (Średnie ryzyko)';
+      zoneColor = 'text-amber-400';
+      zoneBg = 'bg-amber-950/20 border-amber-500/30';
+    }
+
+    return { score: roundedZ, zone, zoneLabel, zoneColor, zoneBg };
+  };
+
+  const handleUnlockCurrentReport = () => {
+    if (!company) return;
+    if (isReportUnlocked) return;
+
+    if (referralState.premiumCredits > 0) {
+      const res = referralService.unlockReportForNip(company.nip);
+      setUnlockToast({ message: res.message, success: res.success });
+      setTimeout(() => setUnlockToast(null), 4000);
+    } else {
+      window.dispatchEvent(new CustomEvent('open_referral_modal'));
+    }
+  };
 
   // Walidacja NIP w locie
   const nipValidation = validateNip(nipInput);
@@ -165,6 +236,23 @@ export function CompanyAnalysis() {
 
   const handleDownloadPdf = () => {
     if (!company || !financials) return;
+
+    // Sprawdzenie uprawnień Premium
+    if (!isReportUnlocked && !referralState.isVipUnlimited) {
+      if (referralState.premiumCredits > 0) {
+        // Zużyj kredyt automatycznie na ten raport
+        const unlockRes = referralService.unlockReportForNip(company.nip);
+        setUnlockToast({ message: unlockRes.message, success: unlockRes.success });
+        setTimeout(() => setUnlockToast(null), 4000);
+      } else {
+        // Brak kredytów - otwórz program poleceń
+        setPdfError('Pobieranie oficjalnego certyfikowanego audytu PDF jest dostępne w wersji Premium. Odbierz darmowy kredyt polecając znajomego!');
+        setTimeout(() => setPdfError(null), 5000);
+        window.dispatchEvent(new CustomEvent('open_referral_modal'));
+        return;
+      }
+    }
+
     setDownloadingPdf(true);
     try {
       const effectiveDiagnostic: AiCompanyDiagnostic = diagnostic || {
@@ -468,6 +556,27 @@ export function CompanyAnalysis() {
 
               {/* Action Buttons */}
               <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+                {/* Premium Report Status & Unlock Button */}
+                {isReportUnlocked || referralState.isVipUnlimited ? (
+                  <div className="px-3.5 py-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 font-bold text-xs flex items-center gap-1.5 shadow-sm">
+                    <Crown size={14} className="text-amber-400" />
+                    <span>Raport Premium Odblokowany</span>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleUnlockCurrentReport}
+                    className="px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:opacity-95 text-black font-black text-xs flex items-center gap-1.5 shadow-[0_0_15px_rgba(245,158,11,0.25)] transition-all cursor-pointer active:scale-95"
+                    title="Odblokuj pełny audyt Altman Z-Score i certyfikowany PDF"
+                  >
+                    <Sparkles size={14} />
+                    <span>
+                      {referralState.premiumCredits > 0
+                        ? `Odblokuj Raport (${referralState.premiumCredits} darmowych)`
+                        : 'Odblokuj Raport (Poleć znajomemu)'}
+                    </span>
+                  </button>
+                )}
+
                 <button
                   id="btn-download-pdf-main"
                   onClick={handleDownloadPdf}
@@ -507,6 +616,18 @@ export function CompanyAnalysis() {
                 </button>
               </div>
             </div>
+
+            {/* Unlock Feedback Toast */}
+            {unlockToast && (
+              <div className={`p-3 rounded-xl border text-xs flex items-center gap-2 mb-4 animate-fade-in ${
+                unlockToast.success 
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                  : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+              }`}>
+                <CheckCircle2 size={16} className={unlockToast.success ? "text-emerald-400 shrink-0" : "text-rose-400 shrink-0"} />
+                <span>{unlockToast.message}</span>
+              </div>
+            )}
 
             {/* PDF Downloaded confirmation banner */}
             {pdfDownloaded && (
@@ -678,6 +799,70 @@ export function CompanyAnalysis() {
                     </div>
                   </div>
                 </div>
+
+                {/* 2.1 Premium Module: Altman Z-Score & Bankruptcy Risk Index */}
+                {(() => {
+                  const altman = calculateAltmanScore(financials);
+                  const isUnlocked = isReportUnlocked || referralState.isVipUnlimited;
+
+                  return (
+                    <div className={`p-4 sm:p-5 rounded-2xl border transition-all ${isUnlocked ? altman.zoneBg : 'bg-black/40 border-amber-500/20'}`}>
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[10px] uppercase font-black tracking-wider text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30 flex items-center gap-1">
+                              <Crown size={11} /> Moduł Raportu Premium
+                            </span>
+                            <span className="text-xs font-bold text-white">Indeks Ryzyka Niewypłacalności (Polski Model Altmana Z-Score)</span>
+                          </div>
+                          <p className="text-[11px] text-zinc-400 max-w-xl">
+                            Wieloczynnikowa analiza prawdopodobieństwa upadłości wg modelu prof. E. Mączyńskiej (Instytut Nauk Ekonomicznych PAN).
+                          </p>
+                        </div>
+
+                        {isUnlocked ? (
+                          <div className="flex items-center gap-3 shrink-0 bg-black/60 px-4 py-2.5 rounded-xl border border-white/10">
+                            <div className="text-right">
+                              <div className="text-[10px] text-zinc-400 font-bold uppercase">Wskaźnik Z-Score</div>
+                              <div className={`text-xl font-black ${altman.zoneColor}`}>{altman.score}</div>
+                            </div>
+                            <div className="border-l border-white/10 pl-3">
+                              <div className="text-[10px] text-zinc-400 uppercase font-bold">Ocena Ryzyka</div>
+                              <div className={`text-xs font-bold ${altman.zoneColor}`}>{altman.zoneLabel}</div>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={handleUnlockCurrentReport}
+                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:opacity-95 text-black font-black text-xs shadow-md shadow-amber-500/20 cursor-pointer active:scale-95 shrink-0"
+                          >
+                            <Lock size={13} />
+                            <span>
+                              {referralState.premiumCredits > 0
+                                ? `Odblokuj Z-Score (1 kredyt)`
+                                : `Odblokuj za darmo (Poleć znajomemu)`}
+                            </span>
+                          </button>
+                        )}
+                      </div>
+
+                      {!isUnlocked && (
+                        <div className="mt-3 pt-3 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-zinc-400">
+                          <span className="flex items-center gap-1.5">
+                            <Gift size={13} className="text-[#DC143C]" />
+                            Dostępne kredyty Premium na Twoim koncie: <strong className="text-white">{referralState.premiumCredits}</strong>
+                          </span>
+                          <button
+                            onClick={() => window.dispatchEvent(new CustomEvent('open_referral_modal'))}
+                            className="text-amber-300 hover:underline font-bold text-left sm:text-right cursor-pointer"
+                          >
+                            Zaproś znajomego i odbierz +2 darmowe kredyty →
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             ) : null}
           </div>
@@ -966,6 +1151,13 @@ export function CompanyAnalysis() {
               </div>
             </div>
           )}
+
+          {/* 7. Ocena Przydatności Raportu & Przycisk "Podziel się sukcesem" */}
+          <ReportFeedbackSurvey 
+            reportType="company_audit"
+            targetName={company.name}
+            targetNip={company.nip}
+          />
 
         </div>
       )}

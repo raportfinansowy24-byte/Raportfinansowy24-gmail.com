@@ -207,9 +207,11 @@ export function Chatbot() {
       {/* Floating Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-6 right-6 w-14 h-14 bg-[#DC143C] text-white rounded-full shadow-[0_0_20px_rgba(220,20,60,0.4)] flex items-center justify-center hover:scale-110 transition-transform z-50 ${isOpen ? 'hidden' : 'flex'}`}
+        className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-12 h-12 sm:w-14 sm:h-14 bg-[#DC143C] text-white rounded-full shadow-[0_0_20px_rgba(220,20,60,0.4)] flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-40 cursor-pointer ${isOpen ? 'hidden' : 'flex'}`}
+        title="Otwórz Doradcę AI"
       >
-        <MessageSquare size={24} />
+        <MessageSquare size={20} className="sm:hidden" />
+        <MessageSquare size={24} className="hidden sm:inline" />
       </button>
 
       {/* Chat Window */}
