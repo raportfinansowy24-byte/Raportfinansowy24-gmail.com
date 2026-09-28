@@ -18,7 +18,7 @@ export const Terms = ({ onClose }: { onClose: () => void }) => (
         <p>Użytkownik zobowiązuje się do korzystania z serwisu zgodnie z prawem i zasadami współżycia społecznego.</p>
 
         <h4 className="text-white font-bold">3. Odpowiedzialność</h4>
-        <p>RaportFinansowy24 Sp. z o.o. nie ponosi odpowiedzialności za decyzje finansowe podejmowane przez użytkowników na podstawie informacji zawartych w serwisie.</p>
+        <p>Serwis RaportFinansowy24 nie ponosi odpowiedzialności za decyzje finansowe podejmowane przez użytkowników na podstawie informacji zawartych w serwisie. Prezentowane materiały i kalkulacje mają charakter wyłącznie informacyjny i analityczny.</p>
       </div>
     </div>
   </div>
