@@ -30,7 +30,7 @@ Zaawansowana aplikacja internetowa do symulacji finansowych i generowania sperso
 
 4. **💰 Planowanie Oszczędności (Savings Goal):**
    - Wizualizacja postępów we wdrażaniu celu finansowego.
-   - Kalkulator rat, które pomogą osiagnąć wyznaczony target np. dla emerytury, kupna auta.
+   - Kalkulator rat, które pomogą osiągnąć wyznaczony cel, np. na emeryturę lub zakup auta.
 
 5. **🤖 Asystent AI / Chatbot (Gemini API):**
    - Zintegrowany Chat widoczny na wszystkich ekranach z możliwością minimalizacji.
@@ -43,7 +43,7 @@ Zaawansowana aplikacja internetowa do symulacji finansowych i generowania sperso
 
 ---
 
-## 📁 Struktura Plików Projekowych
+## 📁 Struktura plików projektu
 
 ```text
 ├── .env.example                # Szablony kluczy powiązanych z bazą (Supabase/Firebase) i AI (Gemini)
@@ -64,7 +64,7 @@ Zaawansowana aplikacja internetowa do symulacji finansowych i generowania sperso
 │   ├── lib/                    # Interfejs bazodanowy i storage np. Supabase
 │   ├── server/                 # Backend node w technologii Express 
 │   │   ├── router.ts           # Definicje endpointów API
-│   │   ├── scraper.ts          # Integracje zewnętrzne - web scrapping 
+│   │   ├── scraper.ts          # Integracje zewnętrzne — web scraping
 │   │   └── tracker.ts          # Moduł statystyk
 │   ├── services/               # Serwisy odpowiedzialne za logikę biznesową, API do usług zew.:
 │   │   ├── affiliate.service.ts
@@ -86,23 +86,23 @@ Zaawansowana aplikacja internetowa do symulacji finansowych i generowania sperso
 Poniżej znajduje się przestrzeń na umieszczenie widoków z aplikacji. *(W edytorze GitHub przeciągnij obrazy, aby je automatycznie załadować).*
 
 ### 1. Panel Kalkulatora Kredytowego
-![Screenshot-Kredyty]() 
+<!-- TODO: dodać zrzut ekranu kalkulatora kredytowego -->
 *(Przeciągnij swój plik obrazka dla Kalkulatora tutaj)*
 
 ### 2. Panel Symulatora Hipoteki
-![Screenshot-Hipoteka]()
+<!-- TODO: dodać zrzut ekranu symulatora hipoteki -->
 *(Przeciągnij obrazek pokazujący wprowadzanie parametrów hipotecznych i wykres amortyzacji)*
 
 ### 3. Panel Celu Oszczędnościowego
-![Screenshot-Oszczednosci]()
-*(Przeciągnij screenschot paska i wyników dla Oszczędzania)*
+<!-- TODO: dodać zrzut ekranu celu oszczędnościowego -->
+*(Przeciągnij zrzut ekranu paska postępu i wyników oszczędzania.)*
 
 ### 4. Wygląd Modułu Chatbota AI
-![Screenshot-Chatbot]()
+<!-- TODO: dodać zrzut ekranu chatbota AI -->
 *(Przeciągnij screenshot okna komunikacji z Doradcą)*
 
 ### 5. Rekomendacje Ofert AI i Wiadomości (Mobile/Desktop)
-![Screenshot-Rekomendacje]()
+<!-- TODO: dodać zrzut ekranu rekomendacji i wiadomości -->
 *(Przeciągnij widok powiadomień lub okna wyświetlającego sugerowane usługi)*
 
 ---
