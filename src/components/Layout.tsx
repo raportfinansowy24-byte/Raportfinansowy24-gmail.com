@@ -101,7 +101,7 @@ export const Footer = ({ onPrivacyClick, onTermsClick }: { onPrivacyClick: () =>
           </div>
           <span className="hidden sm:inline text-white/20">•</span>
           <p className="text-[11px] text-zinc-400">
-            © {new Date().getFullYear()} RaportFinansowy24.pl – Niezależna analityka finansowa i algorytmy AI.
+            © {new Date().getFullYear()} RaportFinansowy24.pl – Niezależna analityka finansowa i algorytmy AI. <span className="text-zinc-600 font-mono text-[10px]">v1.0.1</span>
           </p>
         </div>
 
