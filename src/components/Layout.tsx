@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
-  Calculator, Home, PiggyBank, ShieldAlert, Building2, 
+  Calculator, Home, PiggyBank, ShieldAlert, Building2, CreditCard, 
   ArrowRight, Mail, Phone, Gift, Crown, Sparkles 
 } from 'lucide-react';
 import { referralService, ReferralState } from '../services/referral.service';
@@ -18,7 +18,7 @@ export const Header = ({ onOpenReferral }: { onOpenReferral?: () => void }) => {
   }, []);
 
   const isHomeActive = location.pathname === '/';
-  const isCompanyActive = location.pathname === '/firma' || location.pathname === '/spolka' || location.pathname === '/krs' || location.pathname === '/analiza-firmy';
+  const isKontaActive = location.pathname === '/konta' || location.pathname === '/banki' || location.pathname === '/konta-bankowe';
   const isProtocolActive = location.pathname === '/protokol' || location.pathname === '/lejek' || location.pathname === '/funnel' || location.pathname === '/audyt';
   const isLoanActive = location.pathname === '/loan';
   const isMortgageActive = location.pathname === '/mortgage';
@@ -26,10 +26,10 @@ export const Header = ({ onOpenReferral }: { onOpenReferral?: () => void }) => {
 
   const navItems = [
     { label: 'Kredyty', path: '/loan', active: isLoanActive, icon: Calculator },
+    { label: 'Konta Bankowe', path: '/konta', active: isKontaActive, icon: CreditCard },
     { label: 'Hipoteka', path: '/mortgage', active: isMortgageActive, icon: Home },
     { label: 'Oszczędności', path: '/savings', active: isSavingsActive, icon: PiggyBank },
-    { label: 'Protokół AI', path: '/protokol', active: isProtocolActive, icon: ShieldAlert },
-    { label: 'Audyt Firmy (NIP)', path: '/firma', active: isCompanyActive, icon: Building2 },
+    { label: 'Doradca AI', path: '/protokol', active: isProtocolActive, icon: ShieldAlert },
   ];
 
   return (
@@ -102,23 +102,13 @@ export const Header = ({ onOpenReferral }: { onOpenReferral?: () => void }) => {
 
           {/* Right Action Button */}
           <button
-            onClick={() => navigate(isCompanyActive ? '/loan' : '/firma')}
-            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold text-white bg-white/[0.07] hover:bg-white/[0.12] border border-white/[0.12] transition-all cursor-pointer active:scale-95"
+            onClick={() => navigate('/konta')}
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold text-white bg-gradient-to-r from-[#DC143C]/20 to-[#DC143C]/40 hover:from-[#DC143C]/30 hover:to-[#DC143C]/50 border border-[#DC143C]/40 transition-all cursor-pointer active:scale-95 shadow-sm"
           >
-            {isCompanyActive ? (
-              <>
-                <Calculator size={13} className="text-[#DC143C]" />
-                <span className="hidden sm:inline">Kalkulator rat</span>
-                <span className="sm:hidden">Kalkulator</span>
-              </>
-            ) : (
-              <>
-                <Building2 size={13} className="text-[#DC143C]" />
-                <span className="hidden sm:inline">Sprawdź NIP</span>
-                <span className="sm:hidden">NIP</span>
-              </>
-            )}
-            <ArrowRight size={11} className="text-zinc-400 hidden xs:inline" />
+            <CreditCard size={13} className="text-[#DC143C]" />
+            <span className="hidden sm:inline">Konta z premią</span>
+            <span className="sm:hidden">Premie</span>
+            <ArrowRight size={11} className="text-zinc-300 hidden xs:inline" />
           </button>
         </div>
       </div>

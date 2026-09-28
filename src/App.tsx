@@ -6,7 +6,7 @@ import { Terms } from './components/Terms';
 import { Chatbot } from './components/Chatbot';
 import { ReferralModal } from './components/ReferralModal';
 import { ReferralBanner } from './components/ReferralBanner';
-import { Calculator, Home as HomeIcon, PiggyBank, ShieldAlert, Building2 } from 'lucide-react';
+import { Calculator, Home as HomeIcon, PiggyBank, ShieldAlert, Building2, CreditCard } from 'lucide-react';
 import { ThemeProvider } from './context/ThemeContext';
 import { ViewModeProvider } from './context/ViewModeContext';
 import { motion, AnimatePresence } from 'motion/react';
@@ -17,6 +17,7 @@ const FinancialProtocolFunnel = lazy(() => import('./components/FinancialProtoco
 const LoanCalculator = lazy(() => import('./components/LoanCalculator').then(m => ({ default: m.LoanCalculator })));
 const MortgageSimulator = lazy(() => import('./components/MortgageSimulator').then(m => ({ default: m.MortgageSimulator })));
 const SavingsGoal = lazy(() => import('./components/SavingsGoal').then(m => ({ default: m.SavingsGoal })));
+const BankAccountsHub = lazy(() => import('./components/BankAccountsHub').then(m => ({ default: m.BankAccountsHub })));
 
 function AppContent() {
   const location = useLocation();
@@ -25,15 +26,16 @@ function AppContent() {
   const isCompanyActive = location.pathname === '/firma' || location.pathname === '/spolka' || location.pathname === '/krs' || location.pathname === '/analiza-firmy';
   const isProtocolActive = location.pathname === '/protokol' || location.pathname === '/funnel' || location.pathname === '/lejek' || location.pathname === '/audyt';
   const isLoanActive = location.pathname === '/loan';
+  const isKontaActive = location.pathname === '/konta' || location.pathname === '/banki' || location.pathname === '/konta-bankowe';
   const isMortgageActive = location.pathname === '/mortgage';
   const isSavingsActive = location.pathname === '/savings';
 
   const mobileNavItems = [
     { label: 'Kredyty', path: '/loan', active: isLoanActive, icon: Calculator },
+    { label: 'Konta', path: '/konta', active: isKontaActive, icon: CreditCard },
     { label: 'Hipoteka', path: '/mortgage', active: isMortgageActive, icon: HomeIcon },
     { label: 'Oszczędź', path: '/savings', active: isSavingsActive, icon: PiggyBank },
-    { label: 'Protokół', path: '/protokol', active: isProtocolActive, icon: ShieldAlert },
-    { label: 'NIP / KRS', path: '/firma', active: isCompanyActive, icon: Building2 },
+    { label: 'Doradca AI', path: '/protokol', active: isProtocolActive, icon: ShieldAlert },
   ];
 
   return (
@@ -133,6 +135,18 @@ function AppContent() {
                 className="w-full flex flex-col"
               >
                 <SavingsGoal />
+              </motion.div>
+            )}
+            {isKontaActive && (
+              <motion.div
+                key="konta"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="w-full flex flex-col"
+              >
+                <BankAccountsHub />
               </motion.div>
             )}
           </AnimatePresence>

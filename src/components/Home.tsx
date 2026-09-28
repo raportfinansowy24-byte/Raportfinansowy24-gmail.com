@@ -171,11 +171,11 @@ export function Home() {
         </div>
 
         <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight mb-3 sm:mb-4">
-          Sprawdź swoje finanse.<br className="hidden sm:inline" /> Zanim podejmiesz decyzję.
+          Sprawdź swoje finanse.<br className="hidden sm:inline" /> Wybierz najtańszy kredyt lub konto.
         </h1>
 
         <p className="text-sm sm:text-base text-zinc-300 max-w-xl mx-auto font-normal leading-relaxed mb-6 sm:mb-8">
-          Oblicz ratę, porównaj dostępne oferty, zaplanuj oszczędzanie albo sprawdź firmę po NIP.
+          Oblicz ratę, porównaj dostępne oferty bankowe, zaplanuj bezpieczne oszczędzanie i odbierz do 650 zł premii za otwarcie konta.
         </p>
 
         {/* Dwa główne CTA: Primary & Secondary */}
@@ -184,16 +184,16 @@ export function Home() {
             onClick={() => navigate('/loan')}
             className="min-h-[44px] sm:min-h-[48px] px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl bg-[#DC143C] hover:bg-[#b01030] text-white font-bold text-sm sm:text-base transition-all duration-200 shadow-md shadow-[#DC143C]/20 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
           >
-            <span>Potrzebuję finansowania</span>
+            <span>Oblicz ratę kredytu</span>
             <ArrowRight size={16} />
           </button>
           
           <button
-            onClick={() => navigate('/firma')}
+            onClick={() => navigate('/konta')}
             className="min-h-[44px] sm:min-h-[48px] px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white font-bold text-sm sm:text-base transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
           >
-            <Building2 size={16} className="text-zinc-300" />
-            <span>Sprawdzam firmę</span>
+            <CreditCard size={16} className="text-[#DC143C]" />
+            <span>Konta z premią</span>
           </button>
         </div>
       </section>
@@ -273,7 +273,29 @@ export function Home() {
             </div>
           </button>
 
-          {/* Karta 2: Hipoteka */}
+          {/* Karta 2: Konta bankowe i premie */}
+          <button
+            onClick={() => navigate('/konta')}
+            className="group p-3.5 sm:p-4 rounded-xl bg-[#18181b] border border-white/10 hover:border-[#DC143C]/50 transition-all duration-200 text-left flex flex-col justify-between min-h-[110px] sm:min-h-[125px] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#DC143C] focus-visible:outline-none"
+          >
+            <div className="w-full">
+              <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#DC143C] mb-2 group-hover:bg-[#DC143C]/10 transition-colors">
+                <CreditCard size={18} />
+              </div>
+              <h3 className="text-xs sm:text-sm font-bold text-white group-hover:text-[#DC143C] transition-colors leading-tight">
+                Konta i premie
+              </h3>
+              <p className="text-[11px] text-zinc-400 mt-0.5 truncate leading-tight">
+                Konta 0 zł + bonusy do 650 zł
+              </p>
+            </div>
+            <div className="flex items-center text-[10px] sm:text-xs font-semibold text-zinc-400 group-hover:text-white pt-2 mt-1 border-t border-white/5 transition-colors">
+              <span>Ranking kont</span>
+              <ChevronRight size={13} className="ml-0.5 group-hover:translate-x-0.5 transition-transform" />
+            </div>
+          </button>
+
+          {/* Karta 3: Hipoteka */}
           <button
             onClick={() => navigate('/mortgage')}
             className="group p-3.5 sm:p-4 rounded-xl bg-[#18181b] border border-white/10 hover:border-[#DC143C]/50 transition-all duration-200 text-left flex flex-col justify-between min-h-[110px] sm:min-h-[125px] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#DC143C] focus-visible:outline-none"
@@ -283,7 +305,7 @@ export function Home() {
                 <HomeIcon size={18} />
               </div>
               <h3 className="text-xs sm:text-sm font-bold text-white group-hover:text-[#DC143C] transition-colors leading-tight">
-                Hipoteka
+                Kredyt hipoteczny
               </h3>
               <p className="text-[11px] text-zinc-400 mt-0.5 truncate leading-tight">
                 Symulacja z wkładem własnym
@@ -295,9 +317,9 @@ export function Home() {
             </div>
           </button>
 
-          {/* Karta 3: Pożyczka */}
+          {/* Karta 4: Konsolidacja kredytów */}
           <button
-            onClick={() => navigate('/loan')}
+            onClick={() => navigate('/loan?goal=debt')}
             className="group p-3.5 sm:p-4 rounded-xl bg-[#18181b] border border-white/10 hover:border-[#DC143C]/50 transition-all duration-200 text-left flex flex-col justify-between min-h-[110px] sm:min-h-[125px] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#DC143C] focus-visible:outline-none"
           >
             <div className="w-full">
@@ -305,41 +327,19 @@ export function Home() {
                 <Zap size={18} />
               </div>
               <h3 className="text-xs sm:text-sm font-bold text-white group-hover:text-[#DC143C] transition-colors leading-tight">
-                Pożyczka
+                Konsolidacja
               </h3>
               <p className="text-[11px] text-zinc-400 mt-0.5 truncate leading-tight">
-                Krótkoterminowe finansowanie
+                Połącz długi w 1 niższą ratę
               </p>
             </div>
             <div className="flex items-center text-[10px] sm:text-xs font-semibold text-zinc-400 group-hover:text-white pt-2 mt-1 border-t border-white/5 transition-colors">
-              <span>Dopasuj</span>
+              <span>Obniż raty</span>
               <ChevronRight size={13} className="ml-0.5 group-hover:translate-x-0.5 transition-transform" />
             </div>
           </button>
 
-          {/* Karta 4: Konto i lokata */}
-          <button
-            onClick={() => navigate('/savings')}
-            className="group p-3.5 sm:p-4 rounded-xl bg-[#18181b] border border-white/10 hover:border-[#DC143C]/50 transition-all duration-200 text-left flex flex-col justify-between min-h-[110px] sm:min-h-[125px] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#DC143C] focus-visible:outline-none"
-          >
-            <div className="w-full">
-              <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#DC143C] mb-2 group-hover:bg-[#DC143C]/10 transition-colors">
-                <CreditCard size={18} />
-              </div>
-              <h3 className="text-xs sm:text-sm font-bold text-white group-hover:text-[#DC143C] transition-colors leading-tight">
-                Konto i lokata
-              </h3>
-              <p className="text-[11px] text-zinc-400 mt-0.5 truncate leading-tight">
-                Rachunki i lokaty terminowe
-              </p>
-            </div>
-            <div className="flex items-center text-[10px] sm:text-xs font-semibold text-zinc-400 group-hover:text-white pt-2 mt-1 border-t border-white/5 transition-colors">
-              <span>Przeglądaj</span>
-              <ChevronRight size={13} className="ml-0.5 group-hover:translate-x-0.5 transition-transform" />
-            </div>
-          </button>
-
-          {/* Karta 5: Oszczędzanie */}
+          {/* Karta 5: Oszczędzanie i lokaty */}
           <button
             onClick={() => navigate('/savings')}
             className="group p-3.5 sm:p-4 rounded-xl bg-[#18181b] border border-white/10 hover:border-[#DC143C]/50 transition-all duration-200 text-left flex flex-col justify-between min-h-[110px] sm:min-h-[125px] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#DC143C] focus-visible:outline-none"
@@ -349,7 +349,7 @@ export function Home() {
                 <PiggyBank size={18} />
               </div>
               <h3 className="text-xs sm:text-sm font-bold text-white group-hover:text-[#DC143C] transition-colors leading-tight">
-                Oszczędzanie
+                Oszczędzanie i lokaty
               </h3>
               <p className="text-[11px] text-zinc-400 mt-0.5 truncate leading-tight">
                 Plan wpłat i procent składany
@@ -361,24 +361,24 @@ export function Home() {
             </div>
           </button>
 
-          {/* Karta 6: Firma / NIP */}
+          {/* Karta 6: Doradca Finansowy AI */}
           <button
-            onClick={() => navigate('/firma')}
+            onClick={() => navigate('/protokol')}
             className="group p-3.5 sm:p-4 rounded-xl bg-[#18181b] border border-white/10 hover:border-[#DC143C]/50 transition-all duration-200 text-left flex flex-col justify-between min-h-[110px] sm:min-h-[125px] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#DC143C] focus-visible:outline-none"
           >
             <div className="w-full">
               <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#DC143C] mb-2 group-hover:bg-[#DC143C]/10 transition-colors">
-                <Building2 size={18} />
+                <Sparkles size={18} />
               </div>
               <h3 className="text-xs sm:text-sm font-bold text-white group-hover:text-[#DC143C] transition-colors leading-tight">
-                Firma / NIP
+                Doradca AI
               </h3>
               <p className="text-[11px] text-zinc-400 mt-0.5 truncate leading-tight">
-                Dane z rejestrów KRS i MF
+                Diagnoza portfela i ukrytych opłat
               </p>
             </div>
             <div className="flex items-center text-[10px] sm:text-xs font-semibold text-zinc-400 group-hover:text-white pt-2 mt-1 border-t border-white/5 transition-colors">
-              <span>Weryfikuj</span>
+              <span>Rozpocznij</span>
               <ChevronRight size={13} className="ml-0.5 group-hover:translate-x-0.5 transition-transform" />
             </div>
           </button>
@@ -646,58 +646,119 @@ export function Home() {
       </section>
 
       {/* ========================================================
-          SEKCJA 6 — FIRMA / WERYFIKACJA PO NIP (Drugi filar)
+          SEKCJA 6 — OSOBISTY DORADCA FINANSOWY — WYBIERZ SWÓJ CEL
           ======================================================== */}
       <section className="max-w-4xl mx-auto w-full px-4">
-        <div className="p-5 sm:p-6 rounded-2xl bg-[#18181b] border border-white/10">
-          <div className="flex items-start gap-3.5 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-300 shrink-0">
-              <Building2 size={20} />
-            </div>
+        <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-[#18181f] via-[#121217] to-[#0c0c10] border border-white/10 shadow-xl space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
             <div>
-              <h2 className="text-base sm:text-lg font-black text-white tracking-tight">
-                Sprawdzasz kontrahenta?
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                  <CheckCircle2 size={11} /> Usługa dla osób prywatnych
+                </span>
+                <span className="text-xs text-zinc-400">100% bezpłatnie</span>
+              </div>
+              <h2 className="text-lg sm:text-xl font-black text-white tracking-tight mt-1">
+                W czym możemy Ci dzisiaj pomóc?
               </h2>
-              <p className="text-xs sm:text-sm text-zinc-300 mt-0.5 leading-relaxed">
-                Sprawdź dane firmy po NIP i zobacz informacje dostępne w rejestrach MF/KRS.
+              <p className="text-xs sm:text-sm text-zinc-300 mt-0.5">
+                Wybierz obszar, a nasz algorytm przekieruje Cię bezpośrednio do wyliczeń i ofert:
               </p>
             </div>
+            
+            <button
+              onClick={() => navigate('/protokol')}
+              className="text-xs text-amber-300 hover:text-amber-200 font-bold flex items-center gap-1 self-start sm:self-center transition-colors cursor-pointer"
+            >
+              <span>Pełna diagnoza AI portfela</span>
+              <ArrowRight size={13} />
+            </button>
           </div>
 
-          <form onSubmit={handleNipSubmit} className="flex flex-col sm:flex-row gap-2.5">
-            <div className="flex-1 relative">
-              <input
-                type="text"
-                placeholder="Wpisz NIP (np. 734-286-71-48)"
-                value={nipInput}
-                onChange={handleNipChange}
-                maxLength={13}
-                aria-label="Numer NIP do weryfikacji"
-                className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl bg-black/50 border border-white/15 text-white placeholder-zinc-500 text-xs sm:text-sm focus:outline-none focus:border-[#DC143C] focus:ring-1 focus:ring-[#DC143C] transition-all"
-              />
-              {nipError && (
-                <p className="text-[11px] text-[#DC143C] mt-1 font-medium">
-                  {nipError}
-                </p>
-              )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            {/* Opcja 1 */}
+            <div 
+              onClick={() => navigate('/loan')}
+              className="p-4 rounded-2xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/5 hover:border-[#DC143C]/40 transition-all cursor-pointer flex items-center justify-between group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#DC143C]/10 text-[#DC143C] flex items-center justify-center font-bold shrink-0 group-hover:scale-105 transition-transform">
+                  <Zap size={20} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white group-hover:text-[#DC143C] transition-colors">
+                    Potrzebuję gotówki lub pożyczki
+                  </h3>
+                  <p className="text-[11px] text-zinc-400">
+                    Kalkulator rat, najniższe RRSO i decyzja w 15 minut
+                  </p>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-zinc-500 group-hover:text-white group-hover:translate-x-1 transition-all shrink-0 ml-2" />
             </div>
 
-            <button
-              type="submit"
-              className="min-h-[44px] px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white font-bold text-xs sm:text-sm transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 shrink-0 active:scale-95 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+            {/* Opcja 2 */}
+            <div 
+              onClick={() => navigate('/konta')}
+              className="p-4 rounded-2xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/5 hover:border-amber-500/40 transition-all cursor-pointer flex items-center justify-between group"
             >
-              <Search size={15} />
-              <span>Sprawdź firmę</span>
-            </button>
-          </form>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold shrink-0 group-hover:scale-105 transition-transform">
+                  <Gift size={20} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white group-hover:text-amber-400 transition-colors">
+                    Chcę darmowe konto z premią
+                  </h3>
+                  <p className="text-[11px] text-zinc-400">
+                    Konta 0 zł bez opłat + premie do 650 zł gotówki
+                  </p>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-zinc-500 group-hover:text-white group-hover:translate-x-1 transition-all shrink-0 ml-2" />
+            </div>
 
-          <div className="flex items-center gap-2 mt-3 text-[10px] text-zinc-400">
-            <span>Bazy:</span>
-            <span className="text-zinc-300 font-medium">Biała Lista VAT MF</span>
-            <span>•</span>
-            <span className="text-zinc-300 font-medium">KRS</span>
-            <span>•</span>
-            <span className="text-zinc-300 font-medium">REGON</span>
+            {/* Opcja 3 */}
+            <div 
+              onClick={() => navigate('/loan?goal=debt')}
+              className="p-4 rounded-2xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/5 hover:border-[#DC143C]/40 transition-all cursor-pointer flex items-center justify-between group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center font-bold shrink-0 group-hover:scale-105 transition-transform">
+                  <CreditCard size={20} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white group-hover:text-purple-400 transition-colors">
+                    Chcę zmniejszyć obecne raty
+                  </h3>
+                  <p className="text-[11px] text-zinc-400">
+                    Konsolidacja: połącz kilka kredytów w 1 tańszy
+                  </p>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-zinc-500 group-hover:text-white group-hover:translate-x-1 transition-all shrink-0 ml-2" />
+            </div>
+
+            {/* Opcja 4 */}
+            <div 
+              onClick={() => navigate('/savings')}
+              className="p-4 rounded-2xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/5 hover:border-emerald-500/40 transition-all cursor-pointer flex items-center justify-between group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold shrink-0 group-hover:scale-105 transition-transform">
+                  <PiggyBank size={20} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white group-hover:text-emerald-400 transition-colors">
+                    Chcę bezpiecznie pomnożyć oszczędności
+                  </h3>
+                  <p className="text-[11px] text-zinc-400">
+                    Lokaty i konta oszczędnościowe do 7.5% rocznie
+                  </p>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-zinc-500 group-hover:text-white group-hover:translate-x-1 transition-all shrink-0 ml-2" />
+            </div>
           </div>
         </div>
       </section>
