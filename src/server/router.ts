@@ -4,6 +4,7 @@ export interface Offer {
   id: string;
   name: string;
   category: string;
+  categories?: string[];
   url: string;
   features?: string[];
   params?: Record<string, string>;
@@ -31,7 +32,8 @@ async function getLiveOffers(): Promise<Offer[]> {
       offers = scraped.map(s => ({
         id: s.id,
         name: s.name,
-        category: s.category, // Zostawiamy oryginalną kategorię do filtrowania
+        category: s.category, // Główna kategoria
+        categories: s.categories, // Wszystkie kategorie gdzie oferta występuje
         url: s.url,
         features: s.features,
         params: s.params,
@@ -39,7 +41,7 @@ async function getLiveOffers(): Promise<Offer[]> {
       }));
     }
 
-    // Dodajemy ofertę Revolut ręcznie (Referral)
+    // Dodajemy bezpośrednie oferty partnerskie (Direct / Referral)
     const revolutBase = {
       url: "https://revolut.com/referral/?referral-code=tomasz52u!APR1-26-AR&geo-redirect",
       features: ["Ponad 70 mln użytkowników", "Karta wielowalutowa", "Bonus na start"]
@@ -47,26 +49,29 @@ async function getLiveOffers(): Promise<Offer[]> {
 
     offers.push({
       ...revolutBase,
-      id: "revolut-referral-account",
+      id: "direct-revolut-personal",
       name: "Revolut - Konto Osobiste",
       category: "konta-osobiste",
+      categories: ["konta-osobiste"],
       comment: "Konto bez opłat"
     });
 
     offers.push({
       ...revolutBase,
-      id: "revolut-referral-savings",
+      id: "direct-revolut-savings",
       name: "Revolut - Konto Oszczędnościowe",
       category: "konta-oszczednosciowe",
+      categories: ["konta-oszczednosciowe"],
       features: ["Wysokie oprocentowanie", "Dostęp do środków 24/7", "Ponad 70 mln użytkowników"],
       comment: "Codzienny zysk"
     });
 
     offers.push({
       ...revolutBase,
-      id: "revolut-referral-investments",
+      id: "direct-revolut-investments",
       name: "Revolut - Inwestycje i Lokaty",
       category: "lokaty-i-inwestycje",
+      categories: ["lokaty-i-inwestycje"],
       features: ["Inwestuj od 1 EUR", "Akcje, krypto i towary", "Lokaty terminowe"],
       comment: "Tanie inwestowanie"
     });
@@ -87,13 +92,8 @@ export async function getOffersForProfile(profile: any): Promise<Offer[]> {
   const allOffers = await getLiveOffers();
 
   if (allOffers.length === 0) {
-    // Fallback awaryjny
-    return [{
-      id: "gotowkowe-default",
-      name: "Kredyt gotówkowy",
-      category: "Kredyt",
-      url: "https://toomasz-money.oferty-kredytowe.pl/kredyty-gotowkowe"
-    }];
+    console.warn("[Router] getOffersForProfile: brak dostępnych ofert z katalogu.");
+    return [];
   }
 
   // 1. Ustalamy docelowe kategorie na podstawie celu
@@ -141,7 +141,10 @@ export async function getOffersForProfile(profile: any): Promise<Offer[]> {
   }
 
   // 3. Filtrujemy konkretne oferty z pobranej puli
-  let matchedOffers = allOffers.filter(o => targetCategories.includes(o.category));
+  let matchedOffers = allOffers.filter(o => 
+    targetCategories.includes(o.category) || 
+    (o.categories && o.categories.some(c => targetCategories.includes(c)))
+  );
 
   // Priorytetyzacja dla firm (Startup)
   if (profile.goal === 'business' && profile.businessLoanType === 'startup') {
@@ -199,7 +202,10 @@ export async function getOffersForProfile(profile: any): Promise<Offer[]> {
 
   // Jeśli brak dopasowania, dajemy cokolwiek zbliżonego
   if (matchedOffers.length === 0) {
-    matchedOffers = allOffers.filter(o => ['kredyty-gotowkowe', 'chwilowki'].includes(o.category));
+    matchedOffers = allOffers.filter(o => 
+      ['kredyty-gotowkowe', 'chwilowki'].includes(o.category) ||
+      (o.categories && o.categories.some(c => ['kredyty-gotowkowe', 'chwilowki'].includes(c)))
+    );
   }
 
   // Funkcje pomocnicze do sortowania
@@ -271,11 +277,13 @@ export async function getOffersForProfile(profile: any): Promise<Offer[]> {
 }
 
 export async function routeOffer(offerId: string): Promise<Offer | undefined> {
-  if (!offerId) return undefined;
+  if (!offerId || typeof offerId !== 'string' || !offerId.trim()) return undefined;
   
-  if (offerId === "downsell-stop-komornik") {
+  const cleanId = offerId.trim();
+
+  if (cleanId === "direct-stop-komornik" || cleanId === "downsell-stop-komornik") {
     return {
-      id: "downsell-stop-komornik",
+      id: "direct-stop-komornik",
       name: "Stop Komornik",
       category: "POMOC PRAWNA",
       url: "https://tmlead.pl/redirect/388900_1090",
@@ -283,15 +291,6 @@ export async function routeOffer(offerId: string): Promise<Offer | undefined> {
     };
   }
 
-  if (offerId === "gotowkowe-default") {
-    return {
-      id: "gotowkowe-default",
-      name: "Kredyt gotówkowy",
-      category: "Kredyt",
-      url: "https://toomasz-money.oferty-kredytowe.pl/kredyty-gotowkowe"
-    };
-  }
-
   const allOffers = await getLiveOffers();
-  return allOffers.find(o => o.id === offerId);
+  return allOffers.find(o => o.id === cleanId);
 }

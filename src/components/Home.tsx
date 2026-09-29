@@ -516,9 +516,9 @@ export function Home() {
           </div>
         ) : offers.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {offers.map((offer, idx) => (
+            {offers.map((offer) => (
               <div
-                key={offer.id || idx}
+                key={offer.id}
                 className="p-4 sm:p-5 rounded-xl bg-[#18181b] border border-white/10 hover:border-white/20 transition-all flex flex-col justify-between"
               >
                 <div>
@@ -551,7 +551,7 @@ export function Home() {
 
                 <div className="pt-3 mt-auto border-t border-white/5">
                   <a
-                    href={`/api/go?offerId=${encodeURIComponent(offer.id || '')}&source=home`}
+                    href={`/api/go?offerId=${encodeURIComponent(offer.id)}&source=home`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="min-h-[44px] w-full py-2.5 px-4 rounded-xl bg-white/10 hover:bg-[#DC143C] text-white text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5 group focus-visible:ring-2 focus-visible:ring-[#DC143C] focus-visible:outline-none"

@@ -23,6 +23,7 @@ export interface ScrapedOffer {
   name: string;
   url: string;
   category: string;
+  categories?: string[];
   features?: string[];
   params?: Record<string, string>;
   comment?: string;
@@ -63,7 +64,7 @@ function generateContextualComment(category: string, name: string, features: str
 }
 
 export async function fetchOffersFromPanel(): Promise<ScrapedOffer[]> {
-  let allOffers: ScrapedOffer[] = [];
+  const offersMap = new Map<string, ScrapedOffer>();
   
   console.log("[Scraper] Rozpoczynam pobieranie ofert z API toomasz-money.oferty-kredytowe.pl...");
 
@@ -111,8 +112,6 @@ export async function fetchOffersFromPanel(): Promise<ScrapedOffer[]> {
 
       console.log(`[Scraper] Kategoria ${cat} (${dataKey}): otrzymano ${json.length} elementów.`);
 
-      const seenIds = new Set<string>();
-
       json.forEach((htmlString) => {
         const $ = cheerio.load(htmlString);
         
@@ -139,31 +138,41 @@ export async function fetchOffersFromPanel(): Promise<ScrapedOffer[]> {
         });
 
         if (name && link) {
-          // Unikalne, deterministyczne ID oparte o kampanię i nazwę (niezależne od kolejności w szablonie)
+          // Deterministyczny, stały identyfikator oparty WYŁĄCZNIE o ID kampanii M2M
           const campaignMatch = link.match(/redirect\/[0-9]+_([a-zA-Z0-9]+)/);
-          const campaignPart = campaignMatch ? campaignMatch[1] : '';
-          const cleanName = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
-          const baseId = campaignPart ? `${cat}-${cleanName}-${campaignPart}` : `${cat}-${cleanName}`;
+          const campaignId = campaignMatch ? campaignMatch[1] : '';
           
-          let id = baseId;
-          let counter = 1;
-          while (seenIds.has(id)) {
-            id = `${baseId}-${counter}`;
-            counter++;
+          if (!campaignId) {
+            console.warn(`[Scraper] Pominięto ofertę "${name}" z powodu braku rozpoznawalnego ID kampanii w linku: ${link}`);
+            return;
           }
-          seenIds.add(id);
 
-          const finalComment = generateContextualComment(cat, name, features);
-          
-          allOffers.push({
-            id,
-            name,
-            url: link,
-            category: cat,
-            features: features.length > 0 ? features : undefined,
-            params: Object.keys(params).length > 0 ? params : undefined,
-            comment: finalComment
-          });
+          const id = `m2m-${campaignId}`;
+
+          if (offersMap.has(id)) {
+            // Jeśli kampania występuje w wielu kategoriach, aktualizujemy listę kategorii
+            const existing = offersMap.get(id)!;
+            if (existing.categories && !existing.categories.includes(cat)) {
+              existing.categories.push(cat);
+            }
+            // Uzupełnij ewentualne brakujące parametry
+            if (!existing.params && Object.keys(params).length > 0) {
+              existing.params = params;
+            }
+          } else {
+            const finalComment = generateContextualComment(cat, name, features);
+            
+            offersMap.set(id, {
+              id,
+              name,
+              url: link,
+              category: cat,
+              categories: [cat],
+              features: features.length > 0 ? features : undefined,
+              params: Object.keys(params).length > 0 ? params : undefined,
+              comment: finalComment
+            });
+          }
         }
       });
     } catch (e) {
@@ -171,7 +180,8 @@ export async function fetchOffersFromPanel(): Promise<ScrapedOffer[]> {
     }
   }
   
-  console.log(`[Scraper] Zakończono. Pobrano łącznie ${allOffers.length} ofert.`);
+  const allOffers = Array.from(offersMap.values());
+  console.log(`[Scraper] Zakończono. Pobrano łącznie ${allOffers.length} unikalnych ofert kampanii.`);
   return allOffers;
 }
 

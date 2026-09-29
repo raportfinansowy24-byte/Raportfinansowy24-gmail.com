@@ -1275,7 +1275,7 @@ export function LoanCalculator() {
                       {comparedOffers.find(o => o.id === offer.id) ? '✓ Wybrano do porównania' : 'Porównaj ofertę'}
                     </button>
                     <a 
-                      href={`/api/go?offerId=${encodeURIComponent(offer.id || '')}&source=loan`}
+                      href={`/api/go?offerId=${encodeURIComponent(offer.id)}&source=loan`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full py-3 bg-[#DC143C] hover:bg-[#b01030] text-white text-xs font-black uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all min-h-[44px] shadow-md shadow-[#DC143C]/20 active:scale-95"

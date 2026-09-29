@@ -44,16 +44,16 @@ async function startServer() {
   app.get("/api/go", async (req, res) => {
     try {
       const offerId = req.query.offerId as string;
-      if (!offerId) {
-        res.redirect("https://toomasz-money.oferty-kredytowe.pl/");
+      if (!offerId || typeof offerId !== 'string' || !offerId.trim()) {
+        res.status(400).json({ error: "Brak lub nieprawidłowy identyfikator oferty (offerId)" });
         return;
       }
 
-      const offer = await routeOffer(offerId);
+      const offer = await routeOffer(offerId.trim());
       
       if (!offer) {
-        console.warn(`[API /api/go] Nie znaleziono oferty dla offerId: ${offerId}. Przekierowanie do katalogu głównego.`);
-        res.redirect("https://toomasz-money.oferty-kredytowe.pl/");
+        console.warn(`[API /api/go] Nie znaleziono oferty dla offerId: ${offerId}.`);
+        res.status(404).json({ error: `Nie znaleziono oferty dla identyfikatora: ${offerId}` });
         return;
       }
 
