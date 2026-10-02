@@ -18,6 +18,7 @@ const LoanCalculator = lazy(() => import('./components/LoanCalculator').then(m =
 const MortgageSimulator = lazy(() => import('./components/MortgageSimulator').then(m => ({ default: m.MortgageSimulator })));
 const SavingsGoal = lazy(() => import('./components/SavingsGoal').then(m => ({ default: m.SavingsGoal })));
 const BankAccountsHub = lazy(() => import('./components/BankAccountsHub').then(m => ({ default: m.BankAccountsHub })));
+const AboutUs = lazy(() => import('./components/AboutUs').then(m => ({ default: m.AboutUs })));
 
 function AppContent() {
   const location = useLocation();
@@ -29,6 +30,7 @@ function AppContent() {
   const isKontaActive = location.pathname === '/konta' || location.pathname === '/banki' || location.pathname === '/konta-bankowe';
   const isMortgageActive = location.pathname === '/mortgage';
   const isSavingsActive = location.pathname === '/savings';
+  const isAboutActive = location.pathname === '/o-nas' || location.pathname === '/about' || location.pathname === '/about-us';
 
   const mobileNavItems = [
     { label: 'Kredyty', path: '/loan', active: isLoanActive, icon: Calculator },
@@ -147,6 +149,18 @@ function AppContent() {
                 className="w-full flex flex-col"
               >
                 <BankAccountsHub />
+              </motion.div>
+            )}
+            {isAboutActive && (
+              <motion.div
+                key="about"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="w-full flex flex-col"
+              >
+                <AboutUs />
               </motion.div>
             )}
           </AnimatePresence>

@@ -125,69 +125,96 @@ export const Footer = ({
   onTermsClick: () => void;
   onOpenReferral?: () => void;
 }) => {
+  const navigate = useNavigate();
+
   return (
     <footer className="w-full py-8 px-4 sm:px-6 lg:px-8 bg-[#070709] border-t border-white/[0.08] text-zinc-400 text-xs mt-auto">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span className="text-zinc-300 font-semibold text-[11px]">System online</span>
+      <div className="max-w-7xl mx-auto flex flex-col gap-4">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="text-zinc-300 font-semibold text-[11px]">System online</span>
+            </div>
+            <span className="hidden sm:inline text-white/20">•</span>
+            <p className="text-[11px] text-zinc-400">
+              © {new Date().getFullYear()} RaportFinansowy24.pl – Niezależna analityka finansowa i algorytmy AI. <span className="text-zinc-600 font-mono text-[10px]">v1.0.1</span>
+            </p>
           </div>
-          <span className="hidden sm:inline text-white/20">•</span>
-          <p className="text-[11px] text-zinc-400">
-            © {new Date().getFullYear()} RaportFinansowy24.pl – Niezależna analityka finansowa i algorytmy AI. <span className="text-zinc-600 font-mono text-[10px]">v1.0.1</span>
+
+          {/* Contact info: Email & Phone */}
+          <div className="flex items-center gap-4 text-[11px] flex-wrap justify-center">
+            <a 
+              href="mailto:raportfinansowy24@gmail.com" 
+              className="flex items-center gap-1.5 text-zinc-300 hover:text-white transition-colors"
+              title="Napisz do nas"
+            >
+              <Mail size={13} className="text-[#DC143C]" />
+              <span>raportfinansowy24@gmail.com</span>
+            </a>
+
+            <span className="text-white/20 hidden sm:inline">•</span>
+
+            <a 
+              href="tel:+491778466985" 
+              className="flex items-center gap-1.5 text-zinc-300 hover:text-white transition-colors"
+              title="Zadzwoń do nas"
+            >
+              <Phone size={13} className="text-[#DC143C]" />
+              <span>+49 177 8466985</span>
+            </a>
+          </div>
+
+          <div className="flex items-center gap-4 text-[11px] flex-wrap justify-center">
+            {onOpenReferral && (
+              <>
+                <button 
+                  onClick={onOpenReferral} 
+                  className="text-amber-300 hover:text-amber-200 transition-colors cursor-pointer font-bold flex items-center gap-1"
+                >
+                  <Gift size={12} className="text-amber-400" />
+                  <span>Program Poleceń (Zyskaj Premium)</span>
+                </button>
+                <span className="text-white/20">|</span>
+              </>
+            )}
+            <button 
+              onClick={() => navigate('/o-nas')} 
+              className="text-zinc-200 hover:text-white font-medium transition-colors underline cursor-pointer"
+            >
+              O nas (Właściciel & Misja)
+            </button>
+            <span className="text-white/20">|</span>
+            <button 
+              onClick={onPrivacyClick} 
+              className="hover:text-white transition-colors underline cursor-pointer"
+            >
+              Polityka Prywatności
+            </button>
+            <span className="text-white/20">|</span>
+            <button 
+              onClick={onTermsClick} 
+              className="hover:text-white transition-colors underline cursor-pointer"
+            >
+              Regulamin
+            </button>
+          </div>
+        </div>
+
+        {/* Ownership & Imprint Notice for Compliance & Trust */}
+        <div className="pt-3 border-t border-white/[0.05] flex flex-col sm:flex-row items-center justify-between text-[11px] text-zinc-400 gap-2 text-center sm:text-left">
+          <p>
+            <span className="text-zinc-300 font-semibold">Właściciel i operator serwisu:</span> Tomasz Siwiaszczyk
+            <button 
+              onClick={() => navigate('/o-nas')} 
+              className="text-[#DC143C] hover:underline cursor-pointer ml-1.5 font-medium"
+            >
+              (Sprawdź profil właściciela & misję)
+            </button>
           </p>
-        </div>
-
-        {/* Contact info: Email & Phone */}
-        <div className="flex items-center gap-4 text-[11px] flex-wrap justify-center">
-          <a 
-            href="mailto:raportfinansowy24@gmail.com" 
-            className="flex items-center gap-1.5 text-zinc-300 hover:text-white transition-colors"
-            title="Napisz do nas"
-          >
-            <Mail size={13} className="text-[#DC143C]" />
-            <span>raportfinansowy24@gmail.com</span>
-          </a>
-
-          <span className="text-white/20 hidden sm:inline">•</span>
-
-          <a 
-            href="tel:+491778466985" 
-            className="flex items-center gap-1.5 text-zinc-300 hover:text-white transition-colors"
-            title="Zadzwoń do nas"
-          >
-            <Phone size={13} className="text-[#DC143C]" />
-            <span>+49 177 8466985</span>
-          </a>
-        </div>
-
-        <div className="flex items-center gap-4 text-[11px] flex-wrap justify-center">
-          {onOpenReferral && (
-            <>
-              <button 
-                onClick={onOpenReferral} 
-                className="text-amber-300 hover:text-amber-200 transition-colors cursor-pointer font-bold flex items-center gap-1"
-              >
-                <Gift size={12} className="text-amber-400" />
-                <span>Program Poleceń (Zyskaj Premium)</span>
-              </button>
-              <span className="text-white/20">|</span>
-            </>
-          )}
-          <button 
-            onClick={onPrivacyClick} 
-            className="hover:text-white transition-colors underline cursor-pointer"
-          >
-            Polityka Prywatności
-          </button>
-          <span className="text-white/20">|</span>
-          <button 
-            onClick={onTermsClick} 
-            className="hover:text-white transition-colors underline cursor-pointer"
-          >
-            Regulamin
-          </button>
+          <p className="text-[10px] text-zinc-500">
+            Wydawca portalu RaportFinansowy24.pl | Wszelkie prawa zastrzeżone
+          </p>
         </div>
       </div>
     </footer>

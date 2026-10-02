@@ -12,7 +12,7 @@ export const PrivacyPolicy = ({ onClose }: { onClose: () => void }) => (
       </div>
       <div className="p-6 overflow-y-auto text-white/70 text-sm space-y-4 custom-scrollbar">
         <h1 className="text-white font-bold text-lg">Polityka prywatności</h1>
-        <p>Administratorem danych serwisu jest RaportFinansowy24.</p>
+        <p>Właścicielem serwisu oraz Administratorem Danych Osobowych (ADO) jest Tomasz Siwiaszczyk.</p>
         <p>Email: raportfinansowy24@gmail.com</p>
         <p>Telefon: +49 177 8466985</p>
       </div>
