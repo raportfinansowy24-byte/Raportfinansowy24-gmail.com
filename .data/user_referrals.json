@@ -1,0 +1,31 @@
+{
+  "test_user_audit_1791004930118": {
+    "userId": "test_user_audit_1791004930118",
+    "myCode": "RF24-6P6V8G",
+    "referralCount": 0,
+    "premiumCredits": 0,
+    "isVipUnlimited": false,
+    "unlockedNips": [
+      "5260211111",
+      "7010212222"
+    ],
+    "redeemedCodes": [
+      "RF24-6VREYF"
+    ],
+    "referredByCode": "RF24-6VREYF",
+    "createdAt": "2026-10-03T05:22:10.236Z",
+    "updatedAt": "2026-10-03T05:22:10.336Z"
+  },
+  "test_friend_1791004930306": {
+    "userId": "test_friend_1791004930306",
+    "myCode": "RF24-6VREYF",
+    "referralCount": 1,
+    "premiumCredits": 3,
+    "isVipUnlimited": false,
+    "unlockedNips": [],
+    "redeemedCodes": [],
+    "referredByCode": null,
+    "createdAt": "2026-10-03T05:22:10.316Z",
+    "updatedAt": "2026-10-03T05:22:10.326Z"
+  }
+}

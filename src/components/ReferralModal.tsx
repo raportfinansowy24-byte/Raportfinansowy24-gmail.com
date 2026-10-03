@@ -80,19 +80,19 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({
     window.location.href = `mailto:?subject=${encodeURIComponent('Darmowy Raport Finansowy Premium w RaportFinansowy24')}&body=${encodeURIComponent(shareText)}`;
   };
 
-  const handleRedeemCode = (e: React.FormEvent) => {
+  const handleRedeemCode = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!friendCodeInput.trim()) return;
 
-    const result = referralService.redeemFriendCode(friendCodeInput);
+    const result = await referralService.redeemFriendCode(friendCodeInput);
     setRedeemFeedback(result);
     if (result.success) {
       setFriendCodeInput('');
     }
   };
 
-  const handleSimulateReferral = () => {
-    const res = referralService.addSuccessfulReferral();
+  const handleSimulateReferral = async () => {
+    const res = await referralService.addSuccessfulReferral();
     if (res.isVipNow) {
       setRedeemFeedback({
         success: true,

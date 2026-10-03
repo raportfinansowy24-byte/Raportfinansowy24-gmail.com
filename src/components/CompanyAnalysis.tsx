@@ -132,12 +132,12 @@ export function CompanyAnalysis() {
     return { score: roundedZ, zone, zoneLabel, zoneColor, zoneBg };
   };
 
-  const handleUnlockCurrentReport = () => {
+  const handleUnlockCurrentReport = async () => {
     if (!company) return;
     if (isReportUnlocked) return;
 
     if (referralState.premiumCredits > 0) {
-      const res = referralService.unlockReportForNip(company.nip);
+      const res = await referralService.unlockReportForNip(company.nip);
       setUnlockToast({ message: res.message, success: res.success });
       setTimeout(() => setUnlockToast(null), 4000);
     } else {
@@ -234,16 +234,20 @@ export function CompanyAnalysis() {
     }
   };
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
     if (!company || !financials) return;
 
     // Sprawdzenie uprawnień Premium
     if (!isReportUnlocked && !referralState.isVipUnlimited) {
       if (referralState.premiumCredits > 0) {
         // Zużyj kredyt automatycznie na ten raport
-        const unlockRes = referralService.unlockReportForNip(company.nip);
+        const unlockRes = await referralService.unlockReportForNip(company.nip);
         setUnlockToast({ message: unlockRes.message, success: unlockRes.success });
         setTimeout(() => setUnlockToast(null), 4000);
+        if (!unlockRes.success) {
+          setPdfError(unlockRes.message);
+          return;
+        }
       } else {
         // Brak kredytów - otwórz program poleceń
         setPdfError('Pobieranie oficjalnego certyfikowanego audytu PDF jest dostępne w wersji Premium. Odbierz darmowy kredyt polecając znajomego!');

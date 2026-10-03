@@ -654,13 +654,24 @@ export function LoanCalculator() {
       const fetchAllData = async () => {
         setShouldFetchOffers(false);
         
-        // Fire and forget leads insert
-        supabase.from('leads').insert({ 
-          quiz_data: quizData,
-          email: quizData.email,
-          phone: quizData.phone,
-          first_name: quizData.firstName
-        }).then();
+        // Zapis leada do backendu /api/leads
+        if (quizData.email) {
+          fetch('/api/leads', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: quizData.email,
+              source: 'loan_calculator',
+              metadata: {
+                phone: quizData.phone,
+                first_name: quizData.firstName,
+                amount: quizData.amount,
+                periodMonths: quizData.periodMonths,
+                goal: quizData.goal
+              }
+            })
+          }).catch(() => {});
+        }
 
         const fetchAiAndOffers = async () => {
           try {

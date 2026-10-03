@@ -5,6 +5,8 @@ import path from "path";
 import { getOffersForProfile, routeOffer } from "./src/server/router.js";
 import { trackClick, trackConversion } from "./src/server/tracker.js";
 import { searchAndFetchCompany, runGeminiCompanyDiagnostic, CURATED_COMPANIES } from "./src/server/companyService.js";
+import { referralManager } from "./src/server/referralManager.js";
+import { leadManager } from "./src/server/leadManager.js";
 
 async function startServer() {
   const app = express();
@@ -57,49 +59,57 @@ async function startServer() {
         return;
       }
 
-      // Zapisujemy kliknięcie w Supabase
-      const clickid = await trackClick(req, offer);
+      // Sanityzacja parametru źródła (source)
+      const rawSource = typeof req.query.source === 'string' && req.query.source.trim()
+        ? req.query.source.trim().replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 30)
+        : 'raport-finansowy';
 
-      // Bezpieczne dodawanie parametrów afiliacyjnych Money2Money:
-      // - epi: nasz unikalny clickid (UUIDv4)
+      // Zapisujemy unikalne kliknięcie (clickid generowany po stronie serwera jako UUIDv4 - nie może być nadpisany z zewnątrz)
+      const clickid = await trackClick(req, offer, rawSource);
+
+      // Bezpieczne dodawanie parametrów afiliacyjnych:
+      // - epi: unikalny identyfikator kliknięcia (UUIDv4)
       // - epi2: kontekst / źródło kliknięcia (np. home, loan, mortgage)
-      // - clickid: wsteczna kompatybilność wewnętrzna
+      // - clickid: dodatkowa wsteczna kompatybilność z sieciami
       const redirectUrl = new URL(offer.url);
       redirectUrl.searchParams.set("epi", clickid);
-      
-      const source = typeof req.query.source === 'string' && req.query.source
-        ? req.query.source.slice(0, 30)
-        : 'raport-finansowy';
-      redirectUrl.searchParams.set("epi2", source);
+      redirectUrl.searchParams.set("epi2", rawSource);
       redirectUrl.searchParams.set("clickid", clickid);
 
-      console.log(`[Affiliate] Przekierowanie: offerId=${offer.id}, clickid/epi=${clickid}, source=${source}`);
+      console.log(`[Affiliate] Przekierowanie: offerId=${offer.id}, clickid/epi=${clickid}, source=${rawSource}`);
       res.redirect(redirectUrl.toString());
     } catch (error) {
       console.error("[API /api/go] Błąd przekierowania:", error);
-      res.status(500).send("Błąd przekierowania");
+      res.status(500).json({ error: "Błąd serwera podczas przekierowania do oferty" });
     }
   });
 
-  // 3. Postback z sieci afiliacyjnej (Money2Money / uniwersalny webhook)
+  // 3. Postback z sieci afiliacyjnej (Money2Money / uniwersalny webhook z walidacją)
   app.get("/api/postback", async (req, res) => {
     try {
       // Obsługujemy zarówno clickid, jak i epi / subid
       const clickid = (req.query.clickid || req.query.epi || req.query.subid) as string;
-      const payout = req.query.payout || req.query.commission || req.query.rate || 0;
-      
-      if (!clickid) {
-        res.status(400).send("Brak identyfikatora kliknięcia (clickid / epi)");
+      const payoutRaw = req.query.payout || req.query.commission || req.query.rate || req.query.amount;
+      const secretToken = (req.query.secret || req.query.token || req.headers['x-postback-secret']) as string | undefined;
+
+      const result = await trackConversion(clickid, payoutRaw, secretToken);
+
+      if (!result.success) {
+        res.status(result.status).json({ success: false, error: result.message });
         return;
       }
 
-      // Zapisujemy konwersję w Supabase
-      await trackConversion(clickid, Number(payout));
-      console.log(`[Postback] Zarejestrowano konwersję dla id/epi: ${clickid}, payout: ${payout}`);
-      res.send("ok");
+      console.log(`[Postback] Potwierdzono konwersję: id=${result.clickid}, payout=${result.payout}`);
+      res.status(200).json({
+        success: true,
+        message: result.message,
+        clickid: result.clickid,
+        payout: result.payout,
+        offerId: result.offerId
+      });
     } catch (error) {
       console.error("[Postback] Błąd postbacka:", error);
-      res.status(500).send("Błąd postbacka");
+      res.status(500).json({ error: "Błąd serwera podczas przetwarzania postbacka" });
     }
   });
 
@@ -137,21 +147,32 @@ async function startServer() {
     }
   });
 
-  // 5. Endpoint dla leadów z lejka (zastępuje Make.com)
+  // 5. Endpoint dla leadów z lejka i kalkulatora (Trwały zapis w bazie i pamięci serwera)
   app.post("/api/leads", async (req, res) => {
     try {
-      const { email, timestamp } = req.body;
+      const { email, source, lossTier, lossAmount, metadata, timestamp } = req.body;
       
-      if (!email) {
-        res.status(400).json({ error: "Brak adresu e-mail" });
+      if (!email || typeof email !== 'string' || !email.trim()) {
+        res.status(400).json({ error: "Adres e-mail jest wymagany." });
         return;
       }
 
-      console.log(`[LEAD] Nowy e-mail z lejka: ${email} (Czas: ${timestamp})`);
-      res.json({ success: true, message: "Lead zapisany" });
-    } catch (error) {
-      console.error("Błąd zapisu leada:", error);
-      res.status(500).json({ error: "Nie udało się zapisać leada." });
+      const lead = await leadManager.saveLead({
+        email,
+        source: source || 'financial_funnel',
+        lossTier,
+        lossAmount,
+        metadata: { ...metadata, clientTimestamp: timestamp }
+      });
+
+      res.status(201).json({
+        success: true,
+        id: lead.id,
+        message: "Lead został pomyślnie i trwale zapisany."
+      });
+    } catch (error: any) {
+      console.error("[API /api/leads] Błąd walidacji lub zapisu leada:", error.message || error);
+      res.status(400).json({ error: error.message || "Nie udało się zapisać leada." });
     }
   });
 
@@ -190,23 +211,31 @@ async function startServer() {
     }
   });
 
-  // 8. Endpoint zapisu na monitoring spółki (B2B Lead)
+  // 8. Endpoint zapisu na monitoring spółki (B2B Lead - Trwały zapis w bazie i pamięci serwera)
   app.post("/api/company/monitor", async (req, res) => {
     try {
       const { email, nip, krs, companyName, plan } = req.body;
-      if (!email) {
-        res.status(400).json({ error: "Adres e-mail jest wymagany" });
+      if (!email || typeof email !== 'string' || !email.trim()) {
+        res.status(400).json({ error: "Adres e-mail jest wymagany." });
         return;
       }
 
-      console.log(`[B2B MONITORING] Nowy lead na monitoring spółki: ${email}, NIP: ${nip}, KRS: ${krs}, Spółka: ${companyName}, Plan: ${plan || 'Pro B2B'}`);
-      res.json({
+      const record = await leadManager.saveCompanyMonitor({
+        email,
+        nip,
+        krs,
+        companyName,
+        plan
+      });
+
+      res.status(201).json({
         success: true,
+        id: record.id,
         message: "Aktywowano alerty monitoringu dla wybranej spółki. Raporty będą wysyłane na podany e-mail."
       });
     } catch (error: any) {
-      console.error("Błąd zapisu na monitoring:", error);
-      res.status(500).json({ error: "Nie udało się zapisać na monitoring" });
+      console.error("[API /api/company/monitor] Błąd zapisu na monitoring:", error.message || error);
+      res.status(400).json({ error: error.message || "Nie udało się zapisać na monitoring spółki." });
     }
   });
 
@@ -295,6 +324,86 @@ async function startServer() {
       supabase: supabaseResult,
       gemini: geminiResult
     });
+  });
+
+  // 10. Endpoints autoryzacji programu poleceń i raportów Premium (Server-Authoritative)
+  app.get("/api/referral/status", async (req, res) => {
+    try {
+      const userId = (req.query.userId as string) || '';
+      const code = (req.query.code as string) || undefined;
+      if (!userId.trim()) {
+        res.status(400).json({ error: "Brak identyfikatora użytkownika (userId)" });
+        return;
+      }
+      const record = await referralManager.getOrCreateUser(userId, code);
+      res.json({ success: true, record });
+    } catch (err: any) {
+      console.error("[ReferralAPI] Błąd pobierania statusu:", err);
+      res.status(500).json({ error: err.message || "Błąd pobierania statusu poleceń" });
+    }
+  });
+
+  app.post("/api/referral/unlock", async (req, res) => {
+    try {
+      const { userId, nip } = req.body;
+      if (!userId || !nip) {
+        res.status(400).json({ error: "Wymagany userId oraz NIP spółki" });
+        return;
+      }
+      const result = await referralManager.unlockReport(userId, nip);
+      if (!result.success) {
+        res.status(403).json(result);
+        return;
+      }
+      res.json(result);
+    } catch (err: any) {
+      console.error("[ReferralAPI] Błąd odblokowania raportu:", err);
+      res.status(500).json({ error: err.message || "Błąd serwera podczas odblokowywania raportu" });
+    }
+  });
+
+  app.post("/api/referral/redeem", async (req, res) => {
+    try {
+      const { userId, friendCode } = req.body;
+      if (!userId || !friendCode) {
+        res.status(400).json({ error: "Wymagany userId oraz kod polecający" });
+        return;
+      }
+      const result = await referralManager.redeemFriendCode(userId, friendCode);
+      if (!result.success) {
+        res.status(400).json(result);
+        return;
+      }
+      res.json(result);
+    } catch (err: any) {
+      console.error("[ReferralAPI] Błąd realizacji kodu:", err);
+      res.status(500).json({ error: err.message || "Błąd realizacji kodu polecającego" });
+    }
+  });
+
+  app.post("/api/referral/share", async (req, res) => {
+    try {
+      const { userId, source } = req.body;
+      if (!userId) {
+        res.status(400).json({ error: "Wymagany userId" });
+        return;
+      }
+      const result = await referralManager.recordShare(userId, source);
+      res.json({ success: true, ...result });
+    } catch (err: any) {
+      console.error("[ReferralAPI] Błąd zapisu polecenia:", err);
+      res.status(500).json({ error: err.message || "Błąd zapisu polecenia" });
+    }
+  });
+
+  app.post("/api/referral/verify", async (req, res) => {
+    try {
+      const { userId, nip } = req.body;
+      const result = await referralManager.verifyAccess(userId, nip);
+      res.json(result);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || "Błąd weryfikacji dostępu" });
+    }
   });
 
   app.post("/api/chat", async (req, res) => {

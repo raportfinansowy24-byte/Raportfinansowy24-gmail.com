@@ -11,5 +11,3 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
-
-declare const GEMINI_API_KEY: string;

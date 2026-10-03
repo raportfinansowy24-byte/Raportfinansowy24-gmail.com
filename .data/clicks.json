@@ -1,0 +1,14 @@
+{
+  "13a52a27-f487-4a1f-8abe-314b7e53b158": {
+    "id": "13a52a27-f487-4a1f-8abe-314b7e53b158",
+    "offer_id": "direct-revolut-personal",
+    "offer_name": "Revolut - Konto Osobiste",
+    "source": "home_quiz",
+    "ip_address": "127.0.0.1",
+    "user_agent": "node",
+    "created_at": "2026-10-03T05:30:31.093Z",
+    "status": "conversion",
+    "payout": 150.5,
+    "converted_at": "2026-10-03T05:30:31.139Z"
+  }
+}

@@ -83,7 +83,7 @@ export const ReportFeedbackSurvey: React.FC<ReportFeedbackSurveyProps> = ({
           text: postText,
           url: referralLink,
         });
-        referralService.addSuccessfulReferral('social_share');
+        await referralService.addSuccessfulReferral('social_share');
         return;
       } catch (err) {
         // Użytkownik zamknął natywny share lub brak obsługi -> otwórz modal
@@ -98,30 +98,30 @@ export const ReportFeedbackSurvey: React.FC<ReportFeedbackSurveyProps> = ({
       await navigator.clipboard.writeText(postText);
       setCopiedPost(true);
       setTimeout(() => setCopiedPost(false), 2500);
-      referralService.addSuccessfulReferral('copied_post');
+      await referralService.addSuccessfulReferral('copied_post');
     } catch {
       // ignore
     }
   };
 
-  const shareToLinkedIn = () => {
+  const shareToLinkedIn = async () => {
     window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(referralLink)}`, '_blank');
-    referralService.addSuccessfulReferral('linkedin');
+    await referralService.addSuccessfulReferral('linkedin');
   };
 
-  const shareToTwitter = () => {
+  const shareToTwitter = async () => {
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(postText)}`, '_blank');
-    referralService.addSuccessfulReferral('twitter');
+    await referralService.addSuccessfulReferral('twitter');
   };
 
-  const shareToWhatsApp = () => {
+  const shareToWhatsApp = async () => {
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(postText)}`, '_blank');
-    referralService.addSuccessfulReferral('whatsapp');
+    await referralService.addSuccessfulReferral('whatsapp');
   };
 
-  const shareToFacebook = () => {
+  const shareToFacebook = async () => {
     window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(referralLink)}`, '_blank');
-    referralService.addSuccessfulReferral('facebook');
+    await referralService.addSuccessfulReferral('facebook');
   };
 
   return (
