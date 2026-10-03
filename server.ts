@@ -210,6 +210,93 @@ async function startServer() {
     }
   });
 
+  // 9. Endpoint diagnostyczny (System Health Check) - Supabase & Gemini
+  app.get("/api/health", async (req, res) => {
+    const startTime = Date.now();
+
+    // Diagnostyka Supabase
+    const sbUrl = (process.env.VITE_SUPABASE_URL || "").trim();
+    const sbKey = (process.env.VITE_SUPABASE_ANON_KEY || "").trim();
+    const isSbConfigured = Boolean(sbUrl && !sbUrl.includes("placeholder"));
+
+    let supabaseResult = {
+      configured: isSbConfigured,
+      reachable: false,
+      latencyMs: 0,
+      urlPreview: isSbConfigured ? sbUrl.replace(/^(https?:\/\/)([^.]+)\.(.*)$/, "$1$2.***.$3") : "Brak VITE_SUPABASE_URL",
+      message: isSbConfigured ? "Sprawdzanie..." : "Brak skonfigurowanego VITE_SUPABASE_URL"
+    };
+
+    if (isSbConfigured) {
+      const sbStart = Date.now();
+      try {
+        const resp = await fetch(`${sbUrl}/rest/v1/`, {
+          method: "GET",
+          headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}` },
+          signal: AbortSignal.timeout(3500)
+        });
+        supabaseResult.latencyMs = Date.now() - sbStart;
+        if (resp.ok || resp.status === 200 || resp.status === 401 || resp.status === 404) {
+          supabaseResult.reachable = true;
+          supabaseResult.message = `Aktywne połączenie (HTTP ${resp.status})`;
+        } else {
+          supabaseResult.message = `Odpowiedź HTTP ${resp.status}`;
+        }
+      } catch (err: any) {
+        supabaseResult.latencyMs = Date.now() - sbStart;
+        supabaseResult.message = err.message || "Timeout / ENOTFOUND";
+      }
+    }
+
+    // Diagnostyka Gemini AI
+    const geminiKey = (process.env.GEMINI_API_KEY || "").trim();
+    const isGeminiConfigured = Boolean(geminiKey);
+
+    let geminiResult = {
+      configured: isGeminiConfigured,
+      reachable: false,
+      latencyMs: 0,
+      model: "gemini-2.5-flash",
+      message: isGeminiConfigured ? "Sprawdzanie..." : "Brak GEMINI_API_KEY w środowisku"
+    };
+
+    if (isGeminiConfigured) {
+      const gStart = Date.now();
+      try {
+        const { GoogleGenAI } = await import("@google/genai");
+        const ai = new GoogleGenAI({ 
+          apiKey: geminiKey,
+          httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
+        });
+        const testResp = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: "ping"
+        });
+        geminiResult.latencyMs = Date.now() - gStart;
+        const text = testResp?.candidates?.[0]?.content?.parts?.[0]?.text || testResp?.text;
+        if (testResp && (text || (testResp.candidates && testResp.candidates.length > 0))) {
+          geminiResult.reachable = true;
+          geminiResult.message = `Połączono pomyślnie (API responsywne: ${text ? text.trim() : 'OK'})`;
+        } else {
+          geminiResult.message = "Brak treści w odpowiedzi modelu";
+        }
+      } catch (err: any) {
+        geminiResult.latencyMs = Date.now() - gStart;
+        geminiResult.message = err?.message || "Błąd zapytania testowego";
+      }
+    }
+
+    res.json({
+      status: "ok",
+      timestamp: new Date().toISOString(),
+      uptimeSeconds: Math.floor(process.uptime()),
+      totalLatencyMs: Date.now() - startTime,
+      environment: process.env.NODE_ENV || "development",
+      supabase: supabaseResult,
+      gemini: geminiResult
+    });
+  });
+
   app.post("/api/chat", async (req, res) => {
     try {
       const { history, message } = req.body;

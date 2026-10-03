@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Calculator, Home, PiggyBank, ShieldAlert, Building2, CreditCard, 
-  ArrowRight, Mail, Phone, Gift, Crown, Sparkles 
+  ArrowRight, Mail, Phone, Gift, Crown, Sparkles, Activity 
 } from 'lucide-react';
 import { referralService, ReferralState } from '../services/referral.service';
 import { NotificationSystem } from './NotificationSystem';
+import { SystemHealthCheck } from './SystemHealthCheck';
 
 export const Header = ({ onOpenReferral }: { onOpenReferral?: () => void }) => {
   const location = useLocation();
@@ -126,6 +127,36 @@ export const Footer = ({
   onOpenReferral?: () => void;
 }) => {
   const navigate = useNavigate();
+  const [showHealthCheck, setShowHealthCheck] = useState(false);
+  const [versionClicks, setVersionClicks] = useState(0);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('health') === '1' || params.get('admin') === '1' || params.get('diagnostics') === '1') {
+        setShowHealthCheck(true);
+        localStorage.setItem('sys_health_admin', 'true');
+      } else if (localStorage.getItem('sys_health_admin') === 'true') {
+        setShowHealthCheck(true);
+      }
+    }
+  }, []);
+
+  const handleVersionClick = () => {
+    const next = versionClicks + 1;
+    if (next >= 3) {
+      const newState = !showHealthCheck;
+      setShowHealthCheck(newState);
+      if (newState) {
+        localStorage.setItem('sys_health_admin', 'true');
+      } else {
+        localStorage.removeItem('sys_health_admin');
+      }
+      setVersionClicks(0);
+    } else {
+      setVersionClicks(next);
+    }
+  };
 
   return (
     <footer className="w-full py-8 px-4 sm:px-6 lg:px-8 bg-[#070709] border-t border-white/[0.08] text-zinc-400 text-xs mt-auto">
@@ -138,7 +169,24 @@ export const Footer = ({
             </div>
             <span className="hidden sm:inline text-white/20">•</span>
             <p className="text-[11px] text-zinc-400">
-              © {new Date().getFullYear()} RaportFinansowy24.pl – Niezależna analityka finansowa i algorytmy AI. <span className="text-zinc-600 font-mono text-[10px]">v1.0.1</span>
+              © {new Date().getFullYear()} RaportFinansowy24.pl – Niezależna analityka finansowa i algorytmy AI.{' '}
+              <button 
+                onClick={handleVersionClick}
+                className="text-zinc-600 hover:text-zinc-400 font-mono text-[10px] cursor-pointer transition-colors focus:outline-none"
+                title="Wersja systemu"
+              >
+                v1.0.1
+              </button>
+              {showHealthCheck && (
+                <button
+                  onClick={() => setShowHealthCheck(prev => !prev)}
+                  className="ml-2 inline-flex items-center gap-1 text-[10px] text-amber-400/80 hover:text-amber-300 font-mono cursor-pointer"
+                  title="Panel diagnostyczny aktywny"
+                >
+                  <Activity size={10} className="animate-pulse" />
+                  <span>Health</span>
+                </button>
+              )}
             </p>
           </div>
 
@@ -227,6 +275,14 @@ export const Footer = ({
           </p>
         </div>
       </div>
+
+      <SystemHealthCheck 
+        isOpen={showHealthCheck} 
+        onClose={() => {
+          setShowHealthCheck(false);
+          localStorage.removeItem('sys_health_admin');
+        }} 
+      />
     </footer>
   );
 };
