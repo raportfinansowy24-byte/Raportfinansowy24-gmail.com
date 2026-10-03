@@ -12,7 +12,7 @@ export const Terms = ({ onClose }: { onClose: () => void }) => (
       </div>
       <div className="p-6 overflow-y-auto text-white/70 text-sm space-y-4 custom-scrollbar">
         <h4 className="text-white font-bold">1. Postanowienia ogólne</h4>
-        <p>Niniejszy regulamin określa zasady korzystania z serwisu raport-finansowy24.pl. Właścicielem i operatorem serwisu jest Tomasz Siwiaszczyk.</p>
+        <p>Niniejszy regulamin określa zasady korzystania z serwisu raport-finansowy24.pl. Właścicielem, wydawcą i operatorem serwisu jest Tomasz Siwiaszczyk, zam. ul. Reymonta 88B/2, 46-100 Namysłów, Polska (kontakt: raportfinansowy24@gmail.com, tel. +48 794 557 967).</p>
         
         <h4 className="text-white font-bold">2. Zasady korzystania</h4>
         <p>Użytkownik zobowiązuje się do korzystania z serwisu zgodnie z prawem i zasadami współżycia społecznego.</p>

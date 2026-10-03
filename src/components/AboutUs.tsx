@@ -50,9 +50,9 @@ export const AboutUs: React.FC = () => {
             <span>Właściciel Strony & Założyciel</span>
           </div>
 
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
-            <BadgeCheck size={14} className="text-emerald-400" />
-            <span>Tożsamość zweryfikowana (KYC Compliant)</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/10 text-zinc-300 text-xs font-medium">
+            <ShieldCheck size={14} className="text-[#DC143C]" />
+            <span>Deklaracja tożsamości właścicielskiej</span>
           </div>
         </div>
 
@@ -104,28 +104,23 @@ export const AboutUs: React.FC = () => {
         </div>
 
         {/* Verification Contact Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
           <div className="p-4 rounded-xl bg-black/40 border border-white/[0.06]">
             <div className="text-[11px] text-zinc-500 font-medium mb-1 flex items-center gap-1.5">
               <Globe size={13} className="text-[#DC143C]" />
               <span>Adres domeny serwisu</span>
             </div>
-            <p className="text-sm font-bold text-white font-mono">raportfinansowy24.pl</p>
-            <p className="text-[10px] text-zinc-400 mt-0.5">Wyłączna własność Tomasza Siwiaszczyka</p>
+            <p className="text-sm font-bold text-white font-mono truncate">raport-finansowy24.pl</p>
+            <p className="text-[10px] text-zinc-400 mt-0.5">Wyłączna własność: Tomasz Siwiaszczyk</p>
           </div>
 
           <div className="p-4 rounded-xl bg-black/40 border border-white/[0.06]">
             <div className="text-[11px] text-zinc-500 font-medium mb-1 flex items-center gap-1.5">
-              <Mail size={13} className="text-[#DC143C]" />
-              <span>Bezpośredni e-mail właściciela</span>
+              <Building2 size={13} className="text-[#DC143C]" />
+              <span>Adres korespondencyjny</span>
             </div>
-            <a 
-              href="mailto:raportfinansowy24@gmail.com" 
-              className="text-sm font-bold text-zinc-200 hover:text-white transition-colors break-all"
-            >
-              raportfinansowy24@gmail.com
-            </a>
-            <p className="text-[10px] text-zinc-400 mt-0.5">Oficjalny kanał do weryfikacji KYC</p>
+            <p className="text-xs font-bold text-white">ul. Reymonta 88B/2</p>
+            <p className="text-[10px] text-zinc-400 mt-0.5">46-100 Namysłów, woj. opolskie</p>
           </div>
 
           <div className="p-4 rounded-xl bg-black/40 border border-white/[0.06]">
@@ -134,26 +129,40 @@ export const AboutUs: React.FC = () => {
               <span>Telefon kontaktowy</span>
             </div>
             <a 
-              href="tel:+491778466985" 
+              href="tel:+48794557967" 
               className="text-sm font-bold text-zinc-200 hover:text-white transition-colors font-mono"
             >
-              +49 177 8466985
+              +48 794 557 967
             </a>
-            <p className="text-[10px] text-zinc-400 mt-0.5">Bezpośredni kontakt telefoniczny</p>
+            <p className="text-[10px] text-zinc-400 mt-0.5">Bezpośredni telefon właściciela</p>
+          </div>
+
+          <div className="p-4 rounded-xl bg-black/40 border border-white/[0.06]">
+            <div className="text-[11px] text-zinc-500 font-medium mb-1 flex items-center gap-1.5">
+              <Mail size={13} className="text-[#DC143C]" />
+              <span>E-mail kontaktowy</span>
+            </div>
+            <a 
+              href="mailto:raportfinansowy24@gmail.com" 
+              className="text-xs font-bold text-zinc-200 hover:text-white transition-colors break-all"
+            >
+              raportfinansowy24@gmail.com
+            </a>
+            <p className="text-[10px] text-zinc-400 mt-0.5">lipetomasz00@gmail.com</p>
           </div>
         </div>
 
-        {/* Official Declaration for Revolut / Compliance KYC */}
+        {/* Official Declaration of Website Ownership */}
         <div className="mt-6 p-4 rounded-2xl bg-black/60 border border-[#DC143C]/25 text-xs text-zinc-300 leading-relaxed">
           <div className="flex items-center gap-2 text-white font-bold mb-1.5">
             <ShieldCheck size={16} className="text-[#DC143C]" />
-            <span>Oficjalne oświadczenie weryfikacyjne (Website Ownership & KYC Declaration):</span>
+            <span>Oświadczenie o strukturze własnościowej (Website Ownership Declaration):</span>
           </div>
           <p className="text-zinc-400 text-[11px] sm:text-xs">
-            Niniejsza podstrona stanowi prawną deklarację tożsamości właścicielskiej dla instytucji płatniczych i bankowych 
-            (w szczególności <strong>Revolut Ltd / Revolut Bank UAB</strong>, banków współpracujących oraz sieci afiliacyjnych). 
-            Potwierdza się, że pan <strong className="text-white">Tomasz Siwiaszczyk</strong> jest wyłącznym właścicielem, dysponentem i administratorem 
-            portalu internetowego oraz domeny <em>RaportFinansowy24</em>, zarządza wszystkimi kontami rozliczeniowymi i ponosi pełną odpowiedzialność 
+            Niniejsza podstrona stanowi oficjalną deklarację tożsamości właścicielskiej dla instytucji płatniczych i bankowych 
+            (w tym <strong>Revolut Ltd / Revolut Bank UAB</strong>, banków współpracujących oraz sieci afiliacyjnych). 
+            Potwierdza się, że pan <strong className="text-white">Tomasz Siwiaszczyk</strong> (zam. ul. Reymonta 88B/2, 46-100 Namysłów, tel. +48 794 557 967) jest wyłącznym właścicielem, dysponentem i administratorem 
+            portalu internetowego oraz domeny <em>raport-finansowy24.pl</em>, zarządza wszystkimi kontami rozliczeniowymi i ponosi pełną odpowiedzialność 
             za działalność serwisu.
           </p>
         </div>

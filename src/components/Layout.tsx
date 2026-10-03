@@ -156,12 +156,12 @@ export const Footer = ({
             <span className="text-white/20 hidden sm:inline">•</span>
 
             <a 
-              href="tel:+491778466985" 
+              href="tel:+48794557967" 
               className="flex items-center gap-1.5 text-zinc-300 hover:text-white transition-colors"
               title="Zadzwoń do nas"
             >
               <Phone size={13} className="text-[#DC143C]" />
-              <span>+49 177 8466985</span>
+              <span>+48 794 557 967</span>
             </a>
           </div>
 
@@ -204,12 +204,12 @@ export const Footer = ({
         {/* Ownership & Imprint Notice for Compliance & Trust */}
         <div className="pt-3 border-t border-white/[0.05] flex flex-col sm:flex-row items-center justify-between text-[11px] text-zinc-400 gap-2 text-center sm:text-left">
           <p>
-            <span className="text-zinc-300 font-semibold">Właściciel i operator serwisu:</span> Tomasz Siwiaszczyk
+            <span className="text-zinc-300 font-semibold">Właściciel i operator:</span> Tomasz Siwiaszczyk, ul. Reymonta 88B/2, 46-100 Namysłów
             <button 
               onClick={() => navigate('/o-nas')} 
               className="text-[#DC143C] hover:underline cursor-pointer ml-1.5 font-medium"
             >
-              (Sprawdź profil właściciela & misję)
+              (Pełne dane działalności & profil)
             </button>
           </p>
           <p className="text-[10px] text-zinc-500">
