@@ -129,12 +129,12 @@ export const AboutUs: React.FC = () => {
               <span>Telefon kontaktowy</span>
             </div>
             <a 
-              href="tel:+48794557967" 
+              href="tel:+491778466985" 
               className="text-sm font-bold text-zinc-200 hover:text-white transition-colors font-mono"
             >
-              +48 794 557 967
+              +49 177 8466985
             </a>
-            <p className="text-[10px] text-zinc-400 mt-0.5">Bezpośredni telefon właściciela</p>
+            <p className="text-[10px] text-zinc-400 mt-0.5">Kontakt PL: +48 794 557 967</p>
           </div>
 
           <div className="p-4 rounded-xl bg-black/40 border border-white/[0.06]">
@@ -161,7 +161,7 @@ export const AboutUs: React.FC = () => {
           <p className="text-zinc-400 text-[11px] sm:text-xs">
             Niniejsza podstrona stanowi oficjalną deklarację tożsamości właścicielskiej dla instytucji płatniczych i bankowych 
             (w tym <strong>Revolut Ltd / Revolut Bank UAB</strong>, banków współpracujących oraz sieci afiliacyjnych). 
-            Potwierdza się, że pan <strong className="text-white">Tomasz Siwiaszczyk</strong> (zam. ul. Reymonta 88B/2, 46-100 Namysłów, tel. +48 794 557 967) jest wyłącznym właścicielem, dysponentem i administratorem 
+            Potwierdza się, że pan <strong className="text-white">Tomasz Siwiaszczyk</strong> (zam. ul. Reymonta 88B/2, 46-100 Namysłów, tel. +49 177 8466985 / +48 794 557 967) jest wyłącznym właścicielem, dysponentem i administratorem 
             portalu internetowego oraz domeny <em>raport-finansowy24.pl</em>, zarządza wszystkimi kontami rozliczeniowymi i ponosi pełną odpowiedzialność 
             za działalność serwisu.
           </p>

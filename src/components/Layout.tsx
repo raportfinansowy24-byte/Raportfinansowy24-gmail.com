@@ -156,11 +156,21 @@ export const Footer = ({
             <span className="text-white/20 hidden sm:inline">•</span>
 
             <a 
-              href="tel:+48794557967" 
+              href="tel:+491778466985" 
               className="flex items-center gap-1.5 text-zinc-300 hover:text-white transition-colors"
-              title="Zadzwoń do nas"
+              title="Zadzwoń do nas (telefon bieżący)"
             >
               <Phone size={13} className="text-[#DC143C]" />
+              <span>+49 177 8466985</span>
+            </a>
+
+            <span className="text-white/20 hidden sm:inline">/</span>
+
+            <a 
+              href="tel:+48794557967" 
+              className="text-zinc-400 hover:text-white transition-colors text-[10px]"
+              title="Numer kontaktowy (Polska)"
+            >
               <span>+48 794 557 967</span>
             </a>
           </div>
