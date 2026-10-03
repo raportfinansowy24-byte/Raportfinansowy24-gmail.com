@@ -7,5 +7,14 @@
     "plan": "Pro B2B Alert",
     "status": "active",
     "created_at": "2026-10-03T05:30:28.733Z"
+  },
+  "161bd365-1b8d-45ef-9889-77f88ad93d8a": {
+    "id": "161bd365-1b8d-45ef-9889-77f88ad93d8a",
+    "email": "monitor.test.1791006326482@firma.pl",
+    "nip": "5260211111",
+    "company_name": "TEST CORP",
+    "plan": "B2B Pro",
+    "status": "active",
+    "created_at": "2026-10-03T05:45:26.488Z"
   }
 }

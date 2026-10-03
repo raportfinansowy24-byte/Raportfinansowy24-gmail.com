@@ -1298,6 +1298,11 @@ export function LoanCalculator() {
                 </div>
               ))}
             </div>
+
+            {/* Informacja prawna / Nota o charakterze orientacyjnym */}
+            <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 text-[11px] text-zinc-500 leading-relaxed text-center sm:text-left mt-4">
+              * Wyliczenia raty, odsetek i wskaźników RRSO mają charakter wyłącznie orientacyjnej symulacji matematycznej opartej na wprowadzonych parametrach i średnim rynkowym oprocentowaniu. Rzeczywiste warunki kredytowania, ostateczna wysokość raty, prowizja oraz RRSO są ustalane indywidualnie przez bank po ocenie zdolności kredytowej wnioskodawcy. Prezentowane wyniki nie stanowią oferty w rozumieniu art. 66 Kodeksu Cywilnego.
+            </div>
           </div>
         )}
         

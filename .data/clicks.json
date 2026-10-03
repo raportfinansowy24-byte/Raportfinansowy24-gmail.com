@@ -10,5 +10,17 @@
     "status": "conversion",
     "payout": 150.5,
     "converted_at": "2026-10-03T05:30:31.139Z"
+  },
+  "0b0fbc41-5d11-486e-b978-3ff10365eba7": {
+    "id": "0b0fbc41-5d11-486e-b978-3ff10365eba7",
+    "offer_id": "direct-revolut-personal",
+    "offer_name": "Revolut - Konto Osobiste",
+    "source": "audit",
+    "ip_address": "127.0.0.1",
+    "user_agent": "node",
+    "created_at": "2026-10-03T05:45:28.398Z",
+    "status": "conversion",
+    "payout": 250,
+    "converted_at": "2026-10-03T05:45:28.461Z"
   }
 }

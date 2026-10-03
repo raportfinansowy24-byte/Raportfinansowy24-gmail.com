@@ -8,5 +8,13 @@
     "metadata": {},
     "status": "new",
     "created_at": "2026-10-03T05:30:28.490Z"
+  },
+  "5f8e1e95-c862-43d1-8a8f-d54718d0de3f": {
+    "id": "5f8e1e95-c862-43d1-8a8f-d54718d0de3f",
+    "email": "audit.test.1791006326240@gmail.com",
+    "source": "audit_suite",
+    "metadata": {},
+    "status": "new",
+    "created_at": "2026-10-03T05:45:26.254Z"
   }
 }

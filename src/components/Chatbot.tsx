@@ -307,6 +307,9 @@ export function Chatbot() {
                 <Send size={14} className="ml-0.5" />
               </button>
             </div>
+            <p className="text-[10px] text-zinc-500 text-center mt-2 leading-tight">
+              Doradca AI udziela odpowiedzi edukacyjno-informacyjnych. Zawsze weryfikuj warunki na oficjalnej stronie banku.
+            </p>
           </div>
         </div>
       )}

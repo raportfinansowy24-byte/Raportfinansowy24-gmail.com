@@ -175,7 +175,7 @@ export function Home() {
         </h1>
 
         <p className="text-sm sm:text-base text-zinc-300 max-w-xl mx-auto font-normal leading-relaxed mb-6 sm:mb-8">
-          Oblicz ratę, porównaj dostępne oferty bankowe, zaplanuj bezpieczne oszczędzanie i odbierz do 650 zł premii za otwarcie konta.
+          Oblicz ratę, porównaj dostępne oferty bankowe, zaplanuj bezpieczne oszczędzanie i sprawdź aktualne premie powitalne za otwarcie konta.
         </p>
 
         {/* Dwa główne CTA: Primary & Secondary */}
@@ -286,7 +286,7 @@ export function Home() {
                 Konta i premie
               </h3>
               <p className="text-[11px] text-zinc-400 mt-0.5 truncate leading-tight">
-                Konta 0 zł + bonusy do 650 zł
+                Konta 0 zł + premie powitalne
               </p>
             </div>
             <div className="flex items-center text-[10px] sm:text-xs font-semibold text-zinc-400 group-hover:text-white pt-2 mt-1 border-t border-white/5 transition-colors">
@@ -690,7 +690,7 @@ export function Home() {
                     Potrzebuję gotówki lub pożyczki
                   </h3>
                   <p className="text-[11px] text-zinc-400">
-                    Kalkulator rat, najniższe RRSO i decyzja w 15 minut
+                    Kalkulator rat, porównanie RRSO i szybka weryfikacja online
                   </p>
                 </div>
               </div>
@@ -711,7 +711,7 @@ export function Home() {
                     Chcę darmowe konto z premią
                   </h3>
                   <p className="text-[11px] text-zinc-400">
-                    Konta 0 zł bez opłat + premie do 650 zł gotówki
+                    Konta 0 zł bez opłat + aktualne premie gotówkowe
                   </p>
                 </div>
               </div>
@@ -753,7 +753,7 @@ export function Home() {
                     Chcę bezpiecznie pomnożyć oszczędności
                   </h3>
                   <p className="text-[11px] text-zinc-400">
-                    Lokaty i konta oszczędnościowe do 7.5% rocznie
+                    Lokaty i konta oszczędnościowe z wysokim oprocentowaniem
                   </p>
                 </div>
               </div>

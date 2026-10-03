@@ -75,6 +75,16 @@ export function validateNip(nip: string | null | undefined): NipValidationResult
     };
   }
 
+  // Wykluczenie ciągów o identycznych cyfrach (np. 0000000000) oraz nieistniejących prefiksów US
+  if (/^(\d)\1{9}$/.test(clean) || clean.startsWith('000')) {
+    return {
+      isValid: false,
+      cleanNip: clean,
+      formattedNip: formatNip(clean),
+      error: 'Nieprawidłowy numer NIP'
+    };
+  }
+
   // Algorytm sumy kontrolnej
   const weights = [6, 5, 7, 2, 3, 4, 5, 6, 7];
   const digits = clean.split('').map(Number);

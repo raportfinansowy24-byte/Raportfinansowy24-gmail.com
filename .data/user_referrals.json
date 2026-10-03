@@ -27,5 +27,71 @@
     "referredByCode": null,
     "createdAt": "2026-10-03T05:22:10.316Z",
     "updatedAt": "2026-10-03T05:22:10.326Z"
+  },
+  "fe63ebb1-5216-4a22-88c1-2c0ecf701bff": {
+    "userId": "fe63ebb1-5216-4a22-88c1-2c0ecf701bff",
+    "myCode": "RF24-G75TZV",
+    "referralCount": 0,
+    "premiumCredits": 1,
+    "isVipUnlimited": false,
+    "unlockedNips": [],
+    "redeemedCodes": [],
+    "referredByCode": null,
+    "createdAt": "2026-10-03T05:26:51.054Z",
+    "updatedAt": "2026-10-03T05:26:51.054Z"
+  },
+  "spoofed_hacker_1791006326114": {
+    "userId": "spoofed_hacker_1791006326114",
+    "myCode": "RF24-SBHWPN",
+    "referralCount": 0,
+    "premiumCredits": 0,
+    "isVipUnlimited": false,
+    "unlockedNips": [
+      "0000000000"
+    ],
+    "redeemedCodes": [],
+    "referredByCode": null,
+    "createdAt": "2026-10-03T05:45:26.227Z",
+    "updatedAt": "2026-10-03T05:45:26.230Z"
+  },
+  "test_user_nip_check_1791006400547": {
+    "userId": "test_user_nip_check_1791006400547",
+    "myCode": "RF24-82AYY7",
+    "referralCount": 0,
+    "premiumCredits": 0,
+    "isVipUnlimited": false,
+    "unlockedNips": [
+      "0000000000"
+    ],
+    "redeemedCodes": [],
+    "referredByCode": null,
+    "createdAt": "2026-10-03T05:46:40.681Z",
+    "updatedAt": "2026-10-03T05:46:40.684Z"
+  },
+  "test_user_nip_check_1791006434105": {
+    "userId": "test_user_nip_check_1791006434105",
+    "myCode": "RF24-VYXMPA",
+    "referralCount": 0,
+    "premiumCredits": 1,
+    "isVipUnlimited": false,
+    "unlockedNips": [],
+    "redeemedCodes": [],
+    "referredByCode": null,
+    "createdAt": "2026-10-03T05:47:14.240Z",
+    "updatedAt": "2026-10-03T05:47:14.240Z"
+  },
+  "test_user_nip_check_1791006461507": {
+    "userId": "test_user_nip_check_1791006461507",
+    "myCode": "RF24-FCTS82",
+    "referralCount": 0,
+    "premiumCredits": 0,
+    "isVipUnlimited": false,
+    "unlockedNips": [
+      "7740001454"
+    ],
+    "redeemedCodes": [],
+    "referredByCode": null,
+    "createdAt": "2026-10-03T05:47:41.626Z",
+    "updatedAt": "2026-10-03T05:47:41.645Z"
   }
 }

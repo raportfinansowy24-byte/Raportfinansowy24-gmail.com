@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { supabase, getIsSupabaseAvailable } from '../lib/supabase.js';
+import { validateNip } from '../utils/nipValidator.js';
 
 export interface UserReferralRecord {
   userId: string;
@@ -152,11 +153,17 @@ export class ReferralManager {
    */
   public async unlockReport(userId: string, nip: string): Promise<{ success: boolean; message: string; record: UserReferralRecord }> {
     const record = await this.getOrCreateUser(userId);
-    const cleanNip = nip ? nip.replace(/\D/g, '') : '';
+    const nipValidation = validateNip(nip);
 
-    if (!cleanNip || cleanNip.length !== 10) {
-      return { success: false, message: 'Podano nieprawidłowy numer NIP spółki.', record };
+    if (!nipValidation.isValid) {
+      return { 
+        success: false, 
+        message: nipValidation.error || 'Podano nieprawidłowy numer NIP spółki (błędna suma kontrolna lub format).', 
+        record 
+      };
     }
+
+    const cleanNip = nipValidation.cleanNip;
 
     // 1. Jeśli użytkownik ma status VIP Unlimited
     if (record.isVipUnlimited) {

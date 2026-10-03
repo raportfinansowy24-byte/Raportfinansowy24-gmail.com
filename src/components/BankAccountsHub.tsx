@@ -200,18 +200,18 @@ export const BankAccountsHub: React.FC = () => {
         <div className="relative z-10 max-w-3xl space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold uppercase tracking-wider">
             <Gift size={14} className="animate-bounce" />
-            <span>Premie gotówkowe do 650 zł za otwarcie konta</span>
+            <span>Aktualne promocje bankowe i premie powitalne</span>
           </div>
 
           <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
             Konta Bankowe i Oszczędności
           </h1>
           <p className="text-base sm:text-xl font-bold text-zinc-300">
-            Nie płać za konto. Zarabiaj na nim do 650 zł rocznie.
+            Wybierz bezpłatne konto osobiste i odbierz premie na start.
           </p>
 
           <p className="text-sm sm:text-base text-zinc-400 leading-relaxed font-normal">
-            Porównaj aktualne promocje bankowe w Polsce. Wybierz rachunek z darmowym prowadzeniem, kartą 0 zł i odbierz gwarantowaną premię powitalną.
+            Porównaj aktualne promocje bankowe w Polsce. Wybierz rachunek z darmowym prowadzeniem, kartą 0 zł i sprawdź warunki premii powitalnych.
           </p>
 
           {/* Szybki kalkulator korzyści dla użytkownika */}
@@ -478,6 +478,13 @@ export const BankAccountsHub: React.FC = () => {
             </p>
           </div>
         </div>
+      </section>
+
+      {/* Informacja prawna / Nota o charakterze informacyjnym */}
+      <section className="pt-4 pb-2 border-t border-white/5">
+        <p className="text-[11px] text-zinc-500 leading-relaxed text-center sm:text-left">
+          * Prezentowane warunki ofert, kwoty premii i oprocentowania mają charakter informacyjny i orientacyjny. Rzeczywiste warunki promocji regulują regulaminy poszczególnych banków i instytucji finansowych. Wszelkie zestawienia nie stanowią oferty w rozumieniu art. 66 Kodeksu Cywilnego.
+        </p>
       </section>
 
     </div>

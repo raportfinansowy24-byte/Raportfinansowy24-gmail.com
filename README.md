@@ -1,4 +1,4 @@
-# Financial Freedom - My to Sukces 🚀
+# RaportFinansowy24 – Kredyty, Konta, Hipoteka i Doradca AI 🚀
 
 Zaawansowana aplikacja internetowa do symulacji finansowych i generowania spersonalizowanych ofert przy użyciu AI. Projekt pozwala na kalkulację kredytów, symulację hipotek, planowanie oszczędności.  
 

@@ -673,6 +673,11 @@ export function MortgageSimulator() {
         </>
       )}
 
+      {/* Informacja prawna / Nota o charakterze orientacyjnym */}
+      <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 text-[11px] text-zinc-500 leading-relaxed text-center sm:text-left mt-6">
+        * Symulacja kredytu hipotecznego oraz wyliczenia harmonogramu i nadpłat mają charakter wyłącznie edukacyjno-poglądowy. Rzeczywiste warunki kredytu hipotecznego (w tym marża, wskaźnik WIBOR/WIRON, ubezpieczenia pomostowe i koszty okołokredytowe) określa bank w decyzji kredytowej. Wyliczenie nie stanowi oferty handlowej w rozumieniu art. 66 Kodeksu Cywilnego.
+      </div>
+
       <FinancialReportModal
         isOpen={showReportModal}
         onClose={() => setShowReportModal(false)}

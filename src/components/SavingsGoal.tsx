@@ -427,6 +427,11 @@ export function SavingsGoal() {
             "Oszczędzanie to inwestowanie w swoją przyszłość."
           </p>
         </div>
+
+        {/* Informacja prawna / Nota o charakterze orientacyjnym */}
+        <div className="w-full p-4 rounded-xl bg-white/[0.02] border border-white/5 text-[11px] text-zinc-500 leading-relaxed text-center sm:text-left mb-4">
+          * Symulacja planu oszczędzania i zysków z lokat/kont ma charakter czysto modelowy. Rzeczywisty wynik oszczędzania zależy od aktualnych tabel oprocentowania banków, podatku od zysków kapitałowych (podatek Belki) oraz inflacji. Wyliczenia nie stanowią oferty w rozumieniu art. 66 Kodeksu Cywilnego.
+        </div>
       </div>
 
       <FinancialReportModal
