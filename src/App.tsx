@@ -6,6 +6,7 @@ import { Terms } from './components/Terms';
 import { Chatbot } from './components/Chatbot';
 import { ReferralModal } from './components/ReferralModal';
 import { ReferralBanner } from './components/ReferralBanner';
+import { LiveMarketTicker } from './components/LiveMarketTicker';
 import { Calculator, Home as HomeIcon, PiggyBank, ShieldAlert, Building2, CreditCard } from 'lucide-react';
 import { ThemeProvider } from './context/ThemeContext';
 import { ViewModeProvider } from './context/ViewModeContext';
@@ -182,9 +183,15 @@ function AppLayout() {
   }, []);
 
   return (
-    <main className="relative min-h-screen w-full flex flex-col bg-[#09090b] text-zinc-100 selection:bg-[#DC143C] selection:text-white">
+    <main className="relative min-h-screen w-full flex flex-col bg-[#09090b] text-zinc-100 selection:bg-[#DC143C] selection:text-white overflow-x-hidden">
+      {/* Dynamic Ambient Background Glow Orbs */}
+      <div className="ambient-glow-orb w-[500px] h-[500px] -top-32 -left-32 bg-[#DC143C]/[0.04] animate-float-slow" />
+      <div className="ambient-glow-orb w-[600px] h-[600px] top-1/3 -right-48 bg-indigo-500/[0.025] animate-float-reverse" />
+      <div className="ambient-glow-orb w-[450px] h-[450px] bottom-32 left-1/4 bg-[#DC143C]/[0.03] animate-pulse-subtle" />
+
       <ReferralBanner onOpenModal={() => setShowReferral(true)} />
       <Header onOpenReferral={() => setShowReferral(true)} />
+      <LiveMarketTicker />
       <AppContent />
       <Footer 
         onPrivacyClick={() => setShowPrivacy(true)} 

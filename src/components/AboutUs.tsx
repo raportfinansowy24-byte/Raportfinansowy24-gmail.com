@@ -38,132 +38,89 @@ export const AboutUs: React.FC = () => {
         </div>
       </div>
 
-      {/* WŁAŚCICIEL STRONY - GŁÓWNA SEKCJA WERYFIKACYJNA DLA REVOLUT / KYC */}
-      <div className="rounded-3xl bg-gradient-to-b from-[#16161c] to-[#101014] border-2 border-[#DC143C]/40 p-6 sm:p-9 mb-8 shadow-2xl relative overflow-hidden">
+      {/* O PORTALU I ZESPOLE - GŁÓWNA SEKCJA INFORMACYJNA */}
+      <div className="rounded-3xl bg-gradient-to-b from-[#16161c] to-[#101014] border border-white/[0.08] p-6 sm:p-9 mb-8 shadow-2xl relative overflow-hidden">
         {/* Glow accent */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-[#DC143C]/10 rounded-full blur-3xl pointer-events-none" />
 
         {/* Top Badges */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-6 border-b border-white/[0.08]">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#DC143C]/15 border border-[#DC143C]/40 text-[#DC143C] text-xs font-black uppercase tracking-wider">
-            <UserCheck size={14} />
-            <span>Właściciel Strony & Założyciel</span>
+            <Building2 size={14} />
+            <span>Redakcja i Analityka Finansowa</span>
           </div>
 
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/10 text-zinc-300 text-xs font-medium">
             <ShieldCheck size={14} className="text-[#DC143C]" />
-            <span>Deklaracja tożsamości właścicielskiej</span>
+            <span>Niezależny portal informacyjny</span>
           </div>
         </div>
 
-        {/* Identity & Bio Details */}
+        {/* Portal Profile Description */}
         <div className="mt-6 flex flex-col md:flex-row items-start gap-6">
-          {/* Avatar / Monogram */}
-          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-[#DC143C] to-[#800020] border-2 border-white/20 flex flex-col items-center justify-center text-white shrink-0 shadow-xl shadow-[#DC143C]/20">
-            <span className="text-2xl sm:text-3xl font-black font-montserrat tracking-wider">TS</span>
-            <span className="text-[9px] uppercase tracking-widest font-semibold opacity-90 mt-0.5">Owner</span>
+          {/* Logo Badge */}
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-[#DC143C] to-[#800020] border border-white/20 flex flex-col items-center justify-center text-white shrink-0 shadow-xl shadow-[#DC143C]/20">
+            <Sparkles className="w-8 h-8 text-white" />
           </div>
 
-          {/* Profile Name & Roles */}
+          {/* Profile Content */}
           <div className="flex-1">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-                  Tomasz Siwiaszczyk
-                </h2>
-                <p className="text-xs sm:text-sm text-[#DC143C] font-semibold flex items-center gap-1.5 mt-0.5">
-                  <Briefcase size={14} />
-                  <span>Właściciel, Wydawca i Operator serwisu RaportFinansowy24.pl</span>
-                </p>
-              </div>
-
-              {/* LinkedIn Button */}
-              <a
-                href="https://www.linkedin.com/in/tomasz-siwiaszczyk"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0A66C2] hover:bg-[#084e96] text-white text-xs font-bold transition-all shadow-md shadow-[#0A66C2]/20 hover:scale-[1.02] active:scale-[0.98] shrink-0"
-                title="Zobacz oficjalny profil LinkedIn Tomasza Siwiaszczyka"
-              >
-                <Linkedin size={15} className="fill-white" />
-                <span>Profil LinkedIn</span>
-                <ExternalLink size={12} className="opacity-80" />
-              </a>
+            <div className="mb-2">
+              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                Zespół RaportFinansowy24
+              </h2>
+              <p className="text-xs sm:text-sm text-[#DC143C] font-semibold flex items-center gap-1.5 mt-0.5">
+                <Briefcase size={14} />
+                <span>Wydawca i operator platformy analitycznej RaportFinansowy24</span>
+              </p>
             </div>
 
             {/* Professional Bio */}
             <div className="mt-4 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] text-xs sm:text-sm text-zinc-300 leading-relaxed space-y-2">
               <p>
-                <strong className="text-white">Bio zawodowe:</strong> Przedsiębiorca internetowy, wydawca niezależnych serwisów finansowo-technologicznych oraz analityk produktów bankowych i konsumenckich w Polsce.
+                <strong className="text-white">O nas:</strong> RaportFinansowy24 to niezależna polska platforma analityki konsumenckiej oraz porównywarka produktów bankowych i finansowych. 
               </p>
               <p className="text-zinc-400 text-xs">
-                Odpowiada za architekturę merytoryczną portalu <strong>RaportFinansowy24.pl</strong>, transparentność wyliczeń RRSO oraz bezpośrednie integracje partnerskie z instytucjami finansowymi i licencjonowanymi sieciami afiliacyjnymi (m.in. Totalmoney / Money2Money, programy partnerskie banków).
+                Odpowiadamy za transparentność wyliczeń RRSO, algorytmy symulacji kosztów kredytowych oraz bezpośrednie integracje z licencjonowanymi sieciami afiliacyjnymi (m.in. Money2Money / Totalmoney) i oficjalnymi rejestrami publicznymi (Biała Lista VAT, KRS, REGON).
               </p>
             </div>
           </div>
         </div>
 
         {/* Verification Contact Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
           <div className="p-4 rounded-xl bg-black/40 border border-white/[0.06]">
             <div className="text-[11px] text-zinc-500 font-medium mb-1 flex items-center gap-1.5">
               <Globe size={13} className="text-[#DC143C]" />
               <span>Adres domeny serwisu</span>
             </div>
             <p className="text-sm font-bold text-white font-mono truncate">raport-finansowy24.pl</p>
-            <p className="text-[10px] text-zinc-400 mt-0.5">Wyłączna własność: Tomasz Siwiaszczyk</p>
-          </div>
-
-          <div className="p-4 rounded-xl bg-black/40 border border-white/[0.06]">
-            <div className="text-[11px] text-zinc-500 font-medium mb-1 flex items-center gap-1.5">
-              <Building2 size={13} className="text-[#DC143C]" />
-              <span>Adres korespondencyjny</span>
-            </div>
-            <p className="text-xs font-bold text-white">ul. Reymonta 88B/2</p>
-            <p className="text-[10px] text-zinc-400 mt-0.5">46-100 Namysłów, woj. opolskie</p>
-          </div>
-
-          <div className="p-4 rounded-xl bg-black/40 border border-white/[0.06]">
-            <div className="text-[11px] text-zinc-500 font-medium mb-1 flex items-center gap-1.5">
-              <Phone size={13} className="text-[#DC143C]" />
-              <span>Telefon kontaktowy</span>
-            </div>
-            <a 
-              href="tel:+491778466985" 
-              className="text-sm font-bold text-zinc-200 hover:text-white transition-colors font-mono"
-            >
-              +49 177 8466985
-            </a>
-            <p className="text-[10px] text-zinc-400 mt-0.5">Kontakt PL: +48 794 557 967</p>
+            <p className="text-[10px] text-zinc-400 mt-0.5">Oficjalny portal internetowy</p>
           </div>
 
           <div className="p-4 rounded-xl bg-black/40 border border-white/[0.06]">
             <div className="text-[11px] text-zinc-500 font-medium mb-1 flex items-center gap-1.5">
               <Mail size={13} className="text-[#DC143C]" />
-              <span>E-mail kontaktowy</span>
+              <span>E-mail kontaktowy redakcji</span>
             </div>
             <a 
               href="mailto:raportfinansowy24@gmail.com" 
-              className="text-xs font-bold text-zinc-200 hover:text-white transition-colors break-all"
+              className="text-xs font-bold text-zinc-200 hover:text-white transition-colors break-all font-mono"
             >
               raportfinansowy24@gmail.com
             </a>
-            <p className="text-[10px] text-zinc-400 mt-0.5">lipetomasz00@gmail.com</p>
+            <p className="text-[10px] text-zinc-400 mt-0.5">Kontakt i zapytania prasowe</p>
           </div>
         </div>
 
-        {/* Official Declaration of Website Ownership */}
-        <div className="mt-6 p-4 rounded-2xl bg-black/60 border border-[#DC143C]/25 text-xs text-zinc-300 leading-relaxed">
+        {/* Standard Operational Note */}
+        <div className="mt-6 p-4 rounded-2xl bg-black/60 border border-white/[0.06] text-xs text-zinc-300 leading-relaxed">
           <div className="flex items-center gap-2 text-white font-bold mb-1.5">
             <ShieldCheck size={16} className="text-[#DC143C]" />
-            <span>Oświadczenie o strukturze własnościowej (Website Ownership Declaration):</span>
+            <span>Standardy działania i bezpieczeństwo:</span>
           </div>
           <p className="text-zinc-400 text-[11px] sm:text-xs">
-            Niniejsza podstrona stanowi oficjalną deklarację tożsamości właścicielskiej dla instytucji płatniczych i bankowych 
-            (w tym <strong>Revolut Ltd / Revolut Bank UAB</strong>, banków współpracujących oraz sieci afiliacyjnych). 
-            Potwierdza się, że pan <strong className="text-white">Tomasz Siwiaszczyk</strong> (zam. ul. Reymonta 88B/2, 46-100 Namysłów, tel. +49 177 8466985 / +48 794 557 967) jest wyłącznym właścicielem, dysponentem i administratorem 
-            portalu internetowego oraz domeny <em>raport-finansowy24.pl</em>, zarządza wszystkimi kontami rozliczeniowymi i ponosi pełną odpowiedzialność 
-            za działalność serwisu.
+            Portal <em>raport-finansowy24.pl</em> działa w oparciu o najwyższe standardy ochrony danych osobowych (RODO) oraz bezpieczeństwa teleinformatycznego (TLS 1.3 / HTTPS). Wszelkie narzędzia kalkulacyjne są bezpłatne i nie wymagają podawania poufnych danych finansowych.
           </p>
         </div>
       </div>

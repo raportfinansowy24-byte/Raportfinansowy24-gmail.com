@@ -190,36 +190,15 @@ export const Footer = ({
             </p>
           </div>
 
-          {/* Contact info: Email & Phone */}
+          {/* Contact info: Email */}
           <div className="flex items-center gap-4 text-[11px] flex-wrap justify-center">
             <a 
               href="mailto:raportfinansowy24@gmail.com" 
               className="flex items-center gap-1.5 text-zinc-300 hover:text-white transition-colors"
-              title="Napisz do nas"
+              title="Napisz do redakcji"
             >
               <Mail size={13} className="text-[#DC143C]" />
               <span>raportfinansowy24@gmail.com</span>
-            </a>
-
-            <span className="text-white/20 hidden sm:inline">•</span>
-
-            <a 
-              href="tel:+491778466985" 
-              className="flex items-center gap-1.5 text-zinc-300 hover:text-white transition-colors"
-              title="Zadzwoń do nas (telefon bieżący)"
-            >
-              <Phone size={13} className="text-[#DC143C]" />
-              <span>+49 177 8466985</span>
-            </a>
-
-            <span className="text-white/20 hidden sm:inline">/</span>
-
-            <a 
-              href="tel:+48794557967" 
-              className="text-zinc-400 hover:text-white transition-colors text-[10px]"
-              title="Numer kontaktowy (Polska)"
-            >
-              <span>+48 794 557 967</span>
             </a>
           </div>
 
@@ -240,7 +219,7 @@ export const Footer = ({
               onClick={() => navigate('/o-nas')} 
               className="text-zinc-200 hover:text-white font-medium transition-colors underline cursor-pointer"
             >
-              O nas (Właściciel & Misja)
+              O nas & Misja
             </button>
             <span className="text-white/20">|</span>
             <button 
@@ -259,15 +238,15 @@ export const Footer = ({
           </div>
         </div>
 
-        {/* Ownership & Imprint Notice for Compliance & Trust */}
+        {/* Imprint Notice */}
         <div className="pt-3 border-t border-white/[0.05] flex flex-col sm:flex-row items-center justify-between text-[11px] text-zinc-400 gap-2 text-center sm:text-left">
           <p>
-            <span className="text-zinc-300 font-semibold">Właściciel i operator:</span> Tomasz Siwiaszczyk, ul. Reymonta 88B/2, 46-100 Namysłów
+            <span className="text-zinc-300 font-semibold">Wydawca i operator:</span> Zespół RaportFinansowy24 | Niezależny Portal Finansowy
             <button 
               onClick={() => navigate('/o-nas')} 
               className="text-[#DC143C] hover:underline cursor-pointer ml-1.5 font-medium"
             >
-              (Pełne dane działalności & profil)
+              (Więcej o portalu)
             </button>
           </p>
           <p className="text-[10px] text-zinc-500">

@@ -20,6 +20,7 @@ import {
 import { fetchOffersFromApi } from '../services/apiClient';
 import { validateNip, cleanNip, formatNip } from '../services/companyClient';
 import { useViewMode } from '../context/ViewModeContext';
+import { AnimatedNumber } from './AnimatedNumber';
 
 export function Home() {
   const navigate = useNavigate();
@@ -199,33 +200,32 @@ export function Home() {
       </section>
 
       {/* ========================================================
-          PULS RYNKU — GOOGLE SEARCH GROUNDING (gemini-3.5-flash)
+          PULS RYNKU — GOOGLE SEARCH GROUNDING (Kompaktowy, dyskretny pasek)
           ======================================================== */}
       {marketPulse?.summary && (
         <section className="max-w-4xl mx-auto px-4 w-full">
-          <div className="p-3.5 sm:p-4 rounded-2xl bg-[#18181b] border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-lg">
-            <div className="flex items-start sm:items-center gap-2.5">
-              <span className="p-1.5 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0">
-                <Globe size={16} />
+          <div className="py-2 px-3 sm:px-4 rounded-xl bg-[#121216]/90 border border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] shadow-sm backdrop-blur-sm">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="p-1 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">
+                <Globe size={13} />
               </span>
-              <div>
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="font-bold text-white text-[11px] uppercase tracking-wider">Aktualny Puls Rynku NBP / WIBOR</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-medium">
-                    Google Search Data
-                  </span>
-                </div>
-                <p className="text-zinc-300 text-xs leading-relaxed">{marketPulse.summary}</p>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 leading-tight">
+                <span className="font-bold text-white text-[10px] uppercase tracking-wider">
+                  NBP / WIBOR:
+                </span>
+                <span className="text-zinc-300 text-[11px] truncate max-w-xl">
+                  {marketPulse.summary}
+                </span>
               </div>
             </div>
             {marketPulse.sources && marketPulse.sources.length > 0 && (
-              <div className="flex items-center gap-2 shrink-0 self-end sm:self-center pt-1.5 sm:pt-0 border-t sm:border-t-0 border-white/5 w-full sm:w-auto justify-end">
-                <span className="text-[10px] text-zinc-400">Źródło:</span>
+              <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center text-[10px] text-zinc-400">
+                <span>Źródło:</span>
                 <a
                   href={marketPulse.sources[0].uri}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[10px] font-semibold text-zinc-300 hover:text-white underline truncate max-w-[150px] inline-flex items-center gap-1"
+                  className="font-medium text-zinc-300 hover:text-white underline truncate max-w-[140px] inline-flex items-center gap-1"
                 >
                   <span className="truncate">{marketPulse.sources[0].title || 'NBP'}</span>
                   <ArrowRight size={10} />
@@ -237,149 +237,189 @@ export function Home() {
       )}
 
       {/* ========================================================
-          SEKCJA 2 — SZYBKIE NARZĘDZIA (6 KART — 2 kolumny mobile)
+          SEKCJA 2 — SZYBKIE NARZĘDZIA (WYRÓŻNIONE, GŁÓWNY HUB)
           ======================================================== */}
       <section className="max-w-5xl mx-auto w-full px-4">
-        <div className="text-center sm:text-left mb-4 sm:mb-5">
-          <h2 className="text-lg sm:text-xl font-black text-white tracking-tight">
-            Szybkie narzędzia
-          </h2>
-          <p className="text-xs sm:text-sm text-zinc-400 mt-0.5">
-            Wybierz obszar, który chcesz przeanalizować i przejdź do kalkulacji.
-          </p>
+        {/* Wyróżniony nagłówek sekcji */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-5 sm:mb-6 pb-2 border-b border-white/[0.08]">
+          <div>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#DC143C]/15 border border-[#DC143C]/30 text-[#DC143C] text-[10px] sm:text-xs font-black uppercase tracking-wider mb-1.5">
+              <Sparkles size={12} />
+              <span>Główne kalkulatory i moduły</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+              Szybkie <span className="text-[#DC143C]">narzędzia finansowe</span>
+            </h2>
+            <p className="text-xs sm:text-sm text-zinc-300 mt-1">
+              Wybierz kategorię, aby błyskawicznie sprawdzić ratę, ranking lub uruchomić analizę.
+            </p>
+          </div>
+          <span className="text-[11px] text-zinc-400 font-mono hidden sm:block">
+            6 bezpłatnych modułów
+          </span>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4.5">
           
           {/* Karta 1: Kredyt gotówkowy */}
           <button
             onClick={() => navigate('/loan')}
-            className="group p-3.5 sm:p-4 rounded-xl bg-[#18181b] border border-white/10 hover:border-[#DC143C]/50 transition-all duration-200 text-left flex flex-col justify-between min-h-[110px] sm:min-h-[125px] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#DC143C] focus-visible:outline-none"
+            className="group relative p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-[#1a1a22] to-[#111116] border border-white/[0.12] hover:border-[#DC143C]/60 hover:shadow-xl hover:shadow-[#DC143C]/10 transition-all duration-300 text-left flex flex-col justify-between min-h-[145px] sm:min-h-[160px] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#DC143C] focus-visible:outline-none overflow-hidden"
           >
+            <div className="absolute top-2.5 right-2.5 hidden sm:block">
+              <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#DC143C]/20 text-[#DC143C] border border-[#DC143C]/30">
+                Top wybór
+              </span>
+            </div>
             <div className="w-full">
-              <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#DC143C] mb-2 group-hover:bg-[#DC143C]/10 transition-colors">
-                <Calculator size={18} />
+              <div className="w-10 h-10 rounded-xl bg-[#DC143C]/15 border border-[#DC143C]/30 flex items-center justify-center text-[#DC143C] mb-3 group-hover:bg-[#DC143C] group-hover:text-white transition-all duration-200 shadow-md shadow-[#DC143C]/15">
+                <Calculator size={20} />
               </div>
-              <h3 className="text-xs sm:text-sm font-bold text-white group-hover:text-[#DC143C] transition-colors leading-tight">
+              <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-[#DC143C] transition-colors leading-tight">
                 Kredyt gotówkowy
               </h3>
-              <p className="text-[11px] text-zinc-400 mt-0.5 truncate leading-tight">
-                Oblicz orientacyjną ratę kredytu
+              <p className="text-[11px] sm:text-xs text-zinc-400 mt-1 leading-snug line-clamp-2">
+                Dokładna symulacja raty, RRSO i porównanie banków
               </p>
             </div>
-            <div className="flex items-center text-[10px] sm:text-xs font-semibold text-zinc-400 group-hover:text-white pt-2 mt-1 border-t border-white/5 transition-colors">
-              <span>Kalkulator</span>
-              <ChevronRight size={13} className="ml-0.5 group-hover:translate-x-0.5 transition-transform" />
+            <div className="flex items-center justify-between text-[11px] sm:text-xs font-bold text-[#DC143C] pt-2.5 mt-2 border-t border-white/[0.08] transition-colors">
+              <span>Uruchom kalkulator</span>
+              <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </div>
           </button>
 
           {/* Karta 2: Konta bankowe i premie */}
           <button
             onClick={() => navigate('/konta')}
-            className="group p-3.5 sm:p-4 rounded-xl bg-[#18181b] border border-white/10 hover:border-[#DC143C]/50 transition-all duration-200 text-left flex flex-col justify-between min-h-[110px] sm:min-h-[125px] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#DC143C] focus-visible:outline-none"
+            className="group relative p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-[#1a1a22] to-[#111116] border border-white/[0.12] hover:border-[#DC143C]/60 hover:shadow-xl hover:shadow-[#DC143C]/10 transition-all duration-300 text-left flex flex-col justify-between min-h-[145px] sm:min-h-[160px] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#DC143C] focus-visible:outline-none overflow-hidden"
           >
+            <div className="absolute top-2.5 right-2.5 hidden sm:block">
+              <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                Premia do 650 zł
+              </span>
+            </div>
             <div className="w-full">
-              <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#DC143C] mb-2 group-hover:bg-[#DC143C]/10 transition-colors">
-                <CreditCard size={18} />
+              <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-3 group-hover:bg-amber-500 group-hover:text-black transition-all duration-200 shadow-md shadow-amber-500/15">
+                <CreditCard size={20} />
               </div>
-              <h3 className="text-xs sm:text-sm font-bold text-white group-hover:text-[#DC143C] transition-colors leading-tight">
+              <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-[#DC143C] transition-colors leading-tight">
                 Konta i premie
               </h3>
-              <p className="text-[11px] text-zinc-400 mt-0.5 truncate leading-tight">
-                Konta 0 zł + premie powitalne
+              <p className="text-[11px] sm:text-xs text-zinc-400 mt-1 leading-snug line-clamp-2">
+                Ranking darmowych kont 0 zł z gwarantowaną premią
               </p>
             </div>
-            <div className="flex items-center text-[10px] sm:text-xs font-semibold text-zinc-400 group-hover:text-white pt-2 mt-1 border-t border-white/5 transition-colors">
+            <div className="flex items-center justify-between text-[11px] sm:text-xs font-bold text-[#DC143C] pt-2.5 mt-2 border-t border-white/[0.08] transition-colors">
               <span>Ranking kont</span>
-              <ChevronRight size={13} className="ml-0.5 group-hover:translate-x-0.5 transition-transform" />
+              <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </div>
           </button>
 
           {/* Karta 3: Hipoteka */}
           <button
             onClick={() => navigate('/mortgage')}
-            className="group p-3.5 sm:p-4 rounded-xl bg-[#18181b] border border-white/10 hover:border-[#DC143C]/50 transition-all duration-200 text-left flex flex-col justify-between min-h-[110px] sm:min-h-[125px] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#DC143C] focus-visible:outline-none"
+            className="group relative p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-[#1a1a22] to-[#111116] border border-white/[0.12] hover:border-[#DC143C]/60 hover:shadow-xl hover:shadow-[#DC143C]/10 transition-all duration-300 text-left flex flex-col justify-between min-h-[145px] sm:min-h-[160px] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#DC143C] focus-visible:outline-none overflow-hidden"
           >
+            <div className="absolute top-2.5 right-2.5 hidden sm:block">
+              <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                Wkład 10-20%
+              </span>
+            </div>
             <div className="w-full">
-              <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#DC143C] mb-2 group-hover:bg-[#DC143C]/10 transition-colors">
-                <HomeIcon size={18} />
+              <div className="w-10 h-10 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400 mb-3 group-hover:bg-blue-500 group-hover:text-white transition-all duration-200 shadow-md shadow-blue-500/15">
+                <HomeIcon size={20} />
               </div>
-              <h3 className="text-xs sm:text-sm font-bold text-white group-hover:text-[#DC143C] transition-colors leading-tight">
+              <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-[#DC143C] transition-colors leading-tight">
                 Kredyt hipoteczny
               </h3>
-              <p className="text-[11px] text-zinc-400 mt-0.5 truncate leading-tight">
-                Symulacja z wkładem własnym
+              <p className="text-[11px] sm:text-xs text-zinc-400 mt-1 leading-snug line-clamp-2">
+                Harmonogram spłat, marże banków i wkład własny
               </p>
             </div>
-            <div className="flex items-center text-[10px] sm:text-xs font-semibold text-zinc-400 group-hover:text-white pt-2 mt-1 border-t border-white/5 transition-colors">
-              <span>Symulator</span>
-              <ChevronRight size={13} className="ml-0.5 group-hover:translate-x-0.5 transition-transform" />
+            <div className="flex items-center justify-between text-[11px] sm:text-xs font-bold text-[#DC143C] pt-2.5 mt-2 border-t border-white/[0.08] transition-colors">
+              <span>Symulator hipoteki</span>
+              <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </div>
           </button>
 
           {/* Karta 4: Konsolidacja kredytów */}
           <button
             onClick={() => navigate('/loan?goal=debt')}
-            className="group p-3.5 sm:p-4 rounded-xl bg-[#18181b] border border-white/10 hover:border-[#DC143C]/50 transition-all duration-200 text-left flex flex-col justify-between min-h-[110px] sm:min-h-[125px] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#DC143C] focus-visible:outline-none"
+            className="group relative p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-[#1a1a22] to-[#111116] border border-white/[0.12] hover:border-[#DC143C]/60 hover:shadow-xl hover:shadow-[#DC143C]/10 transition-all duration-300 text-left flex flex-col justify-between min-h-[145px] sm:min-h-[160px] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#DC143C] focus-visible:outline-none overflow-hidden"
           >
+            <div className="absolute top-2.5 right-2.5 hidden sm:block">
+              <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                1 niższa rata
+              </span>
+            </div>
             <div className="w-full">
-              <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#DC143C] mb-2 group-hover:bg-[#DC143C]/10 transition-colors">
-                <Zap size={18} />
+              <div className="w-10 h-10 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400 mb-3 group-hover:bg-purple-500 group-hover:text-white transition-all duration-200 shadow-md shadow-purple-500/15">
+                <Zap size={20} />
               </div>
-              <h3 className="text-xs sm:text-sm font-bold text-white group-hover:text-[#DC143C] transition-colors leading-tight">
-                Konsolidacja
+              <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-[#DC143C] transition-colors leading-tight">
+                Konsolidacja długów
               </h3>
-              <p className="text-[11px] text-zinc-400 mt-0.5 truncate leading-tight">
-                Połącz długi w 1 niższą ratę
+              <p className="text-[11px] sm:text-xs text-zinc-400 mt-1 leading-snug line-clamp-2">
+                Połącz kilka rat w jedną i obniż miesięczny koszt
               </p>
             </div>
-            <div className="flex items-center text-[10px] sm:text-xs font-semibold text-zinc-400 group-hover:text-white pt-2 mt-1 border-t border-white/5 transition-colors">
+            <div className="flex items-center justify-between text-[11px] sm:text-xs font-bold text-[#DC143C] pt-2.5 mt-2 border-t border-white/[0.08] transition-colors">
               <span>Obniż raty</span>
-              <ChevronRight size={13} className="ml-0.5 group-hover:translate-x-0.5 transition-transform" />
+              <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </div>
           </button>
 
           {/* Karta 5: Oszczędzanie i lokaty */}
           <button
             onClick={() => navigate('/savings')}
-            className="group p-3.5 sm:p-4 rounded-xl bg-[#18181b] border border-white/10 hover:border-[#DC143C]/50 transition-all duration-200 text-left flex flex-col justify-between min-h-[110px] sm:min-h-[125px] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#DC143C] focus-visible:outline-none"
+            className="group relative p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-[#1a1a22] to-[#111116] border border-white/[0.12] hover:border-[#DC143C]/60 hover:shadow-xl hover:shadow-[#DC143C]/10 transition-all duration-300 text-left flex flex-col justify-between min-h-[145px] sm:min-h-[160px] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#DC143C] focus-visible:outline-none overflow-hidden"
           >
+            <div className="absolute top-2.5 right-2.5 hidden sm:block">
+              <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                Zysk z oszczędności
+              </span>
+            </div>
             <div className="w-full">
-              <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#DC143C] mb-2 group-hover:bg-[#DC143C]/10 transition-colors">
-                <PiggyBank size={18} />
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-3 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-200 shadow-md shadow-emerald-500/15">
+                <PiggyBank size={20} />
               </div>
-              <h3 className="text-xs sm:text-sm font-bold text-white group-hover:text-[#DC143C] transition-colors leading-tight">
+              <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-[#DC143C] transition-colors leading-tight">
                 Oszczędzanie i lokaty
               </h3>
-              <p className="text-[11px] text-zinc-400 mt-0.5 truncate leading-tight">
-                Plan wpłat i procent składany
+              <p className="text-[11px] sm:text-xs text-zinc-400 mt-1 leading-snug line-clamp-2">
+                Plan wpłat, poduszka finansowa i procent składany
               </p>
             </div>
-            <div className="flex items-center text-[10px] sm:text-xs font-semibold text-zinc-400 group-hover:text-white pt-2 mt-1 border-t border-white/5 transition-colors">
-              <span>Zaplanuj</span>
-              <ChevronRight size={13} className="ml-0.5 group-hover:translate-x-0.5 transition-transform" />
+            <div className="flex items-center justify-between text-[11px] sm:text-xs font-bold text-[#DC143C] pt-2.5 mt-2 border-t border-white/[0.08] transition-colors">
+              <span>Zaplanuj cel</span>
+              <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </div>
           </button>
 
           {/* Karta 6: Doradca Finansowy AI */}
           <button
             onClick={() => navigate('/protokol')}
-            className="group p-3.5 sm:p-4 rounded-xl bg-[#18181b] border border-white/10 hover:border-[#DC143C]/50 transition-all duration-200 text-left flex flex-col justify-between min-h-[110px] sm:min-h-[125px] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#DC143C] focus-visible:outline-none"
+            className="group relative p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-[#1a1a22] to-[#111116] border border-white/[0.12] hover:border-[#DC143C]/60 hover:shadow-xl hover:shadow-[#DC143C]/10 transition-all duration-300 text-left flex flex-col justify-between min-h-[145px] sm:min-h-[160px] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#DC143C] focus-visible:outline-none overflow-hidden"
           >
+            <div className="absolute top-2.5 right-2.5 hidden sm:block">
+              <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                Sztuczna Inteligencja
+              </span>
+            </div>
             <div className="w-full">
-              <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#DC143C] mb-2 group-hover:bg-[#DC143C]/10 transition-colors">
-                <Sparkles size={18} />
+              <div className="w-10 h-10 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 mb-3 group-hover:bg-[#DC143C] group-hover:text-white transition-all duration-200 shadow-md shadow-rose-500/15">
+                <Sparkles size={20} />
               </div>
-              <h3 className="text-xs sm:text-sm font-bold text-white group-hover:text-[#DC143C] transition-colors leading-tight">
-                Doradca AI
+              <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-[#DC143C] transition-colors leading-tight">
+                Doradca Finansowy AI
               </h3>
-              <p className="text-[11px] text-zinc-400 mt-0.5 truncate leading-tight">
-                Diagnoza portfela i ukrytych opłat
+              <p className="text-[11px] sm:text-xs text-zinc-400 mt-1 leading-snug line-clamp-2">
+                Audyt kosztów, analiza ukrytych opłat i profilowanie
               </p>
             </div>
-            <div className="flex items-center text-[10px] sm:text-xs font-semibold text-zinc-400 group-hover:text-white pt-2 mt-1 border-t border-white/5 transition-colors">
-              <span>Rozpocznij</span>
-              <ChevronRight size={13} className="ml-0.5 group-hover:translate-x-0.5 transition-transform" />
+            <div className="flex items-center justify-between text-[11px] sm:text-xs font-bold text-[#DC143C] pt-2.5 mt-2 border-t border-white/[0.08] transition-colors">
+              <span>Rozpocznij audyt AI</span>
+              <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </div>
           </button>
 
@@ -406,13 +446,16 @@ export function Home() {
             </div>
 
             {/* Szacunek orientacyjny */}
-            <div className="bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-left sm:text-right shrink-0 w-full sm:w-auto">
+            <div className="bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-left sm:text-right shrink-0 w-full sm:w-auto relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-[#DC143C]/10 rounded-full blur-xl pointer-events-none" />
               <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold block">
                 Szacunkowa rata
               </span>
-              <span className="text-2xl sm:text-3xl font-black text-white">
-                ~{estimatedMonthlyRate.toLocaleString('pl-PL')} <span className="text-xs text-zinc-400 font-normal">PLN/mc</span>
-              </span>
+              <div className="text-2xl sm:text-3xl font-black text-white flex items-baseline sm:justify-end gap-1">
+                <span>~</span>
+                <AnimatedNumber value={estimatedMonthlyRate} />
+                <span className="text-xs text-zinc-400 font-normal">PLN/mc</span>
+              </div>
             </div>
           </div>
 
@@ -423,8 +466,8 @@ export function Home() {
                 <label htmlFor="quick-amount-slider" className="text-xs font-semibold text-zinc-300">
                   Kwota
                 </label>
-                <span className="text-sm font-bold text-white">
-                  {quickAmount.toLocaleString('pl-PL')} PLN
+                <span className="text-sm font-bold text-white font-mono">
+                  <AnimatedNumber value={quickAmount} /> PLN
                 </span>
               </div>
               <input
@@ -435,9 +478,9 @@ export function Home() {
                 step="1000"
                 value={quickAmount}
                 onChange={(e) => setQuickAmount(Number(e.target.value))}
-                className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#DC143C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC143C]"
+                className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#DC143C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC143C] transition-all"
               />
-              <div className="flex justify-between text-[10px] text-zinc-500 mt-1">
+              <div className="flex justify-between text-[10px] text-zinc-500 mt-1 font-mono">
                 <span>2 000 PLN</span>
                 <span>150 000 PLN</span>
               </div>
@@ -449,8 +492,8 @@ export function Home() {
                 <label htmlFor="quick-period-slider" className="text-xs font-semibold text-zinc-300">
                   Okres
                 </label>
-                <span className="text-sm font-bold text-white">
-                  {quickPeriod} miesięcy ({Math.round(quickPeriod / 12 * 10) / 10} lat)
+                <span className="text-sm font-bold text-white font-mono">
+                  {quickPeriod} mies. ({Math.round(quickPeriod / 12 * 10) / 10} lat)
                 </span>
               </div>
               <input
@@ -461,12 +504,42 @@ export function Home() {
                 step="6"
                 value={quickPeriod}
                 onChange={(e) => setQuickPeriod(Number(e.target.value))}
-                className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#DC143C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC143C]"
+                className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#DC143C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC143C] transition-all"
               />
-              <div className="flex justify-between text-[10px] text-zinc-500 mt-1">
+              <div className="flex justify-between text-[10px] text-zinc-500 mt-1 font-mono">
                 <span>6 mies.</span>
                 <span>120 mies.</span>
               </div>
+            </div>
+          </div>
+
+          {/* Dynamic Interactive Split Bar Visualizer (Kapitał vs Odsetki) */}
+          <div className="mt-5 p-3.5 rounded-xl bg-black/40 border border-white/[0.06] space-y-2">
+            <div className="flex items-center justify-between text-[11px]">
+              <div className="flex items-center gap-1.5 text-zinc-300 font-medium">
+                <span className="w-2 h-2 rounded-full bg-white inline-block"></span>
+                <span>Kapitał: <strong className="text-white font-mono">{quickAmount.toLocaleString('pl-PL')} PLN</strong></span>
+              </div>
+              <div className="flex items-center gap-1.5 text-zinc-400 font-medium">
+                <span className="w-2 h-2 rounded-full bg-[#DC143C] inline-block"></span>
+                <span>Szac. koszt odsetek: <strong className="text-zinc-200 font-mono">~{Math.max(0, Math.round(quickPeriod * estimatedMonthlyRate - quickAmount)).toLocaleString('pl-PL')} PLN</strong></span>
+              </div>
+            </div>
+
+            {/* Animated bar track */}
+            <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden flex">
+              <div 
+                className="h-full bg-white/90 rounded-l-full transition-all duration-300 ease-out"
+                style={{
+                  width: `${Math.min(95, Math.max(15, (quickAmount / (quickPeriod * estimatedMonthlyRate || 1)) * 100))}%`
+                }}
+              />
+              <div 
+                className="h-full bg-[#DC143C] rounded-r-full transition-all duration-300 ease-out"
+                style={{
+                  width: `${Math.max(5, 100 - (quickAmount / (quickPeriod * estimatedMonthlyRate || 1)) * 100)}%`
+                }}
+              />
             </div>
           </div>
 

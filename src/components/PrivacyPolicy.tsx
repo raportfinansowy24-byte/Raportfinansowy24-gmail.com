@@ -12,9 +12,8 @@ export const PrivacyPolicy = ({ onClose }: { onClose: () => void }) => (
       </div>
       <div className="p-6 overflow-y-auto text-white/70 text-sm space-y-4 custom-scrollbar">
         <h1 className="text-white font-bold text-lg">Polityka prywatności</h1>
-        <p>Właścicielem serwisu oraz Administratorem Danych Osobowych (ADO) jest Tomasz Siwiaszczyk, zam. ul. Reymonta 88B/2, 46-100 Namysłów, Polska.</p>
-        <p>Email kontaktowy: raportfinansowy24@gmail.com / lipetomasz00@gmail.com</p>
-        <p>Telefon: +49 177 8466985 / +48 794 557 967</p>
+        <p>Wydawcą serwisu oraz Administratorem Danych Osobowych (ADO) jest Zespół RaportFinansowy24.</p>
+        <p>Email kontaktowy: raportfinansowy24@gmail.com</p>
       </div>
     </div>
   </div>

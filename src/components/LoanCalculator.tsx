@@ -16,6 +16,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Cartes
 import { AmortizationChart } from './AmortizationChart';
 import { motion } from 'motion/react';
 import { useViewMode } from '../context/ViewModeContext';
+import { AnimatedNumber } from './AnimatedNumber';
 
 const FAQ_QUESTIONS = [
   "Jak działa konsolidacja kredytów?",
@@ -1080,11 +1081,22 @@ export function LoanCalculator() {
                 {costBreakdownView === 'monthly' ? 'Rata miesięczna łączna' : costBreakdownView === 'yearly' ? 'Roczna suma rat' : 'Całkowita kwota spłaty'}
               </span>
               <div className="text-xl sm:text-2xl font-black text-white mt-1.5 font-mono">
-                {costBreakdownView === 'monthly'
-                  ? `${formatMoney(monthlyPayment)} / mc`
-                  : costBreakdownView === 'yearly'
-                  ? `${formatMoney(yearlyPayment)} / rok`
-                  : formatMoney(totalPayment)}
+                {costBreakdownView === 'monthly' ? (
+                  <>
+                    <AnimatedNumber value={Math.round(monthlyPayment * currCfg.rate)} />
+                    <span className="text-xs text-zinc-400 font-normal"> {currCfg.symbol} / mc</span>
+                  </>
+                ) : costBreakdownView === 'yearly' ? (
+                  <>
+                    <AnimatedNumber value={Math.round(yearlyPayment * currCfg.rate)} />
+                    <span className="text-xs text-zinc-400 font-normal"> {currCfg.symbol} / rok</span>
+                  </>
+                ) : (
+                  <>
+                    <AnimatedNumber value={Math.round(totalPayment * currCfg.rate)} />
+                    <span className="text-xs text-zinc-400 font-normal"> {currCfg.symbol}</span>
+                  </>
+                )}
               </div>
               <span className="text-[10px] text-zinc-500 mt-1">Kapitał + odsetki łącznie</span>
             </div>
@@ -1095,11 +1107,22 @@ export function LoanCalculator() {
                 {costBreakdownView === 'monthly' ? 'Koszt odsetek / miesiąc' : costBreakdownView === 'yearly' ? 'Roczny koszt odsetek' : 'Całkowity koszt odsetek'}
               </span>
               <div className="text-xl sm:text-2xl font-black text-white mt-1.5 font-mono">
-                {costBreakdownView === 'monthly'
-                  ? `${formatMoney(totalInterest / months)} / mc`
-                  : costBreakdownView === 'yearly'
-                  ? `${formatMoney(yearlyInterest)} / rok`
-                  : formatMoney(totalInterest)}
+                {costBreakdownView === 'monthly' ? (
+                  <>
+                    <AnimatedNumber value={Math.round((totalInterest / months) * currCfg.rate)} />
+                    <span className="text-xs text-zinc-400 font-normal"> {currCfg.symbol} / mc</span>
+                  </>
+                ) : costBreakdownView === 'yearly' ? (
+                  <>
+                    <AnimatedNumber value={Math.round(yearlyInterest * currCfg.rate)} />
+                    <span className="text-xs text-zinc-400 font-normal"> {currCfg.symbol} / rok</span>
+                  </>
+                ) : (
+                  <>
+                    <AnimatedNumber value={Math.round(totalInterest * currCfg.rate)} />
+                    <span className="text-xs text-zinc-400 font-normal"> {currCfg.symbol}</span>
+                  </>
+                )}
               </div>
               <span className="text-[10px] text-zinc-400 mt-1">Średni koszt długu (~9.8%)</span>
             </div>
@@ -1109,11 +1132,22 @@ export function LoanCalculator() {
                 {costBreakdownView === 'monthly' ? 'Część kapitałowa / mc' : costBreakdownView === 'yearly' ? 'Roczny kapitał' : 'Wypłacony kapitał netto'}
               </span>
               <div className="text-xl sm:text-2xl font-black text-white mt-1.5 font-mono">
-                {costBreakdownView === 'monthly'
-                  ? `${formatMoney(principal / months)} / mc`
-                  : costBreakdownView === 'yearly'
-                  ? `${formatMoney(principal / Math.max(1, months / 12))} / rok`
-                  : formatMoney(principal)}
+                {costBreakdownView === 'monthly' ? (
+                  <>
+                    <AnimatedNumber value={Math.round((principal / months) * currCfg.rate)} />
+                    <span className="text-xs text-zinc-400 font-normal"> {currCfg.symbol} / mc</span>
+                  </>
+                ) : costBreakdownView === 'yearly' ? (
+                  <>
+                    <AnimatedNumber value={Math.round((principal / Math.max(1, months / 12)) * currCfg.rate)} />
+                    <span className="text-xs text-zinc-400 font-normal"> {currCfg.symbol} / rok</span>
+                  </>
+                ) : (
+                  <>
+                    <AnimatedNumber value={Math.round(principal * currCfg.rate)} />
+                    <span className="text-xs text-zinc-400 font-normal"> {currCfg.symbol}</span>
+                  </>
+                )}
               </div>
               <span className="text-[10px] text-zinc-500 mt-1">Środki trafiające do dyspozycji</span>
             </div>
