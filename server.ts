@@ -299,6 +299,11 @@ async function startServer() {
         metadata: { ...metadata, attribution, clientTimestamp: timestamp },
       });
 
+      await recordContentEvent("lead_submit", {
+        ...attribution,
+        metadata: { lead_id: lead.id, source: source || "financial_funnel" }
+      });
+
       res.status(201).json({
         success: true,
         id: lead.id,
