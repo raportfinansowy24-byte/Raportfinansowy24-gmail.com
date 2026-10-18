@@ -55,16 +55,14 @@ async function startServer() {
   app.post("/api/analytics/event", async (req, res) => {
     try {
       const eventName = req.body?.event_name;
-      if (!CONTENT_EVENT_NAMES.includes(eventName)) {
-        res.status(400).json({ error: "Nieobsługiwany typ zdarzenia analitycznego." });
+      // Browser clients may only report page views. Clicks, leads and conversions
+      // are recorded server-side to prevent spoofed attribution or revenue.
+      if (eventName !== "page_view") {
+        res.status(400).json({ error: "Ten endpoint przyjmuje wyłącznie page_view; kliknięcia, leady i konwersje zapisuje serwer." });
         return;
       }
       const attribution = normalizeAttribution(req.body);
-      if (eventName === "affiliate_conversion") {
-        res.status(400).json({ error: "Konwersje afiliacyjne muszą pochodzić z endpointu postback." });
-        return;
-      }
-      const result = await recordContentEvent(eventName, attribution);
+      const result = await recordContentEvent("page_view", attribution);
       res.status(result.stored ? 202 : 202).json({ accepted: true, stored: result.stored, event_id: result.id });
     } catch (error) {
       console.error("[ContentAnalytics] Błąd zapisu zdarzenia:", error);
