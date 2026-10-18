@@ -1,4 +1,11 @@
+import { createClient } from "@supabase/supabase-js";
 import { supabase, getIsSupabaseAvailable } from "../lib/supabase.js";
+
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const serverSupabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
+const analyticsDb = serviceRoleKey && serverSupabaseUrl
+  ? createClient(serverSupabaseUrl, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } })
+  : supabase;
 import { v4 as uuidv4 } from "uuid";
 
 export const CONTENT_EVENT_NAMES = [
@@ -85,7 +92,7 @@ export async function recordContentEvent(
     console.warn("[ContentAnalytics] Supabase unavailable; event not persisted", eventName, id);
     return { stored: false, id };
   }
-  const { error } = await supabase.from("content_analytics_events").insert([row]);
+  const { error } = await analyticsDb.from("content_analytics_events").insert([row]);
   if (error) {
     console.error("[ContentAnalytics] Failed to persist event:", error.message);
     if (options.requireDatabase) throw new Error("Analytics storage failed.");
