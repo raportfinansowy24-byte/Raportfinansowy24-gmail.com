@@ -24,4 +24,12 @@ create index if not exists content_analytics_events_created_at_idx on public.con
 create index if not exists content_analytics_events_clickid_idx on public.content_analytics_events (clickid) where clickid is not null;
 create index if not exists content_analytics_events_content_idx on public.content_analytics_events (video_id, hook_id, platform);
 alter table public.content_analytics_events enable row level security;
--- No client-side policies: writes/reads are performed by the server-side API only.
+-- Public event ingestion is intentionally insert-only. Reports require a server-side service-role key.
+drop policy if exists "content_analytics_public_insert" on public.content_analytics_events;
+create policy "content_analytics_public_insert"
+  on public.content_analytics_events
+  for insert to anon, authenticated
+  with check (
+    event_name in ('page_view','affiliate_click','lead_submit')
+    and (value is null or value >= 0)
+  );
