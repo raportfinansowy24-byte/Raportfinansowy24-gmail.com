@@ -94,6 +94,20 @@ export async function recordContentEvent(
   return { stored: true, id };
 }
 
+export async function findClickAttribution(clickid: string): Promise<ContentAttribution> {
+  if (!getIsSupabaseAvailable() || !clickid) return {};
+  const { data, error } = await supabase
+    .from("content_analytics_events")
+    .select("visitor_id,video_id,hook_id,platform,topic,utm_source,utm_medium,utm_campaign,utm_content,utm_term,is_test")
+    .eq("event_name", "affiliate_click")
+    .eq("clickid", clickid)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error || !data) return {};
+  return normalizeAttribution(data);
+}
+
 export async function getContentAnalyticsReport(options: { includeTests?: boolean } = {}) {
   if (!getIsSupabaseAvailable()) throw new Error("Supabase is not configured.");
   const { data, error } = await supabase
