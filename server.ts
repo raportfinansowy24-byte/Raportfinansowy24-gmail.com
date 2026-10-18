@@ -72,6 +72,44 @@ async function startServer() {
     }
   });
 
+  // Safe synthetic postback for end-to-end tests. Never touches the real clicks/payout table.
+  app.post("/api/analytics/test-postback", async (req, res) => {
+    const expected = (process.env.ANALYTICS_ADMIN_TOKEN || "").trim();
+    const supplied = (req.headers["x-analytics-token"] as string) || "";
+    if (!expected || supplied !== expected) {
+      res.status(401).json({ error: "Brak prawidłowego tokena analityki." });
+      return;
+    }
+    const clickid = typeof req.body?.clickid === "string" ? req.body.clickid.trim() : "";
+    const value = Number(req.body?.value ?? 1.23);
+    if (!clickid || !Number.isFinite(value) || value < 0) {
+      res.status(400).json({ error: "Podaj clickid oraz nieujemną wartość testową." });
+      return;
+    }
+    try {
+      const attribution = await findClickAttribution(clickid);
+      if (!attribution.clickid && !attribution.video_id && !attribution.visitor_id) {
+        res.status(404).json({ error: "Nie znaleziono kliknięcia analitycznego dla tego clickid." });
+        return;
+      }
+      if (attribution.is_test !== true) {
+        res.status(409).json({ error: "Odrzucono: clickid nie pochodzi z sesji oznaczonej rf24_test=1." });
+        return;
+      }
+      const result = await recordContentEvent("affiliate_conversion", {
+        ...attribution,
+        clickid,
+        value,
+        is_test: true,
+        metadata: { confirmed_by: "synthetic_test_postback", not_real_revenue: true }
+      }, { requireDatabase: true });
+      res.status(201).json({ success: true, stored: result.stored, test: true, real_revenue: false, event_id: result.id });
+    } catch (error: any) {
+      console.error("[ContentAnalytics] Test postback failed:", error);
+      res.status(503).json({ error: error.message || "Nie udało się zapisać testowego postbacka." });
+    }
+  });
+
   // Admin report API. Set ANALYTICS_ADMIN_TOKEN to enable dashboard access.
   app.get("/api/analytics/report", async (req, res) => {
     const expected = (process.env.ANALYTICS_ADMIN_TOKEN || "").trim();
