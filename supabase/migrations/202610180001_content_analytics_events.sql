@@ -33,3 +33,8 @@ create policy "content_analytics_public_insert"
     event_name in ('page_view','affiliate_click','lead_submit')
     and (value is null or value >= 0)
   );
+
+-- A click may produce at most one recorded affiliate conversion in the reporting table.
+create unique index if not exists content_analytics_one_conversion_per_click_idx
+  on public.content_analytics_events (clickid)
+  where event_name = 'affiliate_conversion' and clickid is not null;
