@@ -82,7 +82,7 @@ Supported topic labels include `kredyty`, `oszczednosci`, `konta_bankowe`, and `
 
 ### Test vs real revenue
 
-Add `rf24_test=1` to a test landing URL to mark its page views, clicks, and resulting attributed postback as test data. The dashboard excludes test events by default; enable “Uwzględnij zdarzenia testowe” to inspect them. Never use a real campaign's click ID for a test postback. A conversion is treated as confirmed revenue only when a valid affiliate postback is received. The reporting table also prevents duplicate conversion events per click ID.
+Add `rf24_test=1` to a test landing URL to mark its page views and clicks as test data. The dashboard excludes test events by default; enable “Uwzględnij zdarzenia testowe” to inspect them. For a safe synthetic postback, send `POST /api/analytics/test-postback` with JSON `{"clickid":"<test-click-id>","value":1.23}` and header `x-analytics-token: <ANALYTICS_ADMIN_TOKEN>`. This endpoint accepts only click IDs from test-tagged sessions and does not update the real affiliate clicks/payout table; its value is explicitly marked as test and not real revenue. Never use a real campaign's click ID for a test postback. Real revenue is counted only from the protected `/api/postback` network callback. A unique index prevents duplicate conversion events per click ID.
 
 ### Limitations / operational checks
 
