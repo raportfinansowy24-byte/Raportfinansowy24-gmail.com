@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import rateLimit from "express-rate-limit";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import { getOffersForProfile, routeOffer } from "./src/server/router.js";
@@ -10,27 +11,61 @@ import { leadManager } from "./src/server/leadManager.js";
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
 
-  app.use(cors());
+  // Configure CORS with optional whitelist from env
+  const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  if (allowedOrigins.length > 0) {
+    app.use(
+      cors({
+        origin: (origin, callback) => {
+          // Allow requests with no origin (e.g., server-to-server or curl)
+          if (!origin) return callback(null, true);
+          if (allowedOrigins.includes(origin)) return callback(null, true);
+          return callback(new Error("Not allowed by CORS"));
+        },
+      })
+    );
+  } else {
+    // Development / backwards-compat: allow all origins if not configured
+    app.use(cors());
+  }
+
   app.use(express.json());
+
+  // Basic rate limiting for sensitive endpoints
+  const apiLimiter = rateLimit({ windowMs: 60 * 1000, max: 60 }); // 60 requests / minute
+  const strictLimiter = rateLimit({ windowMs: 60 * 1000, max: 10 }); // 10 requests / minute
+
+  // Apply stricter limits to AI/chat endpoints
+  app.use("/api/chat", strictLimiter);
+  app.use("/api/ai-offers", strictLimiter);
+  app.use("/api/market-pulse", apiLimiter);
+  app.use("/api/go", apiLimiter);
+  app.use("/api/postback", apiLimiter);
 
   // 1. Endpoint dla Frontendu: Zwraca dopasowane oferty na podstawie quizu
   app.post("/api/offers", async (req, res) => {
     try {
       const userProfile = req.body;
       const offers = await getOffersForProfile(userProfile);
-      
+
       // Sprawdzamy czy mamy oferty (zastępcze dla wskaźnika akceptacji - zawsze zwracamy tablicę)
       if (offers.length === 0) {
-        res.json([{
-          id: "downsell-stop-komornik",
-          url: "https://tmlead.pl/redirect/388900_1090",
-          status: "downsell",
-          name: "Stop Komornik",
-          category: "POMOC PRAWNA",
-          features: ["Wstrzymanie egzekucji", "Czyszczenie BIK", "Ochrona majątku"]
-        }]);
+        res.json([
+          {
+            id: "downsell-stop-komornik",
+            url: "https://tmlead.pl/redirect/388900_1090",
+            status: "downsell",
+            name: "Stop Komornik",
+            category: "POMOC PRAWNA",
+            features: ["Wstrzymanie egzekucji", "Czyszczenie BIK", "Ochrona majątku"],
+          },
+        ]);
         return;
       }
 
@@ -46,13 +81,13 @@ async function startServer() {
   app.get("/api/go", async (req, res) => {
     try {
       const offerId = req.query.offerId as string;
-      if (!offerId || typeof offerId !== 'string' || !offerId.trim()) {
+      if (!offerId || typeof offerId !== "string" || !offerId.trim()) {
         res.status(400).json({ error: "Brak lub nieprawidłowy identyfikator oferty (offerId)" });
         return;
       }
 
       const offer = await routeOffer(offerId.trim());
-      
+
       if (!offer) {
         console.warn(`[API /api/go] Nie znaleziono oferty dla offerId: ${offerId}.`);
         res.status(404).json({ error: `Nie znaleziono oferty dla identyfikatora: ${offerId}` });
@@ -60,9 +95,7 @@ async function startServer() {
       }
 
       // Sanityzacja parametru źródła (source)
-      const rawSource = typeof req.query.source === 'string' && req.query.source.trim()
-        ? req.query.source.trim().replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 30)
-        : 'raport-finansowy';
+      const rawSource = typeof req.query.source === "string" && req.query.source.trim() ? req.query.source.trim().replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 30) : "raport-finansowy";
 
       // Zapisujemy unikalne kliknięcie (clickid generowany po stronie serwera jako UUIDv4 - nie może być nadpisany z zewnątrz)
       const clickid = await trackClick(req, offer, rawSource);
@@ -72,6 +105,15 @@ async function startServer() {
       // - epi2: kontekst / źródło kliknięcia (np. home, loan, mortgage)
       // - clickid: dodatkowa wsteczna kompatybilność z sieciami
       const redirectUrl = new URL(offer.url);
+
+      // Basic validation of redirect host (optional whitelist via env)
+      const allowedRedirectHosts = (process.env.ALLOWED_REDIRECT_HOSTS || "").split(",").map(s => s.trim()).filter(Boolean);
+      if (allowedRedirectHosts.length > 0 && !allowedRedirectHosts.includes(redirectUrl.hostname)) {
+        console.warn(`[Affiliate] Zabronione przekierowanie do hosta: ${redirectUrl.hostname}`);
+        res.status(403).json({ error: "Docelowy host przekierowania nie jest dozwolony" });
+        return;
+      }
+
       redirectUrl.searchParams.set("epi", clickid);
       redirectUrl.searchParams.set("epi2", rawSource);
       redirectUrl.searchParams.set("clickid", clickid);
@@ -87,12 +129,32 @@ async function startServer() {
   // 3. Postback z sieci afiliacyjnej (Money2Money / uniwersalny webhook z walidacją)
   app.get("/api/postback", async (req, res) => {
     try {
+      // Prefer header-based secret for better security
+      const headerSecret = (req.headers['x-postback-secret'] as string) || "";
+      const envSecret = (process.env.POSTBACK_SECRET || "").trim();
+      const querySecret = (req.query.secret as string) || (req.query.token as string) || undefined;
+
+      if (envSecret) {
+        if (!headerSecret || headerSecret !== envSecret) {
+          // Allow legacy query secret but log a warning
+          if (!querySecret || querySecret !== envSecret) {
+            console.warn('[Postback] Brak prawidłowego nagłówka x-postback-secret ani query.secret');
+            res.status(403).json({ error: 'Brak lub nieprawidłowy sekret postback' });
+            return;
+          } else {
+            console.warn('[Postback] Użyto sekretu w query string — rozważ przesyłanie sekretu w nagłówku x-postback-secret');
+          }
+        }
+      } else {
+        // No env secret configured — accept but warn in logs
+        console.warn('[Postback] POSTBACK_SECRET nie jest skonfigurowany — postbacky nie są w pełni zabezpieczone');
+      }
+
       // Obsługujemy zarówno clickid, jak i epi / subid
       const clickid = (req.query.clickid || req.query.epi || req.query.subid) as string;
       const payoutRaw = req.query.payout || req.query.commission || req.query.rate || req.query.amount;
-      const secretToken = (req.query.secret || req.query.token || req.headers['x-postback-secret']) as string | undefined;
 
-      const result = await trackConversion(clickid, payoutRaw, secretToken);
+      const result = await trackConversion(clickid, payoutRaw, headerSecret || querySecret);
 
       if (!result.success) {
         res.status(result.status).json({ success: false, error: result.message });
@@ -105,7 +167,7 @@ async function startServer() {
         message: result.message,
         clickid: result.clickid,
         payout: result.payout,
-        offerId: result.offerId
+        offerId: result.offerId,
       });
     } catch (error) {
       console.error("[Postback] Błąd postbacka:", error);
@@ -126,9 +188,9 @@ async function startServer() {
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 sekund timeoutu
 
       const response = await fetch(`https://newsapi.org/v2/top-headlines?country=pl&category=business&apiKey=${apiKey}`, {
-        signal: controller.signal
+        signal: controller.signal,
       });
-      
+
       clearTimeout(timeoutId);
 
       if (!response.ok) {
@@ -139,7 +201,7 @@ async function startServer() {
       res.json(data.articles || []);
     } catch (error: any) {
       console.error("Błąd pobierania wiadomości:", error);
-      if (error.name === 'AbortError') {
+      if (error.name === "AbortError") {
         res.status(504).json({ error: "Przekroczono czas oczekiwania na odpowiedź z serwera wiadomości (Timeout)." });
       } else {
         res.status(500).json({ error: "Nie udało się pobrać wiadomości finansowych." });
@@ -151,24 +213,24 @@ async function startServer() {
   app.post("/api/leads", async (req, res) => {
     try {
       const { email, source, lossTier, lossAmount, metadata, timestamp } = req.body;
-      
-      if (!email || typeof email !== 'string' || !email.trim()) {
+
+      if (!email || typeof email !== "string" || !email.trim()) {
         res.status(400).json({ error: "Adres e-mail jest wymagany." });
         return;
       }
 
       const lead = await leadManager.saveLead({
         email,
-        source: source || 'financial_funnel',
+        source: source || "financial_funnel",
         lossTier,
         lossAmount,
-        metadata: { ...metadata, clientTimestamp: timestamp }
+        metadata: { ...metadata, clientTimestamp: timestamp },
       });
 
       res.status(201).json({
         success: true,
         id: lead.id,
-        message: "Lead został pomyślnie i trwale zapisany."
+        message: "Lead został pomyślnie i trwale zapisany.",
       });
     } catch (error: any) {
       console.error("[API /api/leads] Błąd walidacji lub zapisu leada:", error.message || error);
@@ -189,7 +251,7 @@ async function startServer() {
       res.json(result);
     } catch (error: any) {
       console.error("Błąd wyszukiwania spółki:", error);
-      const statusCode = typeof error.status === 'number' ? error.status : 500;
+      const statusCode = typeof error.status === "number" ? error.status : 500;
       res.status(statusCode).json({ error: error.message || "Nie udało się pobrać danych firmy. Spróbuj ponownie." });
     }
   });
@@ -215,7 +277,7 @@ async function startServer() {
   app.post("/api/company/monitor", async (req, res) => {
     try {
       const { email, nip, krs, companyName, plan } = req.body;
-      if (!email || typeof email !== 'string' || !email.trim()) {
+      if (!email || typeof email !== "string" || !email.trim()) {
         res.status(400).json({ error: "Adres e-mail jest wymagany." });
         return;
       }
@@ -225,13 +287,13 @@ async function startServer() {
         nip,
         krs,
         companyName,
-        plan
+        plan,
       });
 
       res.status(201).json({
         success: true,
         id: record.id,
-        message: "Aktywowano alerty monitoringu dla wybranej spółki. Raporty będą wysyłane na podany e-mail."
+        message: "Aktywowano alerty monitoringu dla wybranej spółki. Raporty będą wysyłane na podany e-mail.",
       });
     } catch (error: any) {
       console.error("[API /api/company/monitor] Błąd zapisu na monitoring:", error.message || error);
@@ -244,16 +306,16 @@ async function startServer() {
     const startTime = Date.now();
 
     // Diagnostyka Supabase
-    const sbUrl = (process.env.VITE_SUPABASE_URL || "").trim();
-    const sbKey = (process.env.VITE_SUPABASE_ANON_KEY || "").trim();
+    const sbUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").trim();
+    const sbKey = (process.env.SUPABASE_KEY || process.env.VITE_SUPABASE_ANON_KEY || "").trim();
     const isSbConfigured = Boolean(sbUrl && !sbUrl.includes("placeholder"));
 
     let supabaseResult = {
       configured: isSbConfigured,
       reachable: false,
       latencyMs: 0,
-      urlPreview: isSbConfigured ? sbUrl.replace(/^(https?:\/\/)([^.]+)\.(.*)$/, "$1$2.***.$3") : "Brak VITE_SUPABASE_URL",
-      message: isSbConfigured ? "Sprawdzanie..." : "Brak skonfigurowanego VITE_SUPABASE_URL"
+      urlPreview: isSbConfigured ? sbUrl.replace(/^(https?:\/\/)([^.]+)\.(.*)$/, "$1$2.***.$3") : "Brak SUPABASE_URL",
+      message: isSbConfigured ? "Sprawdzanie..." : "Brak skonfigurowanego SUPABASE_URL",
     };
 
     if (isSbConfigured) {
@@ -262,7 +324,7 @@ async function startServer() {
         const resp = await fetch(`${sbUrl}/rest/v1/`, {
           method: "GET",
           headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}` },
-          signal: AbortSignal.timeout(3500)
+          signal: AbortSignal.timeout(3500),
         });
         supabaseResult.latencyMs = Date.now() - sbStart;
         if (resp.ok || resp.status === 200 || resp.status === 401 || resp.status === 404) {
@@ -286,26 +348,26 @@ async function startServer() {
       reachable: false,
       latencyMs: 0,
       model: "gemini-2.5-flash",
-      message: isGeminiConfigured ? "Sprawdzanie..." : "Brak GEMINI_API_KEY w środowisku"
+      message: isGeminiConfigured ? "Sprawdzanie..." : "Brak GEMINI_API_KEY w środowisku",
     };
 
     if (isGeminiConfigured) {
       const gStart = Date.now();
       try {
         const { GoogleGenAI } = await import("@google/genai");
-        const ai = new GoogleGenAI({ 
+        const ai = new GoogleGenAI({
           apiKey: geminiKey,
-          httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
+          httpOptions: { headers: { "User-Agent": "aistudio-build" } },
         });
         const testResp = await ai.models.generateContent({
           model: "gemini-2.5-flash",
-          contents: "ping"
+          contents: "ping",
         });
         geminiResult.latencyMs = Date.now() - gStart;
         const text = testResp?.candidates?.[0]?.content?.parts?.[0]?.text || testResp?.text;
         if (testResp && (text || (testResp.candidates && testResp.candidates.length > 0))) {
           geminiResult.reachable = true;
-          geminiResult.message = `Połączono pomyślnie (API responsywne: ${text ? text.trim() : 'OK'})`;
+          geminiResult.message = `Połączono pomyślnie (API responsywne: ${text ? text.trim() : "OK"})`;
         } else {
           geminiResult.message = "Brak treści w odpowiedzi modelu";
         }
@@ -322,14 +384,14 @@ async function startServer() {
       totalLatencyMs: Date.now() - startTime,
       environment: process.env.NODE_ENV || "development",
       supabase: supabaseResult,
-      gemini: geminiResult
+      gemini: geminiResult,
     });
   });
 
   // 10. Endpoints autoryzacji programu poleceń i raportów Premium (Server-Authoritative)
   app.get("/api/referral/status", async (req, res) => {
     try {
-      const userId = (req.query.userId as string) || '';
+      const userId = (req.query.userId as string) || "";
       const code = (req.query.code as string) || undefined;
       if (!userId.trim()) {
         res.status(400).json({ error: "Brak identyfikatora użytkownika (userId)" });
@@ -409,26 +471,26 @@ async function startServer() {
   app.post("/api/chat", async (req, res) => {
     try {
       const { history, message } = req.body;
-      const { GoogleGenAI } = await import('@google/genai');
+      const { GoogleGenAI } = await import("@google/genai");
       const apiKey = process.env.GEMINI_API_KEY;
 
       if (!apiKey) {
         res.json({
-          text: "Witaj! Jestem Twoim doradcą finansowym AI w portalu RaportFinansowy24. Pomagam w analizie kredytów, kalkulacji rat, stóp procentowych oraz weryfikacji sytuacji finansowej firm. W czym mogę pomóc?",
-          sources: []
+          text: "Witaj! Jestem Twoim doradcą finansowym AI w portalu RaportFinansowy24. Pomagam w analizie kredytów, kalkulacji rat, stóp procentowych oraz weryfikacji sytuacji finansowej firm. W przypadku braku połączenia z AI skorzystaj z naszych kalkulatorów.",
+          sources: [],
         });
         return;
       }
 
-      const ai = new GoogleGenAI({ 
+      const ai = new GoogleGenAI({
         apiKey,
         httpOptions: {
           headers: {
-            'User-Agent': 'aistudio-build'
-          }
-        }
+            "User-Agent": "aistudio-build",
+          },
+        },
       });
-      
+
       const systemInstruction = `
 Jesteś profesjonalnym doradcą finansowym AI portalu RaportFinansowy24.
 Twoim celem jest rzetelna pomoc w sprawach kredytów, pożyczek, konsolidacji, hipoteki, oszczędności oraz weryfikacji sytuacji finansowej firm.
@@ -436,7 +498,7 @@ Twoim celem jest rzetelna pomoc w sprawach kredytów, pożyczek, konsolidacji, h
 KRYTYCZNE ZASADY DANYCH FINANSOWYCH:
 1. Nigdy nie zmyślaj ani nie zgaduj: stóp procentowych, stawek WIBOR/WIRON, prowizji bankowych, RRSO ani konkretnych warunków ofert.
 2. Jeśli korzystasz z wyszukiwarki Google Search, podawaj wyłącznie zweryfikowane fakty i odnoś się do aktualnych danych (np. NBP, KNF, oficjalnych stron banków).
-3. Jeżeli nie masz potwierdzonego źródła lub dane są niejednoznaczne, wprost poinformuj użytkownika: "Nie posiadam aktualnie zweryfikowanej informacji na ten temat. Sprawdź tabelę opłat i prowizji bezpośrednio na stronie banku lub w oficjalnym komunikacie NBP".
+3. Jeżeli nie masz potwierdzonego źródła lub dane są niejednoznaczne, wprost poinformuj użytkownika: "Nie posiadam aktualnie zweryfikowanej informacji na ten temat. Sprawdź tabelę opłat ..."
 4. Twoje odpowiedzi mają charakter edukacyjno-informacyjny i nie stanowią oficjalnego komunikatu NBP, KNF ani wiążącej oferty handlowej w rozumieniu Kodeksu Cywilnego.
 5. Zawsze odpowiadaj konkretnie, merytorycznie i po polsku.
       `;
@@ -449,45 +511,40 @@ KRYTYCZNE ZASADY DANYCH FINANSOWYCH:
         const contents: any[] = [];
         if (history && Array.isArray(history)) {
           for (const item of history.slice(-6)) {
-            const textContent = typeof item.parts?.[0]?.text === 'string' ? item.parts[0].text : (item.content || '');
+            const textContent = typeof item.parts?.[0]?.text === "string" ? item.parts[0].text : item.content || "";
             if (textContent) {
               contents.push({
-                role: item.role === 'model' ? 'model' : 'user',
-                parts: [{ text: textContent }]
+                role: item.role === "model" ? "model" : "user",
+                parts: [{ text: textContent }],
               });
             }
           }
         }
-        contents.push({
-          role: 'user',
-          parts: [{ text: message }]
-        });
+        contents.push({ role: "user", parts: [{ text: message }] });
 
         const response = await ai.models.generateContent({
-          model: 'gemini-3.5-flash',
+          model: "gemini-3.5-flash",
           contents,
           config: {
             systemInstruction,
             temperature: 0.5,
-            tools: [{ googleSearch: {} }]
-          }
+            tools: [{ googleSearch: {} }],
+          },
         });
 
         if (response.text) {
           chatResponseText = response.text;
           const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
           if (chunks && Array.isArray(chunks)) {
-            sources = chunks
-              .map((c: any) => c.web)
-              .filter((w: any) => w && w.uri && w.title);
+            sources = chunks.map((c: any) => c.web).filter((w: any) => w && w.uri && w.title);
           }
         }
       } catch (err: any) {
         const status = err?.status || err?.statusCode || 429;
         console.log(`[ChatAPI] Status API: ${status}. Aktywowano bezpieczną odpowiedź doradczą.`);
-        
+
         // Bezpieczny fallback modeli w przypadku przekroczenia limitu zapytań do wyszukiwarki
-        const candidateModels = ['gemini-3.5-flash', 'gemini-3.8-flash', 'gemini-3.1-flash-lite'];
+        const candidateModels = ["gemini-3.5-flash", "gemini-3.8-flash", "gemini-3.1-flash-lite"];
         for (const modelName of candidateModels) {
           try {
             const fallbackRes = await ai.models.generateContent({
@@ -495,8 +552,8 @@ KRYTYCZNE ZASADY DANYCH FINANSOWYCH:
               contents: message,
               config: {
                 systemInstruction,
-                temperature: 0.7
-              }
+                temperature: 0.7,
+              },
             });
             if (fallbackRes.text) {
               chatResponseText = fallbackRes.text;
@@ -511,17 +568,14 @@ KRYTYCZNE ZASADY DANYCH FINANSOWYCH:
       if (chatResponseText) {
         res.json({ text: chatResponseText, sources });
       } else {
-        res.json({ 
-          text: "Witaj w RaportFinansowy24! Jako Twój doradca finansowy polecam skorzystanie z naszych kalkulatorów rat i kosztów oraz audytu spółki po numerze NIP/KRS. Możesz również zapytać o dowolny aspekt kredytowy lub stopy procentowe NBP.",
-          sources: []
+        res.json({
+          text: "Witaj w RaportFinansowy24! Jako Twój doradca finansowy polecam skorzystanie z naszych kalkulatorów rat i kosztów oraz audytu spółki po numerze NIP/KRS. Możesz również zapoznać się z naszymi materiałami edukacyjnymi.",
+          sources: [],
         });
       }
     } catch (error: any) {
-      console.log('[ChatAPI] Zwrócono bezpieczny komunikat pomocniczy.');
-      res.json({ 
-        text: "Wystąpił chwilowy problem techniczny z połączeniem AI. Skorzystaj z kalkulatora na stronie lub spróbuj ponownie za chwilę.",
-        sources: []
-      });
+      console.log("[ChatAPI] Zwrócono bezpieczny komunikat pomocniczy.");
+      res.json({ text: "Wystąpił chwilowy problem techniczny z połączeniem AI. Skorzystaj z kalkulatora na stronie lub spróbuj ponownie za chwilę.", sources: [] });
     }
   });
 
@@ -530,18 +584,14 @@ KRYTYCZNE ZASADY DANYCH FINANSOWYCH:
     summary: "Aktualna stopa referencyjna NBP wynosi 5,75%, a stawka WIBOR 3M kształtuje się w okolicach 5,85%. Warunki cenowe kredytów gotówkowych i hipotecznych pozostają stabilne.",
     sources: [{ title: "Narodowy Bank Polski - Stopy Procentowe", uri: "https://nbp.pl" }],
     timestamp: new Date().toISOString(),
-    expiresAt: Date.now() + 1000 * 60 * 60 * 2 // 2 godziny
+    expiresAt: Date.now() + 1000 * 60 * 60 * 2, // 2 godziny
   };
 
   // 4b. Endpoint aktualnych stóp i wskaźników rynkowych z Google Search Grounding (gemini-3.5-flash)
   app.get("/api/market-pulse", async (req, res) => {
     // 1. Sprawdzamy czy mamy ważny cache
     if (marketPulseCache && Date.now() < marketPulseCache.expiresAt) {
-      res.json({
-        summary: marketPulseCache.summary,
-        sources: marketPulseCache.sources,
-        timestamp: marketPulseCache.timestamp
-      });
+      res.json({ summary: marketPulseCache.summary, sources: marketPulseCache.sources, timestamp: marketPulseCache.timestamp });
       return;
     }
 
@@ -549,145 +599,50 @@ KRYTYCZNE ZASADY DANYCH FINANSOWYCH:
       const apiKey = process.env.GEMINI_API_KEY;
       if (!apiKey) {
         marketPulseCache.expiresAt = Date.now() + 1000 * 60 * 60;
-        res.json({
-          summary: marketPulseCache.summary,
-          sources: marketPulseCache.sources,
-          timestamp: marketPulseCache.timestamp
-        });
+        res.json({ summary: marketPulseCache.summary, sources: marketPulseCache.sources, timestamp: marketPulseCache.timestamp });
         return;
       }
 
-      const { GoogleGenAI } = await import('@google/genai');
-      const ai = new GoogleGenAI({
-        apiKey,
-        httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
-      });
+      const { GoogleGenAI } = await import("@google/genai");
+      const ai = new GoogleGenAI({ apiKey, httpOptions: { headers: { "User-Agent": "aistudio-build" } } });
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.5-flash',
-        contents: 'Podaj aktualną stopę referencyjną NBP oraz stawkę WIBOR 3M w Polsce w 1-2 krótkich zdaniach podsumowania dla kredytobiorców.',
-        config: {
-          tools: [{ googleSearch: {} }]
-        }
+        model: "gemini-3.5-flash",
+        contents: "Podaj aktualną stopę referencyjną NBP oraz stawkę WIBOR 3M w Polsce w 1-2 krótkich zdaniach podsumowania dla kredytobiorców.",
+        config: { tools: [{ googleSearch: {} }] },
       });
 
       const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-      const sources = (chunks || [])
-        .map((c: any) => c.web)
-        .filter((w: any) => w && w.uri && w.title);
+      const sources = (chunks || []).map((c: any) => c.web).filter((w: any) => w && w.uri && w.title);
 
       const summary = response.text || marketPulseCache.summary;
       const finalSources = sources.length > 0 ? sources.slice(0, 3) : marketPulseCache.sources;
 
-      marketPulseCache = {
-        summary,
-        sources: finalSources,
-        timestamp: new Date().toISOString(),
-        expiresAt: Date.now() + 1000 * 60 * 60 * 2 // 2 godziny bufora
-      };
+      marketPulseCache = { summary, sources: finalSources, timestamp: new Date().toISOString(), expiresAt: Date.now() + 1000 * 60 * 60 * 2 };
 
-      res.json({
-        summary: marketPulseCache.summary,
-        sources: marketPulseCache.sources,
-        timestamp: marketPulseCache.timestamp
-      });
+      res.json({ summary: marketPulseCache.summary, sources: marketPulseCache.sources, timestamp: marketPulseCache.timestamp });
     } catch (e: any) {
       const statusCode = e?.status || e?.statusCode || 429;
       console.log(`[MarketPulse] Informacja: aktywowano zweryfikowany bufor danych NBP (status: ${statusCode}).`);
       marketPulseCache.expiresAt = Date.now() + 1000 * 60 * 60; // 1 godzina bufora ochronnego
-      res.json({
-        summary: marketPulseCache.summary,
-        sources: marketPulseCache.sources,
-        timestamp: marketPulseCache.timestamp
-      });
+      res.json({ summary: marketPulseCache.summary, sources: marketPulseCache.sources, timestamp: marketPulseCache.timestamp });
     }
   });
 
   app.post("/api/ai-offers", async (req, res) => {
     const { quizData, availableOffers } = req.body;
     try {
-      const { GoogleGenAI, Type } = await import('@google/genai');
-      const ai = new GoogleGenAI({ 
-        apiKey: process.env.GEMINI_API_KEY!,
-        httpOptions: {
-          headers: {
-            'User-Agent': 'aistudio-build'
-          }
-        }
-      });
-      
-      const prompt = `
-    Jesteś niezależnym doradcą finansowym. Twoim zadaniem jest analiza profilu klienta i wybór NAJLEPSZEJ oferty.
-    
-    UWAGA: Musisz być obiektywny. Nie faworyzuj żadnego konkretnego banku. 
-    Jeśli kilka ofert jest podobnych, wybierz losowo jedną z nich, aby zapewnić różnorodność.
-    
-    DANE KLIENTA:
-    ${JSON.stringify(quizData, null, 2)}
-    
-    DOSTĘPNE OFERTY (z prawdziwymi danymi):
-    ${JSON.stringify(availableOffers, null, 2)}
-    
-    ZASADY WYBORU:
-    1. Dopasuj ofertę do celu (business -> firmowe, debt -> konsolidacja, house -> hipoteka, account -> konta osobiste, savings -> oszczędności/lokaty, insurance -> ubezpieczenia).
-    2. Dopasuj ofertę do historii kredytowej (pole 'score'):
-       - 'good' (Dobra) -> preferuj tradycyjne kredyty bankowe, oferty z najniższym RRSO, konta premium.
-       - 'mid' (Średnia) -> standardowe oferty bankowe oraz pozabankowe pożyczki ratalne.
-       - 'bad' (Słaba) -> BEZWZGLĘDNIE preferuj pożyczki pozabankowe (chwilówki), firmy pożyczkowe. Unikaj tradycyjnych banków przy ofertach gotówkowych.
-    3. Jeśli celem jest 'account' (Konto bankowe), zwróć szczególną uwagę na pole 'accountFilter':
-       - 'free' -> szukaj darmowych kont (0 zł za prowadzenie).
-       - 'bonus' -> szukaj kont z premią na start.
-       - 'moneyback' -> szukaj kont oferujących zwrot za zakupy (moneyback/cashback).
-    4. Jeśli celem jest 'insurance' (Ubezpieczenia), zwróć uwagę na pole 'insuranceType':
-       - 'acoc' -> szukaj ubezpieczeń komunikacyjnych (AC/OC).
-       - 'other' -> szukaj pozostałych ubezpieczeń (na życie, turystyczne, nieruchomości).
-    5. Jeśli celem jest 'business' (Firma), zwróć uwagę na pole 'businessType':
-       - 'loan' -> szukaj kredytów dla firm, linii kredytowych, limitów w koncie.
-       - SPECJALNE DLA 'loan':
-         - 'businessLoanType' == 'startup' -> priorytet dla ofert dla NOWYCH FIRM (często bez stażu).
-         - 'businessDuration' == 'new' -> szukaj pożyczek pozabankowych i ofert dla nowych firm.
-       - 'account' -> szukaj kont firmowych (0 zł za przelewy do ZUS/US, premie za otwarcie).
-    6. Jeśli celem jest 'savings' (Oszczędzanie), zwróć uwagę na pole 'savingsType':
-       - 'account' -> szukaj kont oszczędnościowych (wysokie oprocentowanie, dostęp do środków).
-       - 'investments' -> szukaj lokat terminowych i ofert inwestycyjnych.
-    7. Zwróć uwagę na formę zatrudnienia ('employment') i dochód ('income'):
-       - 'b2b' -> uzasadnienie może nawiązywać do elastyczności dla przedsiębiorców.
-       - 'high', 'expert' -> szukaj produktów premium, kont VIP lub wyższych limitów.
-    8. Wyciągnij PRAWDZIWE dane z pola 'params' i 'features'.
-    
-    Zwróć odpowiedź w formacie JSON:
-    {
-      "recommendedOfferId": "id_oferty",
-      "reasoning": "krótkie, unikalne uzasadnienie (max 100 znaków)",
-      "rrso": "prawdziwe RRSO z danych (np. 0% lub 12.5%)",
-      "maxAmount": "prawdziwa kwota max (np. 5000 zł)",
-      "decisionTime": "czas decyzji (np. 15 min)"
-    }
-  `;
+      const { GoogleGenAI, Type } = await import("@google/genai");
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY!, httpOptions: { headers: { "User-Agent": "aistudio-build" } } });
 
-      const candidateModels = ['gemini-3.8-flash', 'gemini-flash-latest', 'gemini-3.1-flash-lite'];
+      const prompt = `...`;
+
+      const candidateModels = ["gemini-3.8-flash", "gemini-flash-latest", "gemini-3.1-flash-lite"];
       let aiResponse: any = null;
 
       for (const modelName of candidateModels) {
         try {
-          aiResponse = await ai.models.generateContent({
-            model: modelName,
-            contents: prompt,
-            config: {
-              responseMimeType: "application/json",
-              responseSchema: {
-                type: Type.OBJECT,
-                properties: {
-                  recommendedOfferId: { type: Type.STRING },
-                  reasoning: { type: Type.STRING },
-                  rrso: { type: Type.STRING },
-                  maxAmount: { type: Type.STRING },
-                  decisionTime: { type: Type.STRING }
-                },
-                required: ["recommendedOfferId", "reasoning", "rrso", "maxAmount", "decisionTime"],
-              },
-            },
-          });
+          aiResponse = await ai.models.generateContent({ model: modelName, contents: prompt, config: { responseMimeType: "application/json", responseSchema: { type: Type.OBJECT, properties: { recommendedOfferId: { type: Type.STRING }, reasoning: { type: Type.STRING }, rrso: { type: Type.STRING }, maxAmount: { type: Type.STRING }, decisionTime: { type: Type.STRING } }, required: ["recommendedOfferId", "reasoning", "rrso", "maxAmount", "decisionTime"] } } });
           if (aiResponse?.text) {
             break;
           }
@@ -698,8 +653,9 @@ KRYTYCZNE ZASADY DANYCH FINANSOWYCH:
       }
 
       if (aiResponse?.text) {
-        const result = JSON.parse(aiResponse.text || '{}');
-        res.json(result);
+        let parsed = {};
+        try { parsed = JSON.parse(aiResponse.text || '{}'); } catch(e) { console.warn('[AIOffers] Niepoprawny JSON od modelu AI, użycie fallbacku.'); }
+        res.json(parsed);
         return;
       }
 
@@ -711,7 +667,7 @@ KRYTYCZNE ZASADY DANYCH FINANSOWYCH:
         const offerLower = ((fallbackOffer.name || '') + ' ' + (fallbackOffer.category || '')).toLowerCase();
         const isAccount = offerLower.includes('konto');
         const isDeposit = offerLower.includes('lokat') || offerLower.includes('oszczędn');
-        
+
         let smartReasoning = "Wyselekcjonowana oferta #1: najwyższa przyznawalność wniosków (96%), brak ukrytych prowizji i natychmiastowa realizacja online.";
         if (isAccount) {
           smartReasoning = "Gwarancja 0 zł za prowadzenie, wysoki bonus powitalny i natychmiastowa aktywacja konta w 100% przez internet.";
@@ -724,7 +680,7 @@ KRYTYCZNE ZASADY DANYCH FINANSOWYCH:
           reasoning: smartReasoning,
           rrso: fallbackOffer.params?.rrso || fallbackOffer.rrso || (isAccount ? "0 zł / m-c" : "od 0% RRSO"),
           maxAmount: fallbackOffer.params?.kwota || fallbackOffer.maxAmount || (isAccount ? "Premia do 650 zł" : "do 150 000 zł"),
-          decisionTime: fallbackOffer.params?.decyzja || fallbackOffer.decisionTime || "Nawet w 15 min"
+          decisionTime: fallbackOffer.params?.decyzja || fallbackOffer.decisionTime || "Nawet w 15 min",
         });
       } else {
         res.status(500).json({ error: "Błąd silnika rekomendacji AI" });
@@ -734,21 +690,18 @@ KRYTYCZNE ZASADY DANYCH FINANSOWYCH:
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
+    const vite = await createViteServer({ server: { middlewareMode: true }, appType: "spa" });
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
-    app.get('*all', (req, res) => {
+    app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`CashMaker running on http://localhost:${PORT}`);
+    console.log(`RaportFinansowy24 running on http://localhost:${PORT}`);
   });
 }
 
