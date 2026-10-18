@@ -103,7 +103,7 @@ export async function recordContentEvent(
 
 export async function findClickAttribution(clickid: string): Promise<ContentAttribution> {
   if (!getIsSupabaseAvailable() || !clickid) return {};
-  const { data, error } = await supabase
+  const { data, error } = await analyticsDb
     .from("content_analytics_events")
     .select("visitor_id,video_id,hook_id,platform,topic,utm_source,utm_medium,utm_campaign,utm_content,utm_term,is_test")
     .eq("event_name", "affiliate_click")
@@ -117,7 +117,8 @@ export async function findClickAttribution(clickid: string): Promise<ContentAttr
 
 export async function getContentAnalyticsReport(options: { includeTests?: boolean } = {}) {
   if (!getIsSupabaseAvailable()) throw new Error("Supabase is not configured.");
-  const { data, error } = await supabase
+  if (!serviceRoleKey || !serverSupabaseUrl) throw new Error("Set SUPABASE_SERVICE_ROLE_KEY and SUPABASE_URL for protected analytics reporting.");
+  const { data, error } = await analyticsDb
     .from("content_analytics_events")
     .select("event_name,visitor_id,video_id,hook_id,platform,topic,utm_source,utm_campaign,utm_content,clickid,value,is_test,created_at")
     .order("created_at", { ascending: false })
