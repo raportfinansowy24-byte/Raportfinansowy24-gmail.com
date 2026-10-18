@@ -8,6 +8,7 @@ import { trackClick, trackConversion } from "./src/server/tracker.js";
 import { searchAndFetchCompany, runGeminiCompanyDiagnostic, CURATED_COMPANIES } from "./src/server/companyService.js";
 import { referralManager } from "./src/server/referralManager.js";
 import { leadManager } from "./src/server/leadManager.js";
+import { recordContentEvent, findClickAttribution, getContentAnalyticsReport, normalizeAttribution, CONTENT_EVENT_NAMES } from "./src/server/contentAnalytics.js";
 
 async function startServer() {
   const app = express();
@@ -47,6 +48,46 @@ async function startServer() {
   app.use("/api/market-pulse", apiLimiter);
   app.use("/api/go", apiLimiter);
   app.use("/api/postback", apiLimiter);
+  app.use("/api/analytics/event", apiLimiter);
+  app.use("/api/analytics/report", strictLimiter);
+
+  // Public event ingestion; never accept an arbitrary event name or PII.
+  app.post("/api/analytics/event", async (req, res) => {
+    try {
+      const eventName = req.body?.event_name;
+      if (!CONTENT_EVENT_NAMES.includes(eventName)) {
+        res.status(400).json({ error: "Nieobsługiwany typ zdarzenia analitycznego." });
+        return;
+      }
+      const attribution = normalizeAttribution(req.body);
+      if (eventName === "affiliate_conversion") {
+        res.status(400).json({ error: "Konwersje afiliacyjne muszą pochodzić z endpointu postback." });
+        return;
+      }
+      const result = await recordContentEvent(eventName, attribution);
+      res.status(result.stored ? 202 : 202).json({ accepted: true, stored: result.stored, event_id: result.id });
+    } catch (error) {
+      console.error("[ContentAnalytics] Błąd zapisu zdarzenia:", error);
+      res.status(503).json({ error: "Nie udało się zapisać zdarzenia analitycznego." });
+    }
+  });
+
+  // Admin report API. Set ANALYTICS_ADMIN_TOKEN to enable dashboard access.
+  app.get("/api/analytics/report", async (req, res) => {
+    const expected = (process.env.ANALYTICS_ADMIN_TOKEN || "").trim();
+    const supplied = (req.headers["x-analytics-token"] as string) || (req.query.token as string) || "";
+    if (!expected || supplied !== expected) {
+      res.status(401).json({ error: "Brak prawidłowego tokena analityki. Skonfiguruj ANALYTICS_ADMIN_TOKEN." });
+      return;
+    }
+    try {
+      const includeTests = req.query.include_tests === "true";
+      res.json(await getContentAnalyticsReport({ includeTests }));
+    } catch (error: any) {
+      console.error("[ContentAnalytics] Błąd raportu:", error);
+      res.status(503).json({ error: error.message || "Raport analityczny jest niedostępny." });
+    }
+  });
 
   // 1. Endpoint dla Frontendu: Zwraca dopasowane oferty na podstawie quizu
   app.post("/api/offers", async (req, res) => {
@@ -99,6 +140,22 @@ async function startServer() {
 
       // Zapisujemy unikalne kliknięcie (clickid generowany po stronie serwera jako UUIDv4 - nie może być nadpisany z zewnątrz)
       const clickid = await trackClick(req, offer, rawSource);
+      await recordContentEvent("affiliate_click", {
+        visitor_id: req.query.visitor_id,
+        video_id: req.query.video_id,
+        hook_id: req.query.hook_id,
+        platform: req.query.platform,
+        topic: req.query.topic,
+        utm_source: req.query.utm_source,
+        utm_medium: req.query.utm_medium,
+        utm_campaign: req.query.utm_campaign,
+        utm_content: req.query.utm_content,
+        utm_term: req.query.utm_term,
+        clickid,
+        page_path: req.query.page_path,
+        is_test: req.query.rf24_test === "1",
+        metadata: { offer_id: offer.id, source: rawSource }
+      });
 
       // Bezpieczne dodawanie parametrów afiliacyjnych:
       // - epi: unikalny identyfikator kliknięcia (UUIDv4)
@@ -161,6 +218,15 @@ async function startServer() {
         return;
       }
 
+      if (result.clickid) {
+        const clickAttribution = await findClickAttribution(result.clickid);
+        await recordContentEvent("affiliate_conversion", {
+          ...clickAttribution,
+          clickid: result.clickid,
+          value: result.payout ?? 0,
+          metadata: { offer_id: result.offerId, confirmed_by: "affiliate_postback" }
+        });
+      }
       console.log(`[Postback] Potwierdzono konwersję: id=${result.clickid}, payout=${result.payout}`);
       res.status(200).json({
         success: true,
@@ -213,6 +279,12 @@ async function startServer() {
   app.post("/api/leads", async (req, res) => {
     try {
       const { email, source, lossTier, lossAmount, metadata, timestamp } = req.body;
+      let attributionCookie: Record<string, unknown> = {};
+      try {
+        const rawCookie = String(req.headers.cookie || "").split(";").map((part) => part.trim()).find((part) => part.startsWith("rf24_content_attribution="));
+        if (rawCookie) attributionCookie = JSON.parse(decodeURIComponent(rawCookie.slice("rf24_content_attribution=".length)));
+      } catch { attributionCookie = {}; }
+      const attribution = normalizeAttribution({ ...attributionCookie, ...(metadata?.attribution || {}) });
 
       if (!email || typeof email !== "string" || !email.trim()) {
         res.status(400).json({ error: "Adres e-mail jest wymagany." });
@@ -224,7 +296,7 @@ async function startServer() {
         source: source || "financial_funnel",
         lossTier,
         lossAmount,
-        metadata: { ...metadata, clientTimestamp: timestamp },
+        metadata: { ...metadata, attribution, clientTimestamp: timestamp },
       });
 
       res.status(201).json({
