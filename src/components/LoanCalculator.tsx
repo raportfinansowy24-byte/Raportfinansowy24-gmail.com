@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { m2mService, M2MOffer } from '../services/m2m.service';
-import { Zap, Gift, Briefcase, ShieldPlus, CreditCard, Shield, X, HelpCircle, Home, Car, Coins, Banknote, Wallet, Landmark, Clock, Calendar, Coffee, ThumbsUp, Minus, ThumbsDown, ArrowLeft, ArrowRight, PiggyBank, XCircle, Building2, ChevronDown, ChevronUp, TrendingUp, Download, Bookmark, ArrowLeftRight, FileText, ShieldAlert, CheckCircle2, Percent } from 'lucide-react';
+import { Zap, Gift, Briefcase, ShieldPlus, CreditCard, Shield, X, HelpCircle, Home, Car, Coins, Banknote, Wallet, Landmark, Clock, Calendar, Coffee, ThumbsUp, Minus, ThumbsDown, ArrowLeft, ArrowRight, PiggyBank, XCircle, Building2, ChevronDown, ChevronUp, TrendingUp, Download, Bookmark, ArrowLeftRight, FileText, ShieldAlert, CheckCircle2, Percent, SlidersHorizontal } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import { getAiRecommendedOffers, Offer } from '../services/aiOfferService';
 import { AiOfferRecommendations } from './AiOfferRecommendations';
@@ -12,7 +12,7 @@ import { FinancialNews } from './FinancialNews';
 import { saveToLocalStorage, loadFromLocalStorage } from '../lib/storage';
 import { supabase } from '../lib/supabase';
 import { fetchOffersFromApi } from '../services/apiClient';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from 'recharts';
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid, Legend } from 'recharts';
 import { AmortizationChart } from './AmortizationChart';
 import { motion } from 'motion/react';
 import { useViewMode } from '../context/ViewModeContext';
@@ -466,14 +466,79 @@ export const CURRENCY_MAP: Record<CurrencyCode, CurrencyConfig> = {
   GBP: { code: 'GBP', symbol: '£', rate: 0.198, label: 'GBP (£)', name: 'Funt brytyjski' }
 };
 
+import { recordCalculationVisit } from '../lib/userSessionState';
+
 export function LoanCalculator() {
   const navigate = useNavigate();
   const { isBrowserMode } = useViewMode();
-  const [step, setStep] = useState(0);
-  const [quizStep, setQuizStep] = useState(0);
-  const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode>('PLN');
-  const [costBreakdownView, setCostBreakdownView] = useState<'monthly' | 'yearly' | 'total'>('monthly');
+
+  const savedCalcState = useMemo(() => {
+    try {
+      const raw = localStorage.getItem('rf24_loan_calc_state');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return {
+          step: typeof parsed.step === 'number' ? parsed.step : 0,
+          quizStep: typeof parsed.quizStep === 'number' ? parsed.quizStep : 0,
+          sliderAmount: typeof parsed.sliderAmount === 'number' ? parsed.sliderAmount : null,
+          sliderMonths: typeof parsed.sliderMonths === 'number' ? parsed.sliderMonths : null,
+          sliderRate: typeof parsed.sliderRate === 'number' ? parsed.sliderRate : 9.8,
+          selectedCurrency: (parsed.selectedCurrency as CurrencyCode) || 'PLN',
+          costBreakdownView: (parsed.costBreakdownView as 'monthly' | 'yearly' | 'total') || 'monthly',
+          isRestored: Boolean(parsed.step > 0 || (parsed.sliderAmount && parsed.sliderAmount !== 25000))
+        };
+      }
+    } catch {}
+    return null;
+  }, []);
+
+  const [step, setStep] = useState<number>(savedCalcState?.step ?? 0);
+  const [quizStep, setQuizStep] = useState<number>(savedCalcState?.quizStep ?? 0);
+  const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode>(savedCalcState?.selectedCurrency ?? 'PLN');
+  const [costBreakdownView, setCostBreakdownView] = useState<'monthly' | 'yearly' | 'total'>(savedCalcState?.costBreakdownView ?? 'monthly');
   const [showAmortizationTable, setShowAmortizationTable] = useState(false);
+  const [showRestoredNotice, setShowRestoredNotice] = useState<boolean>(Boolean(savedCalcState?.isRestored));
+
+  // Interactive Slider State for Real-Time Recalculations & Line Chart
+  const [sliderAmount, setSliderAmount] = useState<number>(() => {
+    if (savedCalcState?.sliderAmount) return savedCalcState.sliderAmount;
+    const saved = loadFromLocalStorage('quizData');
+    if (saved?.rawAmount) return Number(saved.rawAmount);
+    if (saved?.amount === 'small') return 3000;
+    if (saved?.amount === 'medium') return 6500;
+    if (saved?.amount === 'big') return 30000;
+    if (saved?.amount === 'huge') return 75000;
+    return 25000;
+  });
+
+  const [sliderMonths, setSliderMonths] = useState<number>(() => {
+    if (savedCalcState?.sliderMonths) return savedCalcState.sliderMonths;
+    const saved = loadFromLocalStorage('quizData');
+    if (saved?.rawPeriod) return Number(saved.rawPeriod);
+    if (saved?.period === 'short') return 12;
+    if (saved?.period === 'medium') return 24;
+    if (saved?.period === 'long') return 60;
+    if (saved?.period === 'verylong') return 120;
+    return 36;
+  });
+
+  const [sliderRate, setSliderRate] = useState<number>(savedCalcState?.sliderRate ?? 9.8);
+  const [chartMetricMode, setChartMetricMode] = useState<'balance' | 'monthly'>('balance');
+
+  const handleResetLoanDefaults = () => {
+    setStep(0);
+    setQuizStep(0);
+    setSliderAmount(25000);
+    setSliderMonths(36);
+    setSliderRate(9.8);
+    setSelectedCurrency('PLN');
+    setShowRestoredNotice(false);
+    try {
+      localStorage.removeItem('rf24_loan_calc_state');
+      localStorage.removeItem('quizData');
+    } catch {}
+  };
+
   const [quizData, setQuizData] = useState<Record<string, any>>(() => loadFromLocalStorage('quizData') || {
     goal: '',
     amount: '',
@@ -594,6 +659,18 @@ export function LoanCalculator() {
 
   useEffect(() => {
     saveToLocalStorage('quizData', quizData);
+    if (quizData.rawAmount) {
+      setSliderAmount(Number(quizData.rawAmount));
+    } else if (quizData.amount) {
+      const mapped = quizData.amount === 'small' ? 3000 : quizData.amount === 'medium' ? 6500 : quizData.amount === 'big' ? 30000 : 75000;
+      setSliderAmount(mapped);
+    }
+    if (quizData.rawPeriod) {
+      setSliderMonths(Number(quizData.rawPeriod));
+    } else if (quizData.period) {
+      const mapped = quizData.period === 'short' ? 12 : quizData.period === 'medium' ? 24 : quizData.period === 'long' ? 60 : 120;
+      setSliderMonths(mapped);
+    }
   }, [quizData]);
 
   useEffect(() => {
@@ -647,6 +724,44 @@ export function LoanCalculator() {
       return () => clearTimeout(timer);
     }
   }, [step, downsellData]);
+
+  // Automatyczny zapis kalkulatora i rejestracja ostatniego okna dla powracającego klienta
+  useEffect(() => {
+    try {
+      localStorage.setItem('rf24_loan_calc_state', JSON.stringify({
+        step,
+        quizStep,
+        sliderAmount,
+        sliderMonths,
+        sliderRate,
+        selectedCurrency,
+        costBreakdownView,
+        updatedAt: Date.now()
+      }));
+      recordCalculationVisit({
+        route: '/loan',
+        title: 'Kalkulator Kredytu Gotówkowego',
+        badge: 'Kredyt',
+        summary: `${sliderAmount.toLocaleString('pl-PL')} ${selectedCurrency} • ${sliderMonths} mies. • stopa ${sliderRate}%`,
+        updatedAt: Date.now()
+      });
+    } catch {}
+  }, [step, quizStep, sliderAmount, sliderMonths, sliderRate, selectedCurrency, costBreakdownView]);
+
+  // Jeśli powracający klient wchodzi na step === 3 (wyniki) a oferty jeszcze nie zostały pobrane w tej sesji
+  useEffect(() => {
+    if (step === 3 && allOffers.length === 0) {
+      fetchOffersFromApi(quizData).then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setAllOffers(data);
+          setBestOffer(data[0]);
+        }
+      }).catch(() => {});
+      getAiRecommendedOffers(quizData).then(rec => {
+        if (rec) setAiOffer(rec);
+      }).catch(() => {});
+    }
+  }, [step, allOffers.length, quizData]);
 
   const [shouldFetchOffers, setShouldFetchOffers] = useState(false);
 
@@ -826,10 +941,10 @@ export function LoanCalculator() {
 
   const renderResultsStep = () => {
     const visibleOffers = allOffers.filter(o => !excludedBanks.includes(o.name || ''));
-    const principal = quizData.rawAmount || (quizData.amount === 'small' ? 3000 : quizData.amount === 'medium' ? 6500 : quizData.amount === 'big' ? 30000 : 75000);
-    const months = quizData.rawPeriod || (quizData.period === 'short' ? 12 : quizData.period === 'medium' ? 24 : quizData.period === 'long' ? 60 : 120);
+    const principal = sliderAmount;
+    const months = sliderMonths;
+    const annualInterestRate = sliderRate / 100;
     
-    const annualInterestRate = 0.098; // 9.8% orientacyjne średnie rynkowe RRSO
     const monthlyRate = annualInterestRate / 12;
     const monthlyPayment = (principal * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -months));
     const totalPayment = monthlyPayment * months;
@@ -868,6 +983,49 @@ export function LoanCalculator() {
         interestPaid: yearInterest,
         remainingPrincipal: remPrincipal
       });
+    }
+
+    // Dynamic Amortization Line Data for Recharts LineChart
+    const safeMonths = Math.max(1, months);
+    const amortizationLineData = [];
+    let lineRemaining = principal;
+    let lineCumPrincipal = 0;
+    let lineCumInterest = 0;
+
+    amortizationLineData.push({
+      month: 0,
+      label: 'Start',
+      periodLabel: 'Miesiąc 0 (Wypłata środków)',
+      remainingPrincipal: Math.round(principal * currCfg.rate),
+      principalPaidCum: 0,
+      interestPaidCum: 0,
+      monthlyPayment: Math.round(monthlyPayment * currCfg.rate),
+      monthlyInterest: 0,
+      monthlyPrincipal: 0,
+    });
+
+    const sampleStep = safeMonths <= 24 ? 1 : safeMonths <= 60 ? 2 : safeMonths <= 96 ? 3 : 4;
+
+    for (let m = 1; m <= safeMonths; m++) {
+      const intPart = lineRemaining * monthlyRate;
+      const princPart = monthlyPayment - intPart;
+      lineRemaining = Math.max(0, lineRemaining - princPart);
+      lineCumPrincipal += princPart;
+      lineCumInterest += intPart;
+
+      if (m % sampleStep === 0 || m === safeMonths) {
+        amortizationLineData.push({
+          month: m,
+          label: m % 12 === 0 ? `R.${m / 12}` : `M${m}`,
+          periodLabel: `Miesiąc ${m} (Rok ${Math.ceil(m / 12)})`,
+          remainingPrincipal: Math.round(lineRemaining * currCfg.rate),
+          principalPaidCum: Math.round(Math.min(principal, lineCumPrincipal) * currCfg.rate),
+          interestPaidCum: Math.round(lineCumInterest * currCfg.rate),
+          monthlyPayment: Math.round(monthlyPayment * currCfg.rate),
+          monthlyInterest: Math.round(intPart * currCfg.rate),
+          monthlyPrincipal: Math.round(princPart * currCfg.rate),
+        });
+      }
     }
 
     const generatePdf = () => {
@@ -990,8 +1148,367 @@ export function LoanCalculator() {
           )}
           </div>
         </div>
-        {aiOffer && <AiOfferRecommendations offers={[aiOffer]} />}
-        
+
+        {showRestoredNotice && (
+          <div className="flex items-center justify-between p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs shadow-sm">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+              <span>
+                Przywrócono Twoje ostatnie obliczenia kredytowe z poprzedniej wizyty
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleResetLoanDefaults}
+                className="text-[11px] font-bold text-zinc-300 hover:text-white underline cursor-pointer"
+              >
+                Resetuj do domyślnych
+              </button>
+              <button
+                onClick={() => setShowRestoredNotice(false)}
+                className="text-zinc-400 hover:text-white text-xs px-1 cursor-pointer"
+                title="Ukryj"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================
+            DYNAMICZNY HARMONOGRAM SPŁAT ZE SUWAKAMI & WYKRESEM RECHARTS
+            ======================================================== */}
+        <div className="bg-[#121216] p-5 sm:p-6 rounded-2xl border border-white/[0.08] shadow-2xl relative overflow-hidden space-y-6">
+          {/* Card Header */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-white/[0.08]">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="p-1 rounded-md bg-[#DC143C]/10 text-[#DC143C] border border-[#DC143C]/20">
+                  <SlidersHorizontal size={14} />
+                </span>
+                <span className="text-[11px] font-bold text-[#DC143C] uppercase tracking-wider">
+                  Wykres Liniowy Harmonogramu Spłat (Recharts)
+                </span>
+              </div>
+              <h3 className="text-lg sm:text-xl font-black text-white tracking-tight flex items-center gap-2">
+                Harmonogram spłat kredytu – symulacja w czasie rzeczywistym
+              </h3>
+              <p className="text-xs text-zinc-400 mt-0.5">
+                Przesuwaj suwaki poniżej: wykres liniowy, rata oraz całkowity koszt przeliczają się natychmiast na żywo.
+              </p>
+            </div>
+
+            {/* Chart Mode Switcher: Balance vs Monthly Payment */}
+            <div className="flex items-center gap-1 bg-black/50 p-1 rounded-xl border border-white/[0.08] shrink-0">
+              <button
+                onClick={() => setChartMetricMode('balance')}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  chartMetricMode === 'balance'
+                    ? 'bg-[#DC143C] text-white shadow-sm'
+                    : 'text-zinc-400 hover:text-white hover:bg-white/[0.06]'
+                }`}
+              >
+                Krzywa Salda & Spłaty
+              </button>
+              <button
+                onClick={() => setChartMetricMode('monthly')}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  chartMetricMode === 'monthly'
+                    ? 'bg-[#DC143C] text-white shadow-sm'
+                    : 'text-zinc-400 hover:text-white hover:bg-white/[0.06]'
+                }`}
+              >
+                Część Raty (Kapitał/Odsetki)
+              </button>
+            </div>
+          </div>
+
+          {/* Sliders Grid: 3 Interactive Sliders */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 p-4 rounded-xl bg-black/40 border border-white/[0.05]">
+            {/* Slider 1: Kwota Kredytu */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-xs">
+                <label htmlFor="loan-calc-amount-slider" className="font-semibold text-zinc-300 flex items-center gap-1.5">
+                  <Banknote size={14} className="text-[#DC143C]" />
+                  Kwota kredytu:
+                </label>
+                <span className="font-mono font-bold text-white text-sm bg-white/5 px-2 py-0.5 rounded border border-white/10">
+                  <AnimatedNumber value={Math.round(sliderAmount * currCfg.rate)} /> {currCfg.symbol}
+                </span>
+              </div>
+              <input
+                id="loan-calc-amount-slider"
+                type="range"
+                min={2000}
+                max={250000}
+                step={1000}
+                value={sliderAmount}
+                onChange={(e) => setSliderAmount(Number(e.target.value))}
+                className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#DC143C] glow-slider transition-all"
+              />
+              <div className="flex justify-between text-[10px] text-zinc-500 font-mono">
+                <span>2 000 {currCfg.symbol}</span>
+                <span>250 000 {currCfg.symbol}</span>
+              </div>
+              {/* Quick amount presets */}
+              <div className="flex items-center gap-1 pt-1 flex-wrap">
+                {[10000, 25000, 50000, 100000, 150000].map((amt) => (
+                  <button
+                    key={amt}
+                    onClick={() => setSliderAmount(amt)}
+                    className={`text-[9px] px-2 py-0.5 rounded-md font-mono transition-all cursor-pointer ${
+                      sliderAmount === amt 
+                        ? 'bg-[#DC143C] text-white font-bold' 
+                        : 'bg-white/5 text-zinc-400 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    {amt >= 1000 ? `${amt / 1000}k` : amt}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Slider 2: Okres Kredytowania */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-xs">
+                <label htmlFor="loan-calc-period-slider" className="font-semibold text-zinc-300 flex items-center gap-1.5">
+                  <Calendar size={14} className="text-[#DC143C]" />
+                  Okres spłaty:
+                </label>
+                <span className="font-mono font-bold text-white text-sm bg-white/5 px-2 py-0.5 rounded border border-white/10">
+                  {sliderMonths} mc <span className="text-[10px] text-zinc-400 font-normal">({(sliderMonths / 12).toFixed(1)} l.)</span>
+                </span>
+              </div>
+              <input
+                id="loan-calc-period-slider"
+                type="range"
+                min={6}
+                max={120}
+                step={6}
+                value={sliderMonths}
+                onChange={(e) => setSliderMonths(Number(e.target.value))}
+                className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#DC143C] glow-slider transition-all"
+              />
+              <div className="flex justify-between text-[10px] text-zinc-500 font-mono">
+                <span>6 mies. (0.5 r.)</span>
+                <span>120 mies. (10 lat)</span>
+              </div>
+              {/* Quick period presets */}
+              <div className="flex items-center gap-1 pt-1 flex-wrap">
+                {[12, 24, 36, 60, 84, 120].map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setSliderMonths(m)}
+                    className={`text-[9px] px-2 py-0.5 rounded-md font-mono transition-all cursor-pointer ${
+                      sliderMonths === m 
+                        ? 'bg-[#DC143C] text-white font-bold' 
+                        : 'bg-white/5 text-zinc-400 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    {m / 12 >= 1 ? `${m / 12}l.` : `${m}m`}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Slider 3: Oprocentowanie / RRSO */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-xs">
+                <label htmlFor="loan-calc-rate-slider" className="font-semibold text-zinc-300 flex items-center gap-1.5">
+                  <Percent size={14} className="text-[#DC143C]" />
+                  Oprocentowanie / RRSO:
+                </label>
+                <span className="font-mono font-bold text-[#DC143C] text-sm bg-[#DC143C]/10 px-2 py-0.5 rounded border border-[#DC143C]/30">
+                  {sliderRate.toFixed(1)}%
+                </span>
+              </div>
+              <input
+                id="loan-calc-rate-slider"
+                type="range"
+                min={4.0}
+                max={20.0}
+                step={0.1}
+                value={sliderRate}
+                onChange={(e) => setSliderRate(Number(e.target.value))}
+                className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#DC143C] glow-slider transition-all"
+              />
+              <div className="flex justify-between text-[10px] text-zinc-500 font-mono">
+                <span>4.0% (Niskie)</span>
+                <span>20.0% (Maks.)</span>
+              </div>
+              {/* Quick rate presets */}
+              <div className="flex items-center gap-1 pt-1 flex-wrap">
+                {[
+                  { label: '6.9%', val: 6.9 },
+                  { label: '9.8% (śr.)', val: 9.8 },
+                  { label: '12.5%', val: 12.5 },
+                  { label: '16.9%', val: 16.9 }
+                ].map((r) => (
+                  <button
+                    key={r.val}
+                    onClick={() => setSliderRate(r.val)}
+                    className={`text-[9px] px-2 py-0.5 rounded-md font-mono transition-all cursor-pointer ${
+                      Math.abs(sliderRate - r.val) < 0.05
+                        ? 'bg-[#DC143C] text-white font-bold' 
+                        : 'bg-white/5 text-zinc-400 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Recharts LineChart Container */}
+          <div className="w-full h-[320px] bg-black/30 p-3 sm:p-4 rounded-xl border border-white/[0.06] relative">
+            <div className="flex items-center justify-between mb-2 px-1 text-[11px] text-zinc-400">
+              <span className="font-medium flex items-center gap-1.5">
+                <TrendingUp size={13} className="text-[#DC143C]" />
+                {chartMetricMode === 'balance' ? 'Krzywa spłaty kapitału i narastania odsetek' : 'Miesięczny rozkład raty: część kapitałowa vs odsetkowa'}
+              </span>
+              <span className="font-mono text-[10px] text-zinc-500">
+                Zakres osi X: 0 – {months} mies.
+              </span>
+            </div>
+
+            <ResponsiveContainer width="100%" height="86%">
+              <LineChart data={amortizationLineData} margin={{ top: 10, right: 15, left: -5, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.07)" vertical={false} />
+                <XAxis 
+                  dataKey="label" 
+                  stroke="#ffffff50" 
+                  fontSize={10} 
+                  tickLine={false} 
+                  axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+                />
+                <YAxis 
+                  stroke="#ffffff50" 
+                  fontSize={10} 
+                  tickLine={false} 
+                  axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+                  width={55} 
+                  tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} 
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#0d0d11', 
+                    border: '1px solid rgba(255,255,255,0.15)', 
+                    borderRadius: '12px', 
+                    boxShadow: '0 12px 30px rgba(0,0,0,0.6)',
+                    padding: '10px 14px'
+                  }}
+                  itemStyle={{ fontSize: '11px', padding: '1px 0' }}
+                  labelStyle={{ color: '#fff', fontWeight: 'bold', fontSize: '11px', marginBottom: '6px' }}
+                  formatter={(value: number, name: string) => [
+                    `${value.toLocaleString('pl-PL')} ${currCfg.symbol}`, 
+                    name
+                  ]}
+                  labelFormatter={(label, payload) => {
+                    const item = payload && payload[0]?.payload;
+                    return item ? item.periodLabel : String(label);
+                  }}
+                />
+                <Legend 
+                  wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} 
+                  iconType="circle"
+                  iconSize={8}
+                />
+                {chartMetricMode === 'balance' ? (
+                  <>
+                    <Line 
+                      type="monotone" 
+                      dataKey="remainingPrincipal" 
+                      name="Pozostały kapitał do spłaty" 
+                      stroke="#DC143C" 
+                      strokeWidth={3} 
+                      dot={false}
+                      activeDot={{ r: 6, fill: '#DC143C', stroke: '#fff', strokeWidth: 2 }} 
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="principalPaidCum" 
+                      name="Spłacony kapitał łącznie" 
+                      stroke="#10B981" 
+                      strokeWidth={2.5} 
+                      dot={false}
+                      activeDot={{ r: 6, fill: '#10B981', stroke: '#fff', strokeWidth: 2 }} 
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="interestPaidCum" 
+                      name="Skumulowane odsetki" 
+                      stroke="#F59E0B" 
+                      strokeWidth={2} 
+                      strokeDasharray="4 4" 
+                      dot={false}
+                      activeDot={{ r: 5, fill: '#F59E0B', stroke: '#fff', strokeWidth: 2 }} 
+                    />
+                  </>
+                ) : (
+                  <>
+                    <Line 
+                      type="monotone" 
+                      dataKey="monthlyPayment" 
+                      name="Rata miesięczna łączna" 
+                      stroke="#FFFFFF" 
+                      strokeWidth={2.5} 
+                      dot={false}
+                      activeDot={{ r: 5, fill: '#FFFFFF', stroke: '#DC143C', strokeWidth: 2 }} 
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="monthlyPrincipal" 
+                      name="Część kapitałowa raty" 
+                      stroke="#10B981" 
+                      strokeWidth={2} 
+                      dot={false}
+                      activeDot={{ r: 5, fill: '#10B981', stroke: '#fff', strokeWidth: 1.5 }} 
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="monthlyInterest" 
+                      name="Część odsetkowa raty" 
+                      stroke="#DC143C" 
+                      strokeWidth={2} 
+                      dot={false}
+                      activeDot={{ r: 5, fill: '#DC143C', stroke: '#fff', strokeWidth: 1.5 }} 
+                    />
+                  </>
+                )}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Real-Time Live KPI Summary Ribbon */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+            <div className="p-3 rounded-xl bg-black/40 border border-white/[0.05]">
+              <span className="text-[10px] text-zinc-400 uppercase tracking-wider block">Szacunkowa rata</span>
+              <div className="text-base sm:text-lg font-black text-white font-mono mt-0.5">
+                <AnimatedNumber value={Math.round(monthlyPayment * currCfg.rate)} /> {currCfg.symbol} <span className="text-[10px] font-sans text-zinc-400">/ mc</span>
+              </div>
+            </div>
+            <div className="p-3 rounded-xl bg-[#DC143C]/10 border border-[#DC143C]/20">
+              <span className="text-[10px] text-[#DC143C] uppercase tracking-wider block">Łączne odsetki</span>
+              <div className="text-base sm:text-lg font-black text-white font-mono mt-0.5">
+                <AnimatedNumber value={Math.round(totalInterest * currCfg.rate)} /> {currCfg.symbol}
+              </div>
+            </div>
+            <div className="p-3 rounded-xl bg-black/40 border border-white/[0.05]">
+              <span className="text-[10px] text-zinc-400 uppercase tracking-wider block">Całkowita spłata</span>
+              <div className="text-base sm:text-lg font-black text-white font-mono mt-0.5">
+                <AnimatedNumber value={Math.round(totalPayment * currCfg.rate)} /> {currCfg.symbol}
+              </div>
+            </div>
+            <div className="p-3 rounded-xl bg-black/40 border border-white/[0.05]">
+              <span className="text-[10px] text-zinc-400 uppercase tracking-wider block">Koszt kredytu</span>
+              <div className="text-base sm:text-lg font-black text-[#F59E0B] font-mono mt-0.5">
+                {principal > 0 ? ((totalInterest / principal) * 100).toFixed(1) : '0'}% <span className="text-[10px] font-sans text-zinc-400">kwoty</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* ========================================================
             KOSZT ODSETKOWY & PRZEŁĄCZNIK WALUT (NOWA FUNKCJA)
             ======================================================== */}
@@ -1507,6 +2024,29 @@ export function LoanCalculator() {
 
       {step === 0 && (
         <div className="flex-1 w-full flex flex-col px-2 sm:px-4 pb-6">
+          {showRestoredNotice && (
+            <div className="w-full max-w-lg mx-auto mb-3.5 px-3.5 py-2.5 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-between gap-2 shadow-[0_0_15px_rgba(16,185,129,0.1)] text-xs text-emerald-300">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
+                <span className="text-[11px]">Wczytano Twoje ostatnio wybrane parametry kalkulatora</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleResetLoanDefaults}
+                  className="text-[10px] uppercase font-black tracking-wider text-emerald-400 hover:text-emerald-300 underline cursor-pointer"
+                >
+                  Resetuj
+                </button>
+                <button
+                  onClick={() => setShowRestoredNotice(false)}
+                  className="text-zinc-400 hover:text-white text-xs px-1 cursor-pointer"
+                  title="Ukryj"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
           {protocolStatus.unlocked ? (
             <div className="w-full max-w-lg mx-auto mb-3.5 px-3.5 py-2.5 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 flex items-center justify-between gap-2 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
               <div className="flex items-center gap-2 min-w-0">
@@ -1543,6 +2083,26 @@ export function LoanCalculator() {
               <ArrowRight size={16} className="text-[#DC143C] group-hover:translate-x-1 transition-transform shrink-0 ml-2" />
             </div>
           )}
+
+          {/* Quick link: Direct Interactive Simulator with Sliders and Line Chart */}
+          <div 
+            onClick={() => setStep(3)}
+            className="w-full max-w-lg mx-auto mb-3.5 p-2.5 sm:p-3 rounded-2xl bg-[#121216] border border-white/10 hover:border-[#DC143C]/60 cursor-pointer transition-all shadow-md flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="p-2 rounded-xl bg-white/5 text-[#DC143C] border border-white/10 shrink-0">
+                <SlidersHorizontal size={16} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-black text-white group-hover:text-[#DC143C] transition-colors flex items-center gap-1.5 flex-wrap">
+                  <span>Kalkulator ze Suwakami i Wykresem Spłat</span>
+                  <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[8px] font-black uppercase tracking-wider">Recharts</span>
+                </div>
+                <p className="text-[10px] text-zinc-400 truncate">Przejdź od razu do symulacji na żywo ze suwakami i wykresem liniowym</p>
+              </div>
+            </div>
+            <ArrowRight size={16} className="text-[#DC143C] group-hover:translate-x-1 transition-transform shrink-0 ml-2" />
+          </div>
 
           <div className="flex items-center justify-between mb-4 sm:mb-6">
             {quizStep > 0 ? (

@@ -15,20 +15,182 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
-import { Calculator, Save, TrendingUp, AlertCircle, ArrowLeft, Home, Zap, Clock, ShieldCheck, Sparkles, Bookmark, ArrowLeftRight, X, FileText, Percent, Coins, DollarSign } from 'lucide-react';
+import { Calculator, Save, TrendingUp, AlertCircle, ArrowLeft, Home, Zap, Clock, ShieldCheck, Sparkles, Bookmark, ArrowLeftRight, X, FileText, Percent, Coins, DollarSign, ExternalLink, Check, Copy, Building2, CheckCircle2, ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import { getAiRecommendedOffers, Offer } from '../services/aiOfferService';
 import { AiOfferRecommendations } from './AiOfferRecommendations';
 import { FinancialReportModal } from './FinancialReportModal';
 import { useViewMode } from '../context/ViewModeContext';
 
+export interface MortgageOfferItem {
+  id: string;
+  name: string;
+  bankName: string;
+  rate: number;
+  rrso: string;
+  margin: string;
+  commission: string;
+  ltvMax: string;
+  minDownPaymentPct: number;
+  badge: string;
+  features: string[];
+  url: string;
+}
+
+export const MORTGAGE_BANK_OFFERS: MortgageOfferItem[] = [
+  {
+    id: "m2m-2160",
+    name: "Bank Pekao - Kredyt mieszkaniowy",
+    bankName: "Bank Pekao S.A.",
+    rate: 7.82,
+    rrso: "7.82%",
+    margin: "od 1.84%",
+    commission: "0%",
+    ltvMax: "do 90% LTV",
+    minDownPaymentPct: 10,
+    badge: "Najniższa marża",
+    features: [
+      "Wkład własny już od 10% (do 90% LTV)",
+      "0 zł prowizji za udzielenie kredytu z kontem",
+      "Długi okres spłaty nawet do 30 lat",
+      "Gwarancja stałego oprocentowania na 5 lat"
+    ],
+    url: "https://tmlead.pl/redirect/388900_2160"
+  },
+  {
+    id: "m2m-2374",
+    name: "Bank Millennium - Kredyt hipoteczny",
+    bankName: "Bank Millennium",
+    rate: 7.95,
+    rrso: "7.95%",
+    margin: "od 1.95%",
+    commission: "0 zł",
+    ltvMax: "do 90% LTV",
+    minDownPaymentPct: 10,
+    badge: "0 zł prowizji",
+    features: [
+      "0 zł prowizji na start i brak opłat przygotowawczych",
+      "Bezpłatne wakacje kredytowe raz w roku",
+      "Wcześniejsza spłata lub nadpłata bez opłat",
+      "Finansowanie nawet do 35 lat"
+    ],
+    url: "https://tmlead.pl/redirect/388900_2374"
+  },
+  {
+    id: "m2m-3042",
+    name: "VeloBank - Kredyt hipoteczny VeloDom",
+    bankName: "VeloBank",
+    rate: 7.69,
+    rrso: "7.69%",
+    margin: "od 1.79%",
+    commission: "0%",
+    ltvMax: "do 90% LTV",
+    minDownPaymentPct: 10,
+    badge: "Bonus do 5000 zł",
+    features: [
+      "Gwarancja stałego oprocentowania przez 5 lat",
+      "Voucher do 5000 zł do Media Expert lub Agata Meble",
+      "Prowizja 0% za udzielenie kredytu",
+      "Szybka decyzja w procesie cyfrowym"
+    ],
+    url: "https://tmlead.pl/redirect/388900_3042"
+  },
+  {
+    id: "m2m-3043",
+    name: "VeloBank - VeloDom dla Profesjonalistów",
+    bankName: "VeloBank",
+    rate: 7.65,
+    rrso: "7.65%",
+    margin: "od 1.75%",
+    commission: "0%",
+    ltvMax: "do 90% LTV",
+    minDownPaymentPct: 10,
+    badge: "Dla Specjalistów",
+    features: [
+      "Dedykowany dla IT, lekarzy, prawników, architektów",
+      "Uproszczona analiza dochodowa na oświadczenie",
+      "Bonus 5000 zł na zakupy domowe",
+      "Priorytetowa ścieżka rozpatrzenia wniosku"
+    ],
+    url: "https://tmlead.pl/redirect/388900_3043"
+  },
+  {
+    id: "m2m-3044",
+    name: "VeloBank - VeloDom z Refinansowaniem",
+    bankName: "VeloBank",
+    rate: 7.70,
+    rrso: "7.70%",
+    margin: "od 1.80%",
+    commission: "0 zł",
+    ltvMax: "do 90% LTV",
+    minDownPaymentPct: 10,
+    badge: "Refinansowanie",
+    features: [
+      "Przenieś drogi kredyt hipoteczny z innego banku",
+      "Obniż miesięczną ratę dzięki niższemu RRSO",
+      "0 zł prowizji za procedurę refinansowania",
+      "Możliwość dobrania dodatkowej kwoty na remont"
+    ],
+    url: "https://tmlead.pl/redirect/388900_3044"
+  },
+  {
+    id: "m2m-3166",
+    name: "Bank Millennium - Eko Kredyt Hipoteczny",
+    bankName: "Bank Millennium",
+    rate: 7.59,
+    rrso: "7.59%",
+    margin: "od 1.69%",
+    commission: "0 zł",
+    ltvMax: "do 90% LTV",
+    minDownPaymentPct: 10,
+    badge: "Eko Rabat -0.5%",
+    features: [
+      "Zniżka marży dla lokali energooszczędnych (klasa A/B)",
+      "0 zł prowizji przygotowawczej",
+      "Bezpłatna wycena nieruchomości online",
+      "Ekologiczny bonus obniżający całkowity koszt kredytu"
+    ],
+    url: "https://tmlead.pl/redirect/388900_3166"
+  }
+];
+
+import { recordCalculationVisit } from '../lib/userSessionState';
+
 export function MortgageSimulator() {
   const navigate = useNavigate();
   const { isBrowserMode } = useViewMode();
-  const [propertyValue, setPropertyValue] = useState<number>(500000);
-  const [downPayment, setDownPayment] = useState<number>(100000);
-  const [years, setYears] = useState<number>(25);
-  const [interestRate, setInterestRate] = useState<number>(7.5);
+
+  // Inicjalizacja z ostatnio wprowadzonych przez klienta wartości
+  const initialSavedState = useMemo(() => {
+    try {
+      const raw = localStorage.getItem('rf24_mortgage_state');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed.propertyValue === 'number') {
+          return {
+            propertyValue: parsed.propertyValue,
+            downPayment: parsed.downPayment,
+            years: parsed.years,
+            interestRate: parsed.interestRate,
+            isRestored: true
+          };
+        }
+      }
+    } catch {}
+    return {
+      propertyValue: 500000,
+      downPayment: 100000,
+      years: 25,
+      interestRate: 7.5,
+      isRestored: false
+    };
+  }, []);
+
+  const [propertyValue, setPropertyValue] = useState<number>(initialSavedState.propertyValue);
+  const [downPayment, setDownPayment] = useState<number>(initialSavedState.downPayment);
+  const [years, setYears] = useState<number>(initialSavedState.years);
+  const [interestRate, setInterestRate] = useState<number>(initialSavedState.interestRate);
+  const [showRestoredNotice, setShowRestoredNotice] = useState<boolean>(initialSavedState.isRestored);
   
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -40,6 +202,17 @@ export function MortgageSimulator() {
   const [savedSimulation, setSavedSimulation] = useState<any>(() => loadFromLocalStorage('savedMortgageSimulation') || null);
   const [showSavedComparison, setShowSavedComparison] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+
+  const handleResetToDefaults = () => {
+    setPropertyValue(500000);
+    setDownPayment(100000);
+    setYears(25);
+    setInterestRate(7.5);
+    setShowRestoredNotice(false);
+    try {
+      localStorage.removeItem('rf24_mortgage_state');
+    } catch {}
+  };
 
   const generateTextReport = () => {
     let report = `=========================================\n`;
@@ -171,6 +344,33 @@ export function MortgageSimulator() {
   const monthlyPayment = loanAmount > 0 && years > 0 && interestRate > 0 
     ? (loanAmount * (interestRate / 100 / 12) * Math.pow(1 + interestRate / 100 / 12, years * 12)) / (Math.pow(1 + interestRate / 100 / 12, years * 12) - 1)
     : 0;
+
+  const calculateOfferMonthlyPayment = (rate: number) => {
+    if (loanAmount <= 0 || years <= 0 || rate <= 0) return 0;
+    const r = rate / 100 / 12;
+    const n = years * 12;
+    return (loanAmount * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+  };
+
+  // Automatyczny zapis parametrów do pamięci urządzenia powracającego klienta
+  useEffect(() => {
+    try {
+      localStorage.setItem('rf24_mortgage_state', JSON.stringify({
+        propertyValue,
+        downPayment,
+        years,
+        interestRate,
+        updatedAt: Date.now()
+      }));
+      recordCalculationVisit({
+        route: '/mortgage',
+        title: 'Symulator Kredytu Hipotecznego',
+        badge: 'Hipoteka',
+        summary: `${propertyValue.toLocaleString('pl-PL')} zł • ${years} lat • Rata: ${Math.round(monthlyPayment).toLocaleString('pl-PL')} zł/mc`,
+        updatedAt: Date.now()
+      });
+    } catch {}
+  }, [propertyValue, downPayment, years, interestRate, monthlyPayment]);
 
   const getPropertyValueTip = () => {
     if (propertyValue <= 50000) return null;
@@ -366,6 +566,32 @@ export function MortgageSimulator() {
             <div className="absolute inset-0 bg-gradient-to-br from-[#DC143C]/5 via-transparent to-transparent opacity-50"></div>
             
             <div className="p-6 space-y-6 relative z-10">
+              {showRestoredNotice && (
+                <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
+                    <span className="font-medium">
+                      Przywrócono Twoje ostatnie parametry symulacji hipoteki
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleResetToDefaults}
+                      className="text-[11px] font-bold text-zinc-300 hover:text-white underline cursor-pointer"
+                    >
+                      Domyślne wartości
+                    </button>
+                    <button
+                      onClick={() => setShowRestoredNotice(false)}
+                      className="text-zinc-400 hover:text-white text-xs px-1 cursor-pointer"
+                      title="Ukryj powiadomienie"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-4 group bg-black/30 p-4 rounded-2xl border border-white/5 hover:border-[#DC143C]/30 transition-colors sm:col-span-2 relative">
                   {getPropertyValueTip() && (
@@ -511,7 +737,9 @@ export function MortgageSimulator() {
           {/* Matched Offer Result */}
           {matchedOffer && (
             <div id="matched-offer-section" className="mt-4 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-              <AiOfferRecommendations offers={[matchedOffer]} />
+              <AiOfferRecommendations 
+                offers={[matchedOffer]} 
+              />
             </div>
           )}
         </div>
@@ -613,6 +841,117 @@ export function MortgageSimulator() {
               </div>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* ========================================================
+          SEKCJA OFERT BANKÓW - PORÓWNYWARKA KREDYTÓW HIPOTECZNYCH
+          ======================================================== */}
+      <div className="w-full max-w-6xl mx-auto mt-4 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-white/[0.08] pb-4">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#DC143C]/10 border border-[#DC143C]/20 text-[#DC143C] text-[10px] font-bold uppercase tracking-widest mb-1.5">
+              <Building2 size={12} />
+              Aktualne Oferty Banków
+            </div>
+            <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight uppercase">
+              Porównanie Ofert Kredytów Hipotecznych
+            </h3>
+            <p className="text-xs sm:text-sm text-zinc-400 mt-0.5">
+              Rzeczywiste stawki marż i raty przeliczone dla kwoty <strong className="text-white">{loanAmount.toLocaleString('pl-PL')} zł</strong> i okresu <strong className="text-white">{years} lat</strong>.
+            </p>
+          </div>
+          <div className="text-xs text-zinc-400 shrink-0">
+            Dostępnych ofert: <strong className="text-[#DC143C]">{MORTGAGE_BANK_OFFERS.length}</strong>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {MORTGAGE_BANK_OFFERS.map((bankOffer) => {
+            const offerMonthly = calculateOfferMonthlyPayment(bankOffer.rate);
+            const isCurrentSelectedRate = Math.abs(interestRate - bankOffer.rate) < 0.05;
+
+            return (
+              <div 
+                key={bankOffer.id}
+                className={`relative rounded-2xl p-5 flex flex-col justify-between transition-all duration-300 border ${
+                  isCurrentSelectedRate
+                    ? 'bg-gradient-to-b from-[#1c1822] to-[#121218] border-[#DC143C] shadow-lg shadow-[#DC143C]/20'
+                    : 'bg-[#14141a] border-white/[0.08] hover:border-white/20'
+                }`}
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      {bankOffer.badge}
+                    </span>
+                    <span className="text-[11px] font-bold text-zinc-400">
+                      {bankOffer.bankName}
+                    </span>
+                  </div>
+
+                  <h4 className="text-base font-black text-white leading-snug mb-3">
+                    {bankOffer.name}
+                  </h4>
+
+                  {/* Wyliczona rata dla tego banku */}
+                  <div className="p-3.5 rounded-xl bg-black/40 border border-white/[0.06] mb-4">
+                    <span className="text-[9px] uppercase font-bold tracking-widest text-zinc-400 block mb-0.5">
+                      Szacowana rata miesięczna
+                    </span>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-2xl font-black text-white font-mono">
+                        {Math.round(offerMonthly).toLocaleString('pl-PL')}
+                      </span>
+                      <span className="text-xs font-bold text-zinc-400">zł / mc</span>
+                    </div>
+                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5 text-[11px] text-zinc-400">
+                      <span>RRSO: <strong className="text-white font-mono">{bankOffer.rrso}</strong></span>
+                      <span>Marża: <strong className="text-white font-mono">{bankOffer.margin}</strong></span>
+                      <span>Prowizja: <strong className="text-emerald-400 font-mono">{bankOffer.commission}</strong></span>
+                    </div>
+                  </div>
+
+                  {/* Cechy */}
+                  <ul className="space-y-1.5 mb-5 text-xs text-zinc-300">
+                    {bankOffer.features.slice(0, 3).map((f, i) => (
+                      <li key={i} className="flex items-start gap-1.5">
+                        <CheckCircle2 size={13} className="text-[#DC143C] shrink-0 mt-0.5" />
+                        <span className="leading-snug text-zinc-300 text-[11px]">{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="space-y-2 pt-3 border-t border-white/[0.06]">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setInterestRate(bankOffer.rate);
+                      window.scrollTo({ top: 120, behavior: 'smooth' });
+                    }}
+                    className={`w-full py-2 px-3 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                      isCurrentSelectedRate
+                        ? 'bg-[#DC143C]/20 text-white border border-[#DC143C]/40'
+                        : 'bg-white/5 text-zinc-400 hover:text-white hover:bg-white/10 border border-white/5'
+                    }`}
+                  >
+                    {isCurrentSelectedRate ? "✓ Aktywna w symulatorze" : "Symuluj z tą marżą"}
+                  </button>
+
+                  <a
+                    href={`/api/go?offerId=${encodeURIComponent(bankOffer.id)}&source=mortgage`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-3 px-4 rounded-xl bg-[#DC143C] hover:bg-[#b01030] text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md shadow-[#DC143C]/20 transition-all cursor-pointer active:scale-95 text-center"
+                  >
+                    <span>Złóż wniosek w banku</span>
+                    <ArrowRight size={14} />
+                  </a>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 

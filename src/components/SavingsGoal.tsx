@@ -155,18 +155,79 @@ const SavingsChart: React.FC<SavingsChartProps> = ({ currentSavings, monthlyCont
   );
 };
 
+import { CheckCircle2 } from 'lucide-react';
+import { recordCalculationVisit } from '../lib/userSessionState';
+
 export function SavingsGoal() {
   const navigate = useNavigate();
   const { isBrowserMode } = useViewMode();
-  const [targetAmount, setTargetAmount] = useState<number>(50000);
-  const [currentSavings, setCurrentSavings] = useState<number>(5000);
-  const [years, setYears] = useState<number>(5);
-  const [rateOfReturn, setRateOfReturn] = useState<number>(5);
+
+  const savedSavings = useMemo(() => {
+    try {
+      const raw = localStorage.getItem('rf24_savings_state');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed.targetAmount === 'number') {
+          return {
+            targetAmount: parsed.targetAmount,
+            currentSavings: parsed.currentSavings,
+            years: parsed.years,
+            rateOfReturn: parsed.rateOfReturn,
+            isRestored: true
+          };
+        }
+      }
+    } catch {}
+    return {
+      targetAmount: 50000,
+      currentSavings: 5000,
+      years: 5,
+      rateOfReturn: 5,
+      isRestored: false
+    };
+  }, []);
+
+  const [targetAmount, setTargetAmount] = useState<number>(savedSavings.targetAmount);
+  const [currentSavings, setCurrentSavings] = useState<number>(savedSavings.currentSavings);
+  const [years, setYears] = useState<number>(savedSavings.years);
+  const [rateOfReturn, setRateOfReturn] = useState<number>(savedSavings.rateOfReturn);
+  const [showRestoredNotice, setShowRestoredNotice] = useState<boolean>(savedSavings.isRestored);
   const [showReportModal, setShowReportModal] = useState(false);
   
   const [offers, setOffers] = useState<Offer[]>([]);
   const [isLoadingOffers, setIsLoadingOffers] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'account' | 'investments' | null>(null);
+
+  const handleResetSavingsDefaults = () => {
+    setTargetAmount(50000);
+    setCurrentSavings(5000);
+    setYears(5);
+    setRateOfReturn(5);
+    setShowRestoredNotice(false);
+    try {
+      localStorage.removeItem('rf24_savings_state');
+    } catch {}
+  };
+
+  // Automatyczny zapis parametrów i rejestracja okna
+  useEffect(() => {
+    try {
+      localStorage.setItem('rf24_savings_state', JSON.stringify({
+        targetAmount,
+        currentSavings,
+        years,
+        rateOfReturn,
+        updatedAt: Date.now()
+      }));
+      recordCalculationVisit({
+        route: '/savings',
+        title: 'Plan Oszczędnościowy',
+        badge: 'Oszczędności',
+        summary: `Cel: ${targetAmount.toLocaleString('pl-PL')} zł • ${years} lat • zwrot ${rateOfReturn}%`,
+        updatedAt: Date.now()
+      });
+    } catch {}
+  }, [targetAmount, currentSavings, years, rateOfReturn]);
 
   const targetError = targetAmount <= 0 ? 'Kwota musi być większa od 0' : '';
   const currentError = currentSavings < 0 ? 'Kwota nie może być ujemna' : '';
@@ -282,6 +343,31 @@ export function SavingsGoal() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start mb-8">
           {/* Left Column / Form Inputs */}
           <div className="lg:col-span-5 space-y-4 sm:space-y-5">
+            {showRestoredNotice && (
+              <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs shadow-sm">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
+                  <span className="font-medium text-[11px]">
+                    Przywrócono Twoje ostatnie parametry celu oszczędnościowego
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleResetSavingsDefaults}
+                    className="text-[11px] font-bold text-zinc-300 hover:text-white underline cursor-pointer"
+                  >
+                    Domyślne
+                  </button>
+                  <button
+                    onClick={() => setShowRestoredNotice(false)}
+                    className="text-zinc-400 hover:text-white text-xs px-1 cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="bg-[#121216] p-5 sm:p-6 rounded-2xl border border-white/[0.08] shadow-xl space-y-4">
               <h3 className="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2 border-b border-white/5 pb-2">
                 <span className="w-2 h-2 rounded-full bg-[#DC143C]"></span> Parametry Oszczędzania

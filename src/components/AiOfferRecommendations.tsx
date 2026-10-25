@@ -24,7 +24,13 @@ const OfferCountdown = ({ initialMinutes = 15 }) => {
   );
 };
 
-export function AiOfferRecommendations({ offers }: { offers: Offer[] }) {
+export function AiOfferRecommendations({ 
+  offers,
+  onSelectOffer 
+}: { 
+  offers: Offer[];
+  onSelectOffer?: (offer: Offer) => void;
+}) {
   const [applicantsCount, setApplicantsCount] = useState(() => {
     const hour = new Date().getHours();
     return 142 + (hour * 18) + Math.floor(Math.random() * 12);
@@ -43,6 +49,9 @@ export function AiOfferRecommendations({ offers }: { offers: Offer[] }) {
     
     // Zastąpienie technicznych lub "zapasowych" formułek na atrakcyjne uzasadnienie AI
     if (!desc || desc.toLowerCase().includes('systemowy') || desc.toLowerCase().includes('zapasow') || desc.length < 15) {
+      if (text.includes('hipoteczn') || text.includes('mieszkaniow') || text.includes('velodom')) {
+        return "Rekomendacja #1 w hipotekach: najniższa marża bankowa, 0 zł prowizji za udzielenie kredytu, możliwość wkładu od 10% i gwarancja stałego oprocentowania.";
+      }
       if (text.includes('konto')) {
         return "Najlepsze konto w rankingu: 0 zł za prowadzenie i kartę, ekspresowe otwarcie w 100% online oraz gwarantowany bonus powitalny na start.";
       }
@@ -59,9 +68,10 @@ export function AiOfferRecommendations({ offers }: { offers: Offer[] }) {
 
   const getDisplayParameters = (offer: Offer) => {
     const text = ((offer.name || '') + ' ' + (offer.comment || '')).toLowerCase();
-    const isAccount = text.includes('konto');
-    const isDeposit = text.includes('lokat') || text.includes('oszczędn');
-    const isConsolidation = text.includes('konsolid');
+    const isMortgage = text.includes('hipoteczn') || text.includes('mieszkaniow') || text.includes('velodom') || text.includes('pekao') || text.includes('millennium');
+    const isAccount = !isMortgage && text.includes('konto');
+    const isDeposit = !isMortgage && (text.includes('lokat') || text.includes('oszczędn'));
+    const isConsolidation = !isMortgage && text.includes('konsolid');
 
     let label1 = 'RRSO';
     let value1 = offer.rrso;
@@ -77,7 +87,21 @@ export function AiOfferRecommendations({ offers }: { offers: Offer[] }) {
 
     let ctaTitle = 'Odbierz Pieniądze na Konto';
 
-    if (isAccount) {
+    if (isMortgage) {
+      label1 = 'Oprocentowanie / RRSO';
+      value1 = offer.rrso || '7.82%';
+      sub1 = 'Stałe lub zmienne';
+
+      label2 = 'Wkład własny';
+      value2 = 'od 10% LTV';
+      sub2 = 'Finansowanie do 90%';
+
+      label3 = 'Dostępna kwota';
+      value3 = offer.maxAmount || 'do 2 500 000 zł';
+      sub3 = 'Finansowanie nieruchomości';
+
+      ctaTitle = 'Złóż Wniosek o Kredyt Hipoteczny';
+    } else if (isAccount) {
       label1 = 'Opłata za konto';
       value1 = '0 zł';
       sub1 = 'Gwarancja 0 zł';
@@ -128,7 +152,7 @@ export function AiOfferRecommendations({ offers }: { offers: Offer[] }) {
       }
     }
 
-    return { label1, value1, sub1, label2, value2, sub2, label3, value3, sub3, ctaTitle, isAccount, isDeposit };
+    return { label1, value1, sub1, label2, value2, sub2, label3, value3, sub3, ctaTitle, isAccount, isDeposit, isMortgage };
   };
 
   return (
@@ -284,22 +308,40 @@ export function AiOfferRecommendations({ offers }: { offers: Offer[] }) {
                   <div className="space-y-2.5 pt-1">
                     <OfferCountdown initialMinutes={14} />
                     
-                    <a
-                      href={`/api/go?offerId=${encodeURIComponent(offer.id)}&source=ai-recommendation`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group/btn relative flex flex-col items-center justify-center w-full py-4 px-6 bg-gradient-to-r from-[#DC143C] via-[#ff1a4b] to-[#b01030] hover:from-[#ff1a4b] hover:to-[#DC143C] text-white font-black text-base sm:text-lg rounded-2xl shadow-[0_12px_30px_rgba(220,20,60,0.45)] transform hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300 uppercase tracking-tight overflow-hidden"
-                    >
-                      <span className="relative z-10 flex items-center justify-center gap-2.5">
-                        <span>{params.ctaTitle}</span>
-                        <ArrowRight size={20} className="group-hover/btn:translate-x-1.5 transition-transform" />
-                      </span>
-                      <span className="relative z-10 text-[10px] text-white/90 font-normal normal-case tracking-normal mt-0.5">
-                        Bezpieczny wniosek online • Wypłata bezpośrednio na konto
-                      </span>
-                      {/* Efekt połysku */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover/btn:animate-[shimmer_1.5s_infinite]"></div>
-                    </a>
+                    {onSelectOffer ? (
+                      <button
+                        type="button"
+                        onClick={() => onSelectOffer(offer)}
+                        className="group/btn relative flex flex-col items-center justify-center w-full py-4 px-6 bg-gradient-to-r from-[#DC143C] via-[#ff1a4b] to-[#b01030] hover:from-[#ff1a4b] hover:to-[#DC143C] text-white font-black text-base sm:text-lg rounded-2xl shadow-[0_12px_30px_rgba(220,20,60,0.45)] transform hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300 uppercase tracking-tight overflow-hidden cursor-pointer"
+                      >
+                        <span className="relative z-10 flex items-center justify-center gap-2.5">
+                          <span>{params.ctaTitle}</span>
+                          <ArrowRight size={20} className="group-hover/btn:translate-x-1.5 transition-transform" />
+                        </span>
+                        <span className="relative z-10 text-[10px] text-white/90 font-normal normal-case tracking-normal mt-0.5">
+                          {params.isMortgage ? "Oficjalny wniosek banku • 0 zł prowizji" : "Bezpieczny wniosek online • Wypłata bezpośrednio na konto"}
+                        </span>
+                        {/* Efekt połysku */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover/btn:animate-[shimmer_1.5s_infinite]"></div>
+                      </button>
+                    ) : (
+                      <a
+                        href={`/api/go?offerId=${encodeURIComponent(offer.id)}&source=ai-recommendation`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group/btn relative flex flex-col items-center justify-center w-full py-4 px-6 bg-gradient-to-r from-[#DC143C] via-[#ff1a4b] to-[#b01030] hover:from-[#ff1a4b] hover:to-[#DC143C] text-white font-black text-base sm:text-lg rounded-2xl shadow-[0_12px_30px_rgba(220,20,60,0.45)] transform hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-300 uppercase tracking-tight overflow-hidden"
+                      >
+                        <span className="relative z-10 flex items-center justify-center gap-2.5">
+                          <span>{params.ctaTitle}</span>
+                          <ArrowRight size={20} className="group-hover/btn:translate-x-1.5 transition-transform" />
+                        </span>
+                        <span className="relative z-10 text-[10px] text-white/90 font-normal normal-case tracking-normal mt-0.5">
+                          {params.isMortgage ? "Oficjalny wniosek banku • 0 zł prowizji" : "Bezpieczny wniosek online • Wypłata bezpośrednio na konto"}
+                        </span>
+                        {/* Efekt połysku */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover/btn:animate-[shimmer_1.5s_infinite]"></div>
+                      </a>
+                    )}
                   </div>
 
                   {/* Społeczny dowód słuszności & Bezpieczeństwo */}

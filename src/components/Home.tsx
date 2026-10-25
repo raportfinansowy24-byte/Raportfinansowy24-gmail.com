@@ -22,9 +22,12 @@ import { validateNip, cleanNip, formatNip } from '../services/companyClient';
 import { useViewMode } from '../context/ViewModeContext';
 import { AnimatedNumber } from './AnimatedNumber';
 
+import { getLastCalculationMeta } from '../lib/userSessionState';
+
 export function Home() {
   const navigate = useNavigate();
   const { isBrowserMode } = useViewMode();
+  const lastCalc = React.useMemo(() => getLastCalculationMeta(), []);
 
   // Stan sekcji 3: Szybki kalkulator (orientacyjny)
   const [quickAmount, setQuickAmount] = useState<number>(20000);
@@ -162,6 +165,35 @@ export function Home() {
   return (
     <div className="w-full flex flex-col space-y-10 sm:space-y-14 pb-12 font-sans text-white overflow-x-hidden">
       
+      {/* Karta wznawiania ostatnich obliczeń dla powracającego klienta */}
+      {lastCalc && (
+        <div className="max-w-3xl mx-auto px-4 w-full -mb-4 sm:-mb-6 pt-2">
+          <div 
+            onClick={() => navigate(lastCalc.route)}
+            className="flex items-center justify-between p-3 sm:p-3.5 rounded-2xl bg-gradient-to-r from-zinc-900/90 via-[#18181b]/95 to-zinc-900/90 border border-[#DC143C]/40 hover:border-[#DC143C] shadow-lg shadow-[#DC143C]/10 cursor-pointer transition-all group backdrop-blur-md"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-[#DC143C]/20 border border-[#DC143C]/40 flex items-center justify-center text-[#DC143C] shrink-0 group-hover:scale-105 transition-transform">
+                <Sparkles size={17} />
+              </div>
+              <div className="text-left min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-[#DC143C] px-2 py-0.5 rounded-md bg-[#DC143C]/15 border border-[#DC143C]/30">
+                    Ostatnie obliczenia
+                  </span>
+                  <span className="text-xs font-bold text-white truncate">{lastCalc.title}</span>
+                </div>
+                <p className="text-[11px] text-zinc-300 truncate mt-0.5">{lastCalc.summary}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#DC143C]/15 group-hover:bg-[#DC143C] text-xs font-bold text-[#DC143C] group-hover:text-white transition-all shrink-0 ml-2 border border-[#DC143C]/30">
+              <span className="hidden sm:inline">Kontynuuj</span>
+              <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ========================================================
           SEKCJA 1 — HERO (Kompaktowy, wyrazisty, above-the-fold)
           ======================================================== */}

@@ -21,9 +21,33 @@ const SavingsGoal = lazy(() => import('./components/SavingsGoal').then(m => ({ d
 const BankAccountsHub = lazy(() => import('./components/BankAccountsHub').then(m => ({ default: m.BankAccountsHub })));
 const AboutUs = lazy(() => import('./components/AboutUs').then(m => ({ default: m.AboutUs })));
 
+import { getLastCalculationMeta, hasSessionBeenRedirected, markSessionRedirected, CalculationSessionMeta } from './lib/userSessionState';
+import { RotateCcw, Sparkles } from 'lucide-react';
+
 function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [restoredBanner, setRestoredBanner] = useState<CalculationSessionMeta | null>(null);
+
+  // Automatyczne przywracanie ostatniego okna i kalkulacji dla powracającego klienta
+  useEffect(() => {
+    if (location.pathname === '/' && !hasSessionBeenRedirected()) {
+      const lastCalc = getLastCalculationMeta();
+      if (lastCalc && lastCalc.route) {
+        markSessionRedirected();
+        setRestoredBanner(lastCalc);
+        navigate(lastCalc.route, { replace: true });
+      }
+    }
+  }, [location.pathname, navigate]);
+
+  // Automatyczne ukrywanie banera po 8 sekundach
+  useEffect(() => {
+    if (restoredBanner) {
+      const timer = setTimeout(() => setRestoredBanner(null), 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [restoredBanner]);
 
   const isCompanyActive = location.pathname === '/firma' || location.pathname === '/spolka' || location.pathname === '/krs' || location.pathname === '/analiza-firmy';
   const isProtocolActive = location.pathname === '/protokol' || location.pathname === '/funnel' || location.pathname === '/lejek' || location.pathname === '/audyt';
@@ -43,6 +67,49 @@ function AppContent() {
 
   return (
     <div className="relative z-20 w-full flex-1 flex flex-col mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-2.5 sm:py-6 pb-20 sm:pb-8">
+      {/* Floating notification when returning user is restored to their last window */}
+      <AnimatePresence>
+        {restoredBanner && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.96 }}
+            transition={{ duration: 0.25 }}
+            className="mb-4 p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-zinc-900/95 via-[#18181b]/95 to-zinc-900/95 border border-[#DC143C]/40 shadow-xl shadow-black/50 backdrop-blur-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-[#DC143C]/20 border border-[#DC143C]/40 flex items-center justify-center text-[#DC143C] shrink-0">
+                <Sparkles size={16} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-white text-sm">Witaj z powrotem!</span>
+                  <span className="px-2 py-0.5 rounded-full bg-[#DC143C]/20 text-[#DC143C] text-[10px] font-bold uppercase tracking-wider">
+                    {restoredBanner.badge}
+                  </span>
+                </div>
+                <p className="text-zinc-300 text-[11px] sm:text-xs mt-0.5">
+                  Przywrócono Twoje ostatnie okno: <span className="text-white font-medium">{restoredBanner.title}</span> ({restoredBanner.summary})
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+              <button
+                onClick={() => navigate('/')}
+                className="px-3 py-1.5 rounded-xl text-zinc-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] transition-colors cursor-pointer text-[11px] font-medium"
+              >
+                Strona główna
+              </button>
+              <button
+                onClick={() => setRestoredBanner(null)}
+                className="px-3 py-1.5 rounded-xl bg-[#DC143C] text-white hover:bg-[#b01030] transition-colors cursor-pointer font-bold text-[11px] shadow-sm shadow-[#DC143C]/30"
+              >
+                Rozumiem
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <Suspense fallback={<div className="flex items-center justify-center h-64 text-zinc-400 text-sm">Ładowanie modułu finansowego...</div>}>
         {/* Mobile Navigation Bar (visible on small screens < md) */}
         <div className="md:hidden grid grid-cols-5 gap-1 p-1 mb-3.5 rounded-2xl bg-[#121216]/95 backdrop-blur-md border border-white/[0.08] shadow-lg">

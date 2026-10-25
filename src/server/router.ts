@@ -76,6 +76,76 @@ async function getLiveOffers(): Promise<Offer[]> {
       comment: "Tanie inwestowanie"
     });
 
+    // Gwarantowane oferty kredytów hipotecznych (Partner M2M)
+    const mortgageBaseOffers: Offer[] = [
+      {
+        id: "m2m-2160",
+        name: "Bank Pekao - Kredyt mieszkaniowy",
+        category: "kredyty-hipoteczne",
+        categories: ["kredyty-hipoteczne"],
+        url: "https://tmlead.pl/redirect/388900_2160",
+        features: ["Finansowanie do 90% LTV", "0 zł prowizji dla klientów z kontem", "Okres spłaty do 30 lat", "Stałe lub zmienne oprocentowanie"],
+        params: { "rrso": "7.82%", "marża": "od 1.84%", "prowizja": "0%" },
+        comment: "Najniższa marża"
+      },
+      {
+        id: "m2m-2374",
+        name: "Bank Millennium - Kredyt hipoteczny",
+        category: "kredyty-hipoteczne",
+        categories: ["kredyty-hipoteczne"],
+        url: "https://tmlead.pl/redirect/388900_2374",
+        features: ["0 zł prowizji na start", "Wakacje kredytowe raz w roku", "Możliwość wcześniejszej spłaty bez opłat", "Do 35 lat kredytowania"],
+        params: { "rrso": "7.95%", "prowizja": "0 zł", "wkład własny": "od 10%" },
+        comment: "0 zł prowizji"
+      },
+      {
+        id: "m2m-3042",
+        name: "VeloBank - Kredyt hipoteczny VeloDom ze stałym oprocentowaniem",
+        category: "kredyty-hipoteczne",
+        categories: ["kredyty-hipoteczne"],
+        url: "https://tmlead.pl/redirect/388900_3042",
+        features: ["Stałe oprocentowanie przez 5 lat", "Bonus do 5000 zł do Media Expert lub Agata", "Prowizja 0% za udzielenie kredytu"],
+        params: { "rrso": "7.69%", "bonus": "do 5000 zł", "prowizja": "0%" },
+        comment: "Bonus do 5000 zł"
+      },
+      {
+        id: "m2m-3043",
+        name: "VeloBank - Kredyt VeloDom dla Profesjonalistów",
+        category: "kredyty-hipoteczne",
+        categories: ["kredyty-hipoteczne"],
+        url: "https://tmlead.pl/redirect/388900_3043",
+        features: ["Dla lekarzy, prawników, IT, architektów", "Uproszczona analiza dochodów", "Bonus 5000 zł na zakupy domowe"],
+        params: { "rrso": "7.65%", "prowizja": "0%" },
+        comment: "Dla specjalistów"
+      },
+      {
+        id: "m2m-3044",
+        name: "VeloBank - Kredyt VeloDom z Refinansowaniem",
+        category: "kredyty-hipoteczne",
+        categories: ["kredyty-hipoteczne"],
+        url: "https://tmlead.pl/redirect/388900_3044",
+        features: ["Przenieś drogi kredyt i obniż ratę", "0 zł prowizji za refinansowanie", "Dodatkowa gotówka na dowolny cel"],
+        params: { "rrso": "7.70%", "prowizja": "0 zł" },
+        comment: "Refinansowanie"
+      },
+      {
+        id: "m2m-3166",
+        name: "Bank Millennium - Eko Kredyt Hipoteczny",
+        category: "kredyty-hipoteczne",
+        categories: ["kredyty-hipoteczne"],
+        url: "https://tmlead.pl/redirect/388900_3166",
+        features: ["Promocja na nieruchomości energooszczędne", "Obniżona marża banku", "Ekspresowa wycena online"],
+        params: { "rrso": "7.59%", "eko-rabat": "-0.5% marży" },
+        comment: "Eko rabat"
+      }
+    ];
+
+    for (const mOffer of mortgageBaseOffers) {
+      if (!offers.some(o => o.id === mOffer.id)) {
+        offers.push(mOffer);
+      }
+    }
+
     if (offers.length > 0) {
       cachedOffers = offers;
       lastFetchTime = now;

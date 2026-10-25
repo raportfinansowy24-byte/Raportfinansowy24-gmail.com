@@ -152,12 +152,46 @@ const CURATED_BANK_OFFERS: BankAccountOffer[] = [
   }
 ];
 
+import { recordCalculationVisit } from '../lib/userSessionState';
+
 export const BankAccountsHub: React.FC = () => {
   const navigate = useNavigate();
   const { isBrowserMode } = useViewMode();
-  const [filter, setFilter] = useState<'all' | 'bonus' | 'savings' | 'personal'>('all');
+
+  const savedKonta = React.useMemo(() => {
+    try {
+      const raw = localStorage.getItem('rf24_konta_state');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return {
+          filter: (parsed.filter as 'all' | 'bonus' | 'savings' | 'personal') || 'all',
+          spend: typeof parsed.spend === 'number' ? parsed.spend : 1500
+        };
+      }
+    } catch {}
+    return { filter: 'all' as const, spend: 1500 };
+  }, []);
+
+  const [filter, setFilter] = useState<'all' | 'bonus' | 'savings' | 'personal'>(savedKonta.filter);
   const [searchQuery, setSearchQuery] = useState('');
-  const [estimatedMonthlySpend, setEstimatedMonthlySpend] = useState<number>(1500);
+  const [estimatedMonthlySpend, setEstimatedMonthlySpend] = useState<number>(savedKonta.spend);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('rf24_konta_state', JSON.stringify({
+        filter,
+        spend: estimatedMonthlySpend,
+        updatedAt: Date.now()
+      }));
+      recordCalculationVisit({
+        route: '/konta',
+        title: 'Hub Kont Bankowych',
+        badge: 'Konta',
+        summary: `Kategoria: ${filter === 'bonus' ? 'Premie' : filter === 'savings' ? 'Oszczędnościowe' : filter === 'personal' ? 'Osobiste' : 'Wszystkie'} • Wydatki: ${estimatedMonthlySpend.toLocaleString('pl-PL')} zł/mc`,
+        updatedAt: Date.now()
+      });
+    } catch {}
+  }, [filter, estimatedMonthlySpend]);
 
   // Obliczenie szacowanego rocznego zysku na premiach i cashbacku
   const calculateYearlyBenefit = (monthlySpend: number) => {

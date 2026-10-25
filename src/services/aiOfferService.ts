@@ -9,6 +9,7 @@ export interface Offer {
   rrso: string;
   decisionTime: string;
   comment?: string;
+  url?: string;
 }
 
 export async function getAiRecommendedOffers(quizData: Record<string, any>): Promise<Offer | null> {
@@ -35,7 +36,7 @@ export async function getAiRecommendedOffers(quizData: Record<string, any>): Pro
     const result = await response.json();
 
     // 3. Znajdź pełny obiekt oferty na podstawie ID
-    const recommended = availableOffers.find((offer: any) => offer.id === result.recommendedOfferId);
+    const recommended = availableOffers.find((offer: any) => offer.id === result.recommendedOfferId) || availableOffers[0];
     
     if (!recommended) return null;
 
@@ -48,7 +49,8 @@ export async function getAiRecommendedOffers(quizData: Record<string, any>): Pro
       maxAmount: result.maxAmount || "Zależnie od zdolności",
       rrso: result.rrso || "0%",
       decisionTime: result.decisionTime || "15 min",
-      comment: recommended.comment
+      comment: recommended.comment,
+      url: recommended.url || `/api/go?offerId=${encodeURIComponent(recommended.id)}`
     };
   } catch (error) {
     console.error("Błąd podczas pobierania rekomendacji AI:", error);

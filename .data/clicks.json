@@ -22,5 +22,77 @@
     "status": "conversion",
     "payout": 250,
     "converted_at": "2026-10-03T05:45:28.461Z"
+  },
+  "64975479-5bf5-4de8-94b1-dc1db1151c55": {
+    "id": "64975479-5bf5-4de8-94b1-dc1db1151c55",
+    "offer_id": "m2m-2160",
+    "offer_name": "Bank Pekao - Kredyt mieszkaniowy",
+    "source": "ai-recommendation",
+    "ip_address": "127.0.0.1",
+    "user_agent": "node",
+    "created_at": "2026-10-25T06:12:32.131Z",
+    "status": "click",
+    "payout": null,
+    "converted_at": null
+  },
+  "56116a83-779e-41a1-ae66-115154575584": {
+    "id": "56116a83-779e-41a1-ae66-115154575584",
+    "offer_id": "m2m-2160",
+    "offer_name": "Bank Pekao - Kredyt mieszkaniowy",
+    "source": "mortgage",
+    "ip_address": "127.0.0.1",
+    "user_agent": "curl/7.88.1",
+    "created_at": "2026-10-25T06:22:50.687Z",
+    "status": "click",
+    "payout": null,
+    "converted_at": null
+  },
+  "199fae04-dc01-4fa2-92ca-136b8dcc0194": {
+    "id": "199fae04-dc01-4fa2-92ca-136b8dcc0194",
+    "offer_id": "m2m-2160",
+    "offer_name": "Bank Pekao - Kredyt mieszkaniowy",
+    "source": "raport-finansowy",
+    "ip_address": "127.0.0.1",
+    "user_agent": "curl/7.88.1",
+    "created_at": "2026-10-25T06:22:54.165Z",
+    "status": "click",
+    "payout": null,
+    "converted_at": null
+  },
+  "336508d2-8ea8-4c5a-96b1-4012dc654bc6": {
+    "id": "336508d2-8ea8-4c5a-96b1-4012dc654bc6",
+    "offer_id": "m2m-3042",
+    "offer_name": "VeloBank - Kredyt hipoteczny VeloDom ze stałym oprocentowaniem w promocji z bonusem do 5000 zł na zakupy w Media Expert lub sklepach Agata",
+    "source": "raport-finansowy",
+    "ip_address": "127.0.0.1",
+    "user_agent": "curl/7.88.1",
+    "created_at": "2026-10-25T07:40:37.328Z",
+    "status": "click",
+    "payout": null,
+    "converted_at": null
+  },
+  "975d0e5b-dfb9-4d4a-8079-3d84f37ebb27": {
+    "id": "975d0e5b-dfb9-4d4a-8079-3d84f37ebb27",
+    "offer_id": "m2m-2374",
+    "offer_name": "Bank Millennium - Kredyt hipoteczny",
+    "source": "mortgage",
+    "ip_address": "2a02:3035:61d:5029:b3ec:99e8:ba89:2b95",
+    "user_agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Mobile Safari/537.36",
+    "created_at": "2026-10-25T07:40:42.898Z",
+    "status": "click",
+    "payout": null,
+    "converted_at": null
+  },
+  "434ebb00-f24d-41d0-ba38-8b1c97681302": {
+    "id": "434ebb00-f24d-41d0-ba38-8b1c97681302",
+    "offer_id": "m2m-3042",
+    "offer_name": "VeloBank - Kredyt hipoteczny VeloDom ze stałym oprocentowaniem w promocji z bonusem do 5000 zł na zakupy w Media Expert lub sklepach Agata",
+    "source": "mortgage",
+    "ip_address": "127.0.0.1",
+    "user_agent": "curl/7.88.1",
+    "created_at": "2026-10-25T07:46:15.899Z",
+    "status": "click",
+    "payout": null,
+    "converted_at": null
   }
 }
