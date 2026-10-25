@@ -1,7 +1,6 @@
 import express from "express";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
-import { createServer as createViteServer } from "vite";
 import path from "path";
 import { getOffersForProfile, routeOffer } from "./src/server/router.js";
 import { trackClick, trackConversion } from "./src/server/tracker.js";
@@ -36,6 +35,11 @@ async function startServer() {
   }
 
   app.use(express.json());
+
+  // Health checks for Cloud Run and container rollout / liveness probes
+  app.get(["/health", "/api/health"], (req, res) => {
+    res.status(200).json({ status: "healthy", timestamp: new Date().toISOString() });
+  });
 
   // Basic rate limiting for sensitive endpoints
   const apiLimiter = rateLimit({ windowMs: 60 * 1000, max: 60 }); // 60 requests / minute
@@ -687,15 +691,27 @@ KRYTYCZNE ZASADY DANYCH FINANSOWYCH:
     }
   });
 
-  // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({ server: { middlewareMode: true }, appType: "spa" });
-    app.use(vite.middlewares);
+  // Serve frontend: Vite middleware in development, pre-built static bundle in production
+  const isProd = process.env.NODE_ENV === "production" || import.meta.url.includes("dist-server");
+  if (!isProd) {
+    try {
+      const { createServer: createViteServer } = await import("vite");
+      const vite = await createViteServer({ server: { middlewareMode: true }, appType: "spa" });
+      app.use(vite.middlewares);
+    } catch (e) {
+      console.warn("[Server] Vite middleware initialization skipped/failed, serving static files:", e);
+      const distPath = path.join(process.cwd(), "dist");
+      app.use(express.static(distPath));
+      app.use((req, res) => {
+        res.sendFile(path.join(distPath, "index.html"));
+      });
+    }
   } else {
-    const distPath = path.join(process.cwd(), 'dist');
+    const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+    // In Express 5, catch-all fallback uses app.use middleware to avoid pathToRegexpError
+    app.use((req, res) => {
+      res.sendFile(path.join(distPath, "index.html"));
     });
   }
 
