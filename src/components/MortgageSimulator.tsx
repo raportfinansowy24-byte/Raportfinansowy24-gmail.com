@@ -21,6 +21,7 @@ import { getAiRecommendedOffers, Offer } from '../services/aiOfferService';
 import { AiOfferRecommendations } from './AiOfferRecommendations';
 import { FinancialReportModal } from './FinancialReportModal';
 import { useViewMode } from '../context/ViewModeContext';
+import { LastAttemptBar } from './LastAttemptBar';
 
 export interface MortgageOfferItem {
   id: string;
@@ -212,6 +213,32 @@ export function MortgageSimulator() {
     try {
       localStorage.removeItem('rf24_mortgage_state');
     } catch {}
+  };
+
+  // Stan ostatniej próby dla symulatora hipoteki
+  const [hadMortgagePreviousErrors, setHadMortgagePreviousErrors] = useState<boolean>(true);
+  const [mortgageAttemptTime, setMortgageAttemptTime] = useState<string>('12:03:36');
+  const [mortgageAttemptProgress, setMortgageAttemptProgress] = useState<number>(12);
+
+  const mortgageErrors = useMemo(() => {
+    const errs: string[] = [];
+    if (propertyValue < 100000) errs.push('Wartość nieruchomości musi wynosić min. 100 000 zł');
+    if (downPayment >= propertyValue) errs.push('Wkład własny nie może być wyższy niż wartość nieruchomości');
+    if (downPayment < propertyValue * 0.10) errs.push('Minimalny wkład własny wynosi 10% (rekomendacja KNF)');
+    if (years < 5 || years > 35) errs.push('Okres kredytowania musi mieścić się w przedziale 5 - 35 lat');
+    return errs;
+  }, [propertyValue, downPayment, years]);
+
+  const hasMortgageErrors = mortgageErrors.length > 0;
+  // Przycisk ponawiania próby aktywny tylko wtedy, gdy poprawione zostały błędy
+  const isMortgageErrorFixed = hadMortgagePreviousErrors && !hasMortgageErrors;
+
+  const handleRetryMortgageAttempt = () => {
+    if (!isMortgageErrorFixed) return;
+    const now = new Date().toLocaleTimeString('pl-PL');
+    setMortgageAttemptTime(now);
+    setMortgageAttemptProgress(100);
+    setHadMortgagePreviousErrors(false);
   };
 
   const generateTextReport = () => {
@@ -591,6 +618,34 @@ export function MortgageSimulator() {
                   </div>
                 </div>
               )}
+
+              {/* Pasek ostatniej próby ze zrzutu ekranu z przyciskiem ponawiania po poprawieniu błędów */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-black/40 border border-white/5">
+                <div className="text-left text-xs">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400 block mb-0.5">
+                    Ostatnia próba symulacji
+                  </span>
+                  <span className="text-white font-semibold text-xs">
+                    {isMortgageErrorFixed ? (
+                      <span className="text-emerald-400 font-bold">✓ Błędy poprawione — możesz ponowić</span>
+                    ) : hasMortgageErrors ? (
+                      <span className="text-amber-400 font-medium">Popraw błędy parametrów</span>
+                    ) : (
+                      <span className="text-zinc-300">Zapisany stan kalkulacji</span>
+                    )}
+                  </span>
+                </div>
+                <LastAttemptBar
+                  initialTime={mortgageAttemptTime}
+                  initialProgress={mortgageAttemptProgress}
+                  hasErrors={hasMortgageErrors}
+                  errorsFixed={isMortgageErrorFixed}
+                  errorMessages={mortgageErrors}
+                  onRetryAttempt={handleRetryMortgageAttempt}
+                  onClearAttempt={handleResetToDefaults}
+                  onCopyAttempt={() => {}}
+                />
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-4 group bg-black/30 p-4 rounded-2xl border border-white/5 hover:border-[#DC143C]/30 transition-colors sm:col-span-2 relative">

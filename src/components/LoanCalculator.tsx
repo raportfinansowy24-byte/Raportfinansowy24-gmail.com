@@ -17,6 +17,7 @@ import { AmortizationChart } from './AmortizationChart';
 import { motion } from 'motion/react';
 import { useViewMode } from '../context/ViewModeContext';
 import { AnimatedNumber } from './AnimatedNumber';
+import { LastAttemptBar } from './LastAttemptBar';
 
 const FAQ_QUESTIONS = [
   "Jak działa konsolidacja kredytów?",
@@ -572,6 +573,80 @@ export function LoanCalculator() {
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
   const [comparedOffers, setComparedOffers] = useState<M2MOffer[]>([]);
   const [savedSimulation, setSavedSimulation] = useState<any>(() => loadFromLocalStorage('savedSimulation') || null);
+
+  // Stan ostatniej próby i walidacji poprawionych błędów
+  const [hadPreviousErrors, setHadPreviousErrors] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('rf24_loan_had_errors');
+      return saved !== null ? saved === 'true' : true;
+    } catch {
+      return true;
+    }
+  });
+
+  const [lastAttemptTime, setLastAttemptTime] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem('rf24_last_attempt_state');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.time) return parsed.time;
+      }
+    } catch {}
+    return '12:03:36';
+  });
+
+  const [lastAttemptProgress, setLastAttemptProgress] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('rf24_last_attempt_state');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (typeof parsed.progressPercent === 'number') return parsed.progressPercent;
+      }
+    } catch {}
+    return 12;
+  });
+
+  // Dynamiczne sprawdzanie czy parametry mają błędy
+  const loanErrors = useMemo(() => {
+    const errs: string[] = [];
+    if (sliderAmount < 2000) errs.push('Kwota kredytu nie może być niższa niż 2 000 zł');
+    if (sliderAmount > 250000) errs.push('Kwota kredytu przekracza limit 250 000 zł');
+    if (sliderMonths < 6) errs.push('Okres spłaty musi wynosić minimum 6 miesięcy');
+    if (sliderMonths > 120) errs.push('Maksymalny okres spłaty to 120 miesięcy');
+    if (emailError) errs.push(emailError);
+    if (phoneError) errs.push(phoneError);
+    if (nameError) errs.push(nameError);
+    return errs;
+  }, [sliderAmount, sliderMonths, emailError, phoneError, nameError]);
+
+  const hasLoanErrors = loanErrors.length > 0;
+  // Przycisk ponawiania próby jest dostępny TYLKO wtedy, gdy błędy zostały poprawione
+  const isLoanErrorFixed = hadPreviousErrors && !hasLoanErrors;
+
+  // Funkcja ponawiania ostatniej próby
+  const handleRetryAttempt = () => {
+    if (!isLoanErrorFixed) return;
+    const nowTime = new Date().toLocaleTimeString('pl-PL');
+    setLastAttemptTime(nowTime);
+    setLastAttemptProgress(100);
+    setHadPreviousErrors(false);
+    try {
+      localStorage.setItem('rf24_loan_had_errors', 'false');
+      localStorage.setItem('rf24_last_attempt_state', JSON.stringify({
+        time: nowTime,
+        progressPercent: 100,
+        hasErrors: false,
+        errorsFixed: true,
+        lastUpdated: Date.now()
+      }));
+    } catch {}
+
+    // Wymuszenie ponownego przeliczenia raty i odświeżenia ofert
+    setIsCalculating(true);
+    setTimeout(() => {
+      setIsCalculating(false);
+    }, 450);
+  };
   const [showSavedComparison, setShowSavedComparison] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [protocolStatus, setProtocolStatus] = useState<{
@@ -1198,28 +1273,43 @@ export function LoanCalculator() {
               </p>
             </div>
 
-            {/* Chart Mode Switcher: Balance vs Monthly Payment */}
-            <div className="flex items-center gap-1 bg-black/50 p-1 rounded-xl border border-white/[0.08] shrink-0">
-              <button
-                onClick={() => setChartMetricMode('balance')}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  chartMetricMode === 'balance'
-                    ? 'bg-[#DC143C] text-white shadow-sm'
-                    : 'text-zinc-400 hover:text-white hover:bg-white/[0.06]'
-                }`}
-              >
-                Krzywa Salda & Spłaty
-              </button>
-              <button
-                onClick={() => setChartMetricMode('monthly')}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  chartMetricMode === 'monthly'
-                    ? 'bg-[#DC143C] text-white shadow-sm'
-                    : 'text-zinc-400 hover:text-white hover:bg-white/[0.06]'
-                }`}
-              >
-                Część Raty (Kapitał/Odsetki)
-              </button>
+            {/* Right: LastAttemptBar with Copy, Trash, Retry (active when errors fixed), Clock, % and Progress bar */}
+            <div className="flex flex-col sm:items-end gap-3 shrink-0">
+              <LastAttemptBar
+                initialTime={lastAttemptTime}
+                initialProgress={lastAttemptProgress}
+                hasErrors={hasLoanErrors}
+                errorsFixed={isLoanErrorFixed}
+                errorMessages={loanErrors}
+                onRetryAttempt={handleRetryAttempt}
+                onClearAttempt={handleResetLoanDefaults}
+                onCopyAttempt={() => {}}
+                className="w-full sm:w-auto"
+              />
+
+              {/* Chart Mode Switcher: Balance vs Monthly Payment */}
+              <div className="flex items-center gap-1 bg-black/50 p-1 rounded-xl border border-white/[0.08] shrink-0 self-end">
+                <button
+                  onClick={() => setChartMetricMode('balance')}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    chartMetricMode === 'balance'
+                      ? 'bg-[#DC143C] text-white shadow-sm'
+                      : 'text-zinc-400 hover:text-white hover:bg-white/[0.06]'
+                  }`}
+                >
+                  Krzywa Salda & Spłaty
+                </button>
+                <button
+                  onClick={() => setChartMetricMode('monthly')}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    chartMetricMode === 'monthly'
+                      ? 'bg-[#DC143C] text-white shadow-sm'
+                      : 'text-zinc-400 hover:text-white hover:bg-white/[0.06]'
+                  }`}
+                >
+                  Część Raty (Kapitał/Odsetki)
+                </button>
+              </div>
             </div>
           </div>
 
@@ -2102,6 +2192,34 @@ export function LoanCalculator() {
               </div>
             </div>
             <ArrowRight size={16} className="text-[#DC143C] group-hover:translate-x-1 transition-transform shrink-0 ml-2" />
+          </div>
+
+          {/* Ostatnia próba ze zrzutu ekranu z przyciskiem ponawiania po poprawieniu błędów */}
+          <div className="w-full max-w-lg mx-auto mb-4 p-3 sm:p-4 rounded-2xl bg-[#0f0f14] border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+            <div className="text-left text-xs">
+              <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400 block mb-0.5">
+                Status ostatniej próby
+              </span>
+              <span className="text-white font-semibold text-xs">
+                {isLoanErrorFixed ? (
+                  <span className="text-emerald-400 font-bold">✓ Błędy poprawione — ponów próbę</span>
+                ) : hasLoanErrors ? (
+                  <span className="text-amber-400 font-medium">Wykryto błędy w danych</span>
+                ) : (
+                  <span className="text-zinc-300">Poprzednia próba obliczenia</span>
+                )}
+              </span>
+            </div>
+            <LastAttemptBar
+              initialTime={lastAttemptTime}
+              initialProgress={lastAttemptProgress}
+              hasErrors={hasLoanErrors}
+              errorsFixed={isLoanErrorFixed}
+              errorMessages={loanErrors}
+              onRetryAttempt={handleRetryAttempt}
+              onClearAttempt={handleResetLoanDefaults}
+              onCopyAttempt={() => {}}
+            />
           </div>
 
           <div className="flex items-center justify-between mb-4 sm:mb-6">
