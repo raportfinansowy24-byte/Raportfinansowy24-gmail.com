@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build && npx esbuild server.ts --bundle --platform=node --target=node18 --format=esm --outdir=dist-server --packages=external",
     "start": "node dist-server/server.js",
     "preview": "vite preview",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "check:firebase-free": "node scripts/check-firebase-free.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.36.0",
@@ -19,7 +20,6 @@
     "d3": "^7.9.0",
     "express": "^5.2.1",
     "express-rate-limit": "^6.7.0",
-    "firebase": "^12.10.0",
     "jspdf": "^4.2.1",
     "lucide-react": "^0.577.0",
     "marked": "^17.0.4",
