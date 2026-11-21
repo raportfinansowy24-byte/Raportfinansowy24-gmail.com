@@ -19,8 +19,6 @@ dist-ssr
 .env.*
 !.env.example
 
-# Firebase
-firebase-applet-config.json
 
 # Editor directories and files
 .vscode/*
